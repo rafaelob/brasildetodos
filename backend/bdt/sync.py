@@ -1,0 +1,189 @@
+"""Operator-controlled collection with resumable pages and explicit completeness.
+
+A successful HTTP response, a short page or an exhausted budget is not proof
+that the national dataset was collected. Source profiles are explicit inputs.
+"""
+from __future__ import annotations
+import hashlib
+import json
+import os
+import time
+from pathlib import Path
+from typing import Literal
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+import httpx
+from pydantic import Field, model_validator
+from .domain import Source, StrictModel, digest, now
+from .ingest import HOSTS, import_places, safe_download
+
+
+class PagePlan(StrictModel):
+    dataset: str = Field(pattern=r'^[a-z0-9_-]{2,80}$')
+    url: str
+    root: str
+    identity: str
+    page_parameter: str = 'pagina'
+    size_parameter: str = 'tamanhoPagina'
+    page_size: int = Field(default=100, ge=1, le=1000)
+    start: int = Field(default=1, ge=0)
+    step: int = Field(default=1, ge=1)
+    max_pages: int = Field(default=100, ge=1, le=50000)
+    max_bytes_per_page: int = Field(default=8*1024*1024, ge=1, le=64*1024*1024)
+    total_pages_field: str | None = None
+    total_records_field: str | None = None
+    response_page_field: str | None = None
+    reference_date: str | None = None
+    parameters: dict[str, str] = Field(default_factory=dict)
+    delay_seconds: float = Field(default=.25, ge=0, le=60)
+
+    @model_validator(mode='after')
+    def reviewed_source(self):
+        url = urlsplit(self.url)
+        if url.scheme != 'https' or url.hostname not in HOSTS or url.username or url.password or url.port not in (None, 443):
+            raise ValueError('source_not_allowlisted')
+        if self.page_parameter == self.size_parameter or self.page_parameter in self.parameters or self.size_parameter in self.parameters:
+            raise ValueError('ambiguous_pagination_parameters')
+        if any(not key or len(key) > 80 for key in (self.root, self.identity, self.page_parameter, self.size_parameter)):
+            raise ValueError('invalid_profile_field')
+        return self
+
+
+def atomic_json(path: Path, content: dict):
+    target = path.with_suffix(path.suffix + '.tmp')
+    target.write_text(json.dumps(content, ensure_ascii=False, indent=2), encoding='utf-8')
+    os.replace(target, path)
+
+
+def file_hash(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024*1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+
+def page_url(plan: PagePlan, index: int) -> str:
+    parsed = urlsplit(plan.url)
+    parameters = dict(parse_qsl(parsed.query, keep_blank_values=True)) | plan.parameters
+    parameters[plan.page_parameter] = str(plan.start + index * plan.step)
+    parameters[plan.size_parameter] = str(plan.page_size)
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(parameters), ''))
+
+
+def download_retry(url: str, target: Path, max_bytes: int, *, attempts: int = 3, sleep=time.sleep):
+    for attempt in range(attempts):
+        try:
+            return safe_download(url, target, max_bytes)
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as error:
+            retryable = not isinstance(error, httpx.HTTPStatusError) or error.response.status_code in {429, 500, 502, 503, 504}
+            if not retryable or attempt + 1 == attempts:
+                raise
+            sleep(min(2 ** attempt, 8))
+    raise ValueError('retry_budget_must_be_positive')
+
+
+def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.sleep) -> dict:
+    folder.mkdir(parents=True, exist_ok=True)
+    checkpoint = folder / 'collection.json'
+    fingerprint = digest(plan.model_dump())
+    old = json.loads(checkpoint.read_text()) if checkpoint.exists() else None
+    if old and old.get('plan_sha256') != fingerprint:
+        raise ValueError('resume_profile_changed_use_new_collection')
+    report = {'dataset': plan.dataset, 'plan_sha256': fingerprint, 'plan': plan.model_dump(),
+              'started_at': old['started_at'] if old else now(), 'status': 'running', 'pages': [],
+              'records': 0, 'national_catalog_certified': False, 'terminal': None}
+    cached = {p['index']: p for p in (old or {}).get('pages', [])}
+    identities, hashes = set(), set()
+    expected_pages, expected_records = None, None
+    try:
+        for index in range(plan.max_pages):
+            path = folder / f'page-{index:06}.json'
+            url = page_url(plan, index)
+            if index in cached:
+                metadata = cached[index]
+                if metadata['url'] != url or not path.is_file() or file_hash(path) != metadata['sha256']:
+                    raise ValueError('cached_page_integrity_failure')
+            else:
+                if index:
+                    sleep(plan.delay_seconds)
+                metadata = loader(url, path, plan.max_bytes_per_page)
+                if file_hash(path) != metadata['sha256']:
+                    raise ValueError('download_hash_mismatch')
+            payload = json.loads(path.read_text(encoding='utf-8-sig'))
+            rows = payload.get(plan.root) if isinstance(payload, dict) else None
+            if not isinstance(rows, list):
+                raise ValueError('response_schema_changed')
+            if plan.response_page_field and payload.get(plan.response_page_field) != plan.start + index * plan.step:
+                raise ValueError('unexpected_response_page')
+            for field, previous in ((plan.total_pages_field, expected_pages), (plan.total_records_field, expected_records)):
+                if field:
+                    value = payload.get(field)
+                    if isinstance(value, bool) or not isinstance(value, int) or value < 0 or (previous is not None and value != previous):
+                        raise ValueError('changing_or_invalid_total')
+                    if field == plan.total_pages_field:
+                        expected_pages = value
+                    if field == plan.total_records_field:
+                        expected_records = value
+            if rows and metadata['sha256'] in hashes:
+                raise ValueError('repeated_page')
+            hashes.add(metadata['sha256'])
+            for row in rows:
+                identity = row.get(plan.identity) if isinstance(row, dict) else None
+                if isinstance(identity, bool) or not isinstance(identity, (str, int)) or str(identity) == '':
+                    raise ValueError('missing_source_identity')
+                identity = str(identity)
+                if identity in identities:
+                    raise ValueError('duplicate_source_identity_across_pages')
+                identities.add(identity)
+            entry = {key: metadata.get(key) for key in ('url', 'sha256', 'bytes', 'collected_at', 'etag')}
+            entry.update(index=index, file=path.name, records=len(rows))
+            report['pages'].append(entry)
+            report['records'] += len(rows)
+            if expected_records is not None and report['records'] > expected_records:
+                raise ValueError('record_count_exceeds_declared_total')
+            terminal = not rows or (expected_pages is not None and index + 1 >= expected_pages)
+            if terminal:
+                if expected_records is not None and report['records'] != expected_records:
+                    raise ValueError('terminal_count_mismatch')
+                if expected_pages is not None and index + 1 < expected_pages:
+                    raise ValueError('premature_empty_page')
+                report.update(status='complete', terminal='empty_page' if not rows else 'declared_total_pages',
+                    expected_records=expected_records, finished_at=now())
+                atomic_json(checkpoint, report)
+                return report
+            atomic_json(checkpoint, report)
+        report.update(status='partial_budget', finished_at=now())
+        atomic_json(checkpoint, report)
+        return report
+    except Exception as error:
+        report.update(status='failed', error_type=type(error).__name__,
+            error_code=str(error) if isinstance(error, ValueError) else 'transport_failure', finished_at=now())
+        atomic_json(checkpoint, report)
+        raise
+
+
+def collected_rows(folder: Path, report: dict):
+    plan = PagePlan.model_validate(report['plan'])
+    for entry in report['pages']:
+        # Paths are generated, not accepted from an untrusted manifest.
+        path = folder / f"page-{entry['index']:06}.json"
+        if file_hash(path) != entry['sha256']:
+            raise ValueError('page_changed_after_collection')
+        payload = json.loads(path.read_text(encoding='utf-8-sig'))
+        yield from payload[plan.root]
+
+
+def import_collection(database, folder: Path, adapter: Literal['cnes', 'inep']) -> dict:
+    checkpoint = folder / 'collection.json'
+    report = json.loads(checkpoint.read_text())
+    plan = PagePlan.model_validate(report['plan'])
+    if report.get('status') != 'complete' or report.get('plan_sha256') != digest(plan.model_dump()):
+        raise ValueError('incomplete_collection_cannot_be_published')
+    if report['records'] == 0:
+        raise ValueError('empty_collection_cannot_replace_catalogue')
+    source = Source(dataset=plan.dataset, url=plan.url, record_id='collection',
+        reference_date=plan.reference_date, collected_at=report['finished_at'], snapshot_sha256=file_hash(checkpoint))
+    result = import_places(database, collected_rows(folder, report), source, adapter)
+    result.update(collection_terminal=report['terminal'], records_collected=report['records'],
+                  national_catalog_certified=False)
+    return result
