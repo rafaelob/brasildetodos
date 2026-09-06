@@ -99,6 +99,8 @@ jobs:
         run: python ops/browser_resource_sharing.py
       - name: Exercise import state and bounded collection downloads
         run: python ops/browser_resource_status.py
+      - name: Exercise cancellation, late responses and complete long objects
+        run: python ops/browser_resource_lifecycle.py
       - name: Exercise optional WebGL map and bundled worker without external data
         run: python ops/browser_map.py
       - uses: actions/upload-artifact@v4
@@ -112,6 +114,7 @@ jobs:
             test-results/browser-sharing/
             test-results/browser-resource-status/
             test-results/browser-map/
+            test-results/browser-resource-lifecycle/
   official-source-probe:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

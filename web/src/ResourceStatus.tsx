@@ -1,4 +1,5 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useLayoutEffect,useMemo,useState} from 'react';
+import {createLatestTask} from './latest-task.mjs';
 import {api} from './api';
 import {selectionExportURL,statusText} from './resource-status.mjs';
 import type {Locale} from './types';
@@ -25,19 +26,37 @@ export function ResourceCoverage({t,locale}:{t:T;locale:Locale}){
 }
 
 export function CollectionDownloads({criteria,locale}:{criteria:Record<string,string|undefined>;locale:Locale}){
-  const [busy,setBusy]=useState(false),[status,setStatus]=useState('');const text=(key:string)=>statusText(locale,key);
-  const selectionKey=JSON.stringify(criteria);
-  useEffect(()=>setStatus(''),[selectionKey,locale]);
+  const scope=JSON.stringify([criteria,locale]);
+  const task=useMemo(()=>createLatestTask(),[scope]);
+  const [state,setState]=useState({scope:'',busy:false,status:''});
+  const text=(key:string)=>statusText(locale,key);
+  const current=state.scope===scope?state:{scope,busy:false,status:''};
+  // Invalidate the old selection at commit, before asynchronous responses publish.
+  useLayoutEffect(()=>{
+    setState({scope,busy:false,status:''});
+    return()=>task.cancel();
+  },[task,scope]);
   async function download(format:'json'|'text'|'csv'){
-    setBusy(true);setStatus('');
-    try{const response=await fetch(selectionExportURL(criteria,format,locale),{credentials:'omit'});
+    setState({scope,busy:true,status:'preparing'});
+    await task.run(async signal=>{
+      const response=await fetch(selectionExportURL(criteria,format,locale),{credentials:'omit',signal});
       if(!response.ok)throw new Error('export_failed');
-      const blob=await response.blob(),url=URL.createObjectURL(blob),anchor=document.createElement('a');
-      anchor.href=url;anchor.download='brasildetodos-resource-selection.'+(format==='text'?'txt':format);
-      document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);setStatus('ready');
-    }catch{setStatus('exportFailed');}finally{setBusy(false);}
+      return response.blob();
+    },{
+      success:blob=>{
+        const url=URL.createObjectURL(blob),anchor=document.createElement('a');
+        try{
+          anchor.href=url;anchor.download='brasildetodos-resource-selection.'+(format==='text'?'txt':format);
+          document.body.append(anchor);anchor.click();
+        }finally{anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+        setState({scope,busy:false,status:'ready'});
+      },
+      failure:()=>setState({scope,busy:false,status:'exportFailed'})
+    });
   }
+  function cancel(){task.cancel();setState({scope,busy:false,status:'cancelled'});}
   return <div className="collection-downloads"><details><summary>{text('exportTitle')}</summary><p>{text('exportNotice')}</p>
-    <div>{(['text','csv','json'] as const).map(format=><button key={format} disabled={busy} onClick={()=>download(format)}>{text(format)}</button>)}</div>
-    {status&&<p role="status">{text(status)}</p>}</details></div>;
+    <div>{(['text','csv','json'] as const).map(format=><button key={format} disabled={current.busy} onClick={()=>download(format)}>{text(format)}</button>)}</div>
+    {current.busy&&<button onClick={cancel}>{text('cancel')}</button>}
+    {current.status&&<p role="status" aria-live="polite">{text(current.status)}</p>}</details></div>;
 }

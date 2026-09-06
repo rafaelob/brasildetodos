@@ -1,4 +1,5 @@
 import {ResourceCoverage,CollectionDownloads} from './ResourceStatus';
+import ResourceObject from './ResourceObject';
 import {useEffect,useState,useId} from 'react';
 import {api} from './api';
 import {ShareResource,ResourceDownloads} from './ResourceActions';
@@ -6,6 +7,7 @@ import {parseResourceRoute,normalizeResourceRoute} from './resource-route.mjs';
 import './resources.css';
 import {money,safeReference} from './i18n.mjs';
 import {resourceAmounts,resourceAmountText} from './resource-i18n.mjs';
+import {historyFields,historyText} from './resource-history.mjs';
 import type {Locale,Source} from './types';
 
 type T=(key:string)=>string;
@@ -42,7 +44,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
   const investments=Array.isArray(a.planned_investments)?a.planned_investments as {planned_cents:unknown;source_name:unknown}[]:[];
   const planned=investments.filter(entry=>Number.isSafeInteger(entry.planned_cents)&&Number(entry.planned_cents)>=0);
   return <article className="panel resource-card"><span className="pill">{t('resource'+row.kind[0].toUpperCase()+row.kind.slice(1))}</span>
-    <h2>{row.title}</h2><code>{row.id}</code>
+    <ResourceObject text={row.title} locale={locale}/><code>{row.id}</code>
     <p className="callout">{t(scopes[String(a.territorial_basis)]||'resourceScope')}</p>
     {a.profile==='transferegov_special_plans'&&<p>{t('resourceProposalNotice')}</p>}
     {a.budget_direction==='revenue'&&<p className="callout">{t('resourceRevenue')}</p>}
@@ -65,7 +67,10 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
         :<>{history.versions.map(version=><article className="source" key={version.revision}>
           <h3>{t('resourceRevision')} {version.revision}</h3>
           <p>{t('resourceCaptured')}: {version.observed_at}</p>
-          <p>{version.revision===1?t('resourceInitial'):t('resourceChanges')+': '+version.changed_fields.join(', ')}</p>
+          {version.revision===1?<p>{t('resourceInitial')}</p>:<>
+            <p>{t('resourceChanges')}:</p><ul>{historyFields(version.changed_fields,locale).map(field=><li key={field.key}>{field.label}</li>)}</ul>
+            <details><summary>{historyText(locale,'technical')}</summary><ul>{version.changed_fields.map((key,index)=><li key={index}><code>{key}</code></li>)}</ul></details>
+          </>}
           <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{resourceAmountText(item,locale)}</dd></div>)}</dl>
           <Provenance source={version.resource.source} t={t}/><ResourceDownloads id={row.id} locale={locale} t={t} revision={version.revision}/>
         </article>)}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button>
