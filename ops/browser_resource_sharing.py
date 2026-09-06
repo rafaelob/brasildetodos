@@ -40,6 +40,15 @@ def add_precise(database, folder):
     collect(plan,folder,loader=loader);import_resources(database,folder)
 
 
+def open_downloads(container):
+    # Hash navigation is same-document: React preserves an open disclosure
+    # when only the locale changes. Open it if necessary; never toggle it shut.
+    details = container.locator('.resource-downloads').first
+    if details.get_attribute('open') is None:
+        details.locator(':scope > summary').click()
+    expect(details).to_have_attribute('open', '')
+
+
 def main():
     out=Path('test-results/browser-sharing');out.mkdir(parents=True,exist_ok=True)
     report={'synthetic_test_only':True,'live_map_verified':False,'status':'started','checks':[]}
@@ -87,7 +96,7 @@ def main():
                             card=page.locator('.resource-card')
                             card.get_by_role('button',name='Ver versões e mudanças',exact=True).click()
                             version=card.locator('article.source').filter(has=page.get_by_role('heading',name='Versão 1',exact=True))
-                            version.locator('.resource-downloads > summary').click()
+                            open_downloads(version)
                             with page.expect_download() as download:
                                 version.get_by_role('link',name='JSON',exact=True).click()
                             data=json.loads(Path(download.value.path()).read_text())
@@ -99,13 +108,14 @@ def main():
                                 expect(page.get_by_role('heading',name=title,exact=True)).to_be_visible()
                                 card=page.locator('.resource-card')
                                 expect(card.locator('.money h3').first).to_contain_text(fraction)
-                                card.locator('.resource-downloads > summary').first.click()
+                                open_downloads(card)
                                 for format in ('CSV','JSON'):
                                     with page.expect_download() as download:
                                         card.get_by_role('link',name=format,exact=True).first.click()
                                     text=Path(download.value.path()).read_text(encoding='utf-8-sig')
                                     assert '100.0001' in text and '200.0123' in text and 'snapshot_sha256' in text
                                     assert 'DO_NOT_SHARE' not in text
+                                    if format=='JSON':assert json.loads(text)['locale']==locale
                                 assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'),(width,locale)
                             page.screenshot(path=str(out/f'public-resource-{width}.png'),full_page=True)
                             assert not errors,errors
