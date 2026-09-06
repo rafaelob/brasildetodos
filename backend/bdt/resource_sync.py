@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from .domain import Source, digest, now
 from .evidence import Resource, ResourceInput, initialize_extensions
 from .resource_profiles import PROFILES, collection_plan, normalize_resource
+from .resource_diagnostics import ResourceTextError
 from .storage import Base, Database, Ingestion, Municipality
 from .sync import PagePlan, atomic_json, collect, file_hash, page_url
 
@@ -184,7 +185,11 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
             seen.add(identity)
             source = Source(dataset=plan.dataset, record_id=identity, url=entry['url'], reference_date=None,
                 collected_at=entry['collected_at'], snapshot_sha256=entry['sha256'])
-            body = normalize_resource(plan.dataset, row, source, municipalities)
+            try:
+                body = normalize_resource(plan.dataset, row, source, municipalities)
+            except ResourceTextError as error:
+                error.with_reference(plan.dataset, identity, entry["sha256"])
+                raise
             _check_scope(plan, row, body)
             yield body
             total += 1

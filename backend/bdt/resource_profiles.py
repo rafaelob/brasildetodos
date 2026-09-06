@@ -16,6 +16,7 @@ from .domain import Source, cnpj, decimal_cents
 from .evidence import ResourceInput
 from .sync import PagePlan
 from .resource_money import metadata_amount
+from .resource_diagnostics import ResourceTextError
 
 Profile = Literal['pncp_contracts', 'transferegov_special_plans', 'obrasgov_projects']
 PROFILES = {
@@ -26,11 +27,11 @@ PROFILES = {
 STATES = frozenset('AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split())
 
 
-def text(value, *, limit=4000, required=False):
+def text(value, *, limit=4000, required=False, field="unspecified"):
     if value is None and not required:
         return None
     if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit:
-        raise ValueError('invalid_resource_text')
+        raise ResourceTextError(field, value, limit)
     return value.strip()
 
 
@@ -46,7 +47,7 @@ def identifier(value):
 def date_value(value, *, timestamp=False):
     if value is None:
         return None
-    value = text(value, limit=80, required=True)
+    value = text(value, limit=80, required=True, field="timestamp")
     try:
         if timestamp:
             if 'T' not in value:
@@ -134,7 +135,7 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         municipality = str(unit['codigoIbge'])
         if municipality not in municipalities or municipalities[municipality][1] != unit['ufSigla']:
             raise ValueError('unknown_or_conflicting_buyer_territory')
-        title = text(row['objetoContrato'], required=True)
+        title = text(row['objetoContrato'], required=True, field='objetoContrato')
         updated = date_value(row['dataAtualizacao'], timestamp=True)
         if not updated:
             raise ValueError('pncp_update_timestamp_required')
@@ -161,7 +162,7 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         attributes.update(territorial_basis='buyer_registered_municipality_not_execution', state=unit['ufSigla'],
             budget_direction='revenue' if revenue is True else 'expense' if revenue is False else 'unknown',
             published_at=date_value(row.get('dataPublicacaoPncp'), timestamp=True),
-            buyer_cnpj=match[1], buyer_name=text(buyer.get('razaoSocial')), contract_number=text(row.get('numeroContratoEmpenho')),
+            buyer_cnpj=match[1], buyer_name=text(buyer.get('razaoSocial'), field='orgaoEntidade.razaoSocial'), contract_number=text(row.get('numeroContratoEmpenho'), field='numeroContratoEmpenho'),
             source_control_number=identity, upstream_updated_at=updated,
             signed_on=date_value(row.get('dataAssinatura')), starts_on=date_value(row.get('dataVigenciaInicio')),
             ends_on=date_value(row.get('dataVigenciaFim')), **amounts)
@@ -178,11 +179,11 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         year = row['ano_plano_acao']
         if isinstance(year, bool) or not isinstance(year, int) or not 2000 <= year <= 2100:
             raise ValueError('invalid_plan_year')
-        code = text(row['codigo_plano_acao'], limit=100)
-        title = text(row.get('nome_objeto')) or f"Plano de ação {code or identity}"
+        code = text(row['codigo_plano_acao'], limit=100, field='codigo_plano_acao')
+        title = text(row.get('nome_objeto'), field='nome_objeto') or f"Plano de ação {code or identity}"
         attributes.update(territorial_basis='beneficiary_municipality_not_resolved',
             plan_code=code, year=year, beneficiary_id=identifier(row['id_beneficiario']) if row['id_beneficiario'] is not None else None,
-            program_id=identifier(row['id_programa']), declared_status=text(row.get('situacao_plano_acao')),
+            program_id=identifier(row['id_programa']), declared_status=text(row.get('situacao_plano_acao'), field='situacao_plano_acao'),
             accepted_on=date_value(row.get('data_aceite_plano_acao')),
             planned_operating_cents=money(row['valor_custeio_plano_acao']),
             planned_investment_cents=money(row['valor_investimento_plano_acao']))
@@ -190,7 +191,7 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         kind = 'proposal'  # A special-transfer action plan is NOT a signed convenio.
     else:
         require(row, ['desc_nome', 'situacao', 'uf_principal', 'investimentos_previstos'])
-        title = text(row['desc_nome'], required=True)
+        title = text(row['desc_nome'], required=True, field='desc_nome')
         state = row['uf_principal']
         if state is not None and state not in STATES:
             raise ValueError('invalid_project_state')
@@ -201,9 +202,9 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         for investment in investments:
             require(investment, ['vl_investimento_previsto', 'desc_nome_fonte_recurso'])
             entries.append({'planned_cents': money(investment['vl_investimento_previsto']),
-                            'source_name': text(investment['desc_nome_fonte_recurso'])})
+                            'source_name': text(investment['desc_nome_fonte_recurso'], field='investimentos_previstos.desc_nome_fonte_recurso')})
         attributes.update(territorial_basis='state_only_municipality_unresolved', state=state,
-            declared_status=text(row['situacao']), planned_starts_on=date_value(row.get('dt_inicial_prevista')),
+            declared_status=text(row['situacao'], field='situacao'), planned_starts_on=date_value(row.get('dt_inicial_prevista')),
             planned_ends_on=date_value(row.get('dt_final_prevista')), planned_investments=entries)
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': None}))
         kind = 'work'

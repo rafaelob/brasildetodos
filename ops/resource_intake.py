@@ -12,6 +12,7 @@ from bdt.api import create_app
 from bdt.domain import now
 from bdt.evidence import Resource
 from bdt.resource_profiles import PROFILES, collection_plan
+from bdt.resource_diagnostics import ResourceTextError
 from bdt.resource_sync import ResourceRevision, decode, import_resources
 from bdt.storage import Database, Finance
 from bdt.sync import atomic_json, collect, file_hash
@@ -64,6 +65,9 @@ def main():
             except Exception as error:
                 entry.update(status='failed',error_type=type(error).__name__,
                     reason=str(error)[:160] if type(error) is ValueError else 'transport_or_validation_failure')
+                if isinstance(error,ResourceTextError):
+                    entry['reason']='invalid_resource_text'
+                    entry['validation']=error.public_diagnostic()
                 checkpoint=folder/'collection.json'
                 if checkpoint.exists():
                     c=json.loads(checkpoint.read_text());entry['collection']={key:c.get(key) for key in ('status','records','terminal','error_code')}
