@@ -3,27 +3,20 @@
 
 ## Executado localmente
 
-- 119 testes Python passando; cobertura de linhas medida 91%, não cobertura universal de comportamento.
-- 10 testes Node de paridade pt-BR/en/es, links seguros e exibição monetária.
-- Fluxo API completo: login → observação pendente → revisão por outra pessoa → publicação; isolamento e rejeição testados.
-- PDF digital sintético: extração nativa, posições e referência candidata; original preservado e nenhum OCR invocado.
-- Importações sintéticas: transação, duplicidade, município desconhecido, ineligibilidade e histórico.
-- Arquivos de código são reais e executáveis. Não são apenas exemplos de documentação.
+119 testes Python passando; 91% de cobertura de linhas medida, não prova universal de comportamento. Dez testes Node de idiomas, referências e exibição monetária. Fluxo de API de submissão privada, revisão independente e publicação testado. PDF nativo sintético foi extraído sem OCR e com original preservado.
 
-## Verificado por consulta externa
+## GitHub Actions efetivamente observado
 
-- Repositório inicial continha somente README; branch própria a partir do commit 6a3b905033b9e1fd3cc9a3771f980c28035a7b72.
-- JSON CNES efetivo usa estabelecimento_faz_atendimento_ambulatorial_sus; amostra consultada contém cinco registros com NAO, alguns com esfera MUNICIPAL e referência individual 2025-09-03. Não ingestamos essa amostra como cobertura nacional.
-- IBGE estados retorna as 27 UFs; isto não valida a carga integral de municípios.
-- Documentação MapLibre demonstra extrusão de edificações; integração ao vivo e cobertura 3D não foram certificadas.
+Execução https://github.com/rafaelob/brasildetodos/actions/runs/34003855224 sobre b0b69e91d85a800b61f77704738fe159422f5a36:
+- Backend: aprovado, incluindo o gate de cobertura.
+- Web: npm test e TypeScript/Vite build aprovados. Artefato web-build contém dist e o package-lock gerado.
+- Probe oficial: CNES baixado (8.117 bytes; SHA-256 f2a6e47454afb645606812499528eafb2f522c384b8019eb4f460d68befd3f58), cinco registros lidos e cinco excluídos pelo recorte SUS. Não houve publicação de lugares dessa amostra.
+- IBGE: ConnectTimeout no runner. A tarefa de fontes falhou e é informativa/continue-on-error; isso NÃO equivale a certificação nacional nem deve ser ocultado pelo resultado global da CI.
 
-## Não executado / não concluído
+Adicionada suíte de navegador em ops/browser_smoke.py com API real local, banco temporário sintético, três larguras e fluxo de colaboração. A execução ainda precisa ser confirmada nos jobs da revisão que introduz essa suíte. Navegação localhost no Chromium deste ambiente local foi bloqueada por política do ambiente; não desabilitamos essa política.
 
-- Ingestão nacional e atualização automática de cada fonte.
-- OCR de documentos oficiais digitalizados; corpus de qualidade de OCR por campo.
-- Download programático externo no ambiente local: resolução DNS falhou. Navegador de pesquisa conseguiu consultar os recursos citados.
-- Build npm local inicialmente bloqueado pela resolução DNS do registry. CI foi configurado para compilar; resultado deve ser consultado no PR, não presumido.
-- Docker/PostgreSQL/cloud deployment, TLS, telefone real, Safari físico e revisão completa de acessibilidade.
-- Sem dados reais carregados, frontend apresenta estado vazio e a cobertura real do banco.
+## Pendências
 
-Atualizar este registro com IDs de execução e resultados efetivamente observados. Não substituir pendências por estimativas otimistas.
+Ingestão nacional, perfis integrais de portais, OCR de corpus oficial, editor documental e cloud deployment. Docker/PostgreSQL, restauração e política pública de colaboração precisam de validação. Mapa/tiles/3D ao vivo e Safari físico não foram certificados. Lockfile gerado pela CI ainda precisa ser incorporado ao repositório para builds totalmente travados.
+
+A aplicação inicia vazia; fixtures sintéticas existem apenas em testes. Código e documentação distinguem capacidades implementadas, fontes inspecionadas e integrações ainda não concluídas. Issues #2 a #5 registram os próximos gates.
