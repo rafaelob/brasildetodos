@@ -1,0 +1,55 @@
+name: CNES catalog with explicit quality quarantine
+on:
+  workflow_dispatch:
+    inputs:
+      territory_run_id:
+        description: Explicit verified territorial snapshot run
+        required: true
+        default: '34005677349'
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cnes-quality-catalog.yml
+      - backend/bdt/cnes_quality.py
+      - ops/cnes_quality_catalog.py
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cnes-quality-catalog
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          name: national-health-catalog-and-evidence
+          run-id: ${{ inputs.territory_run_id || '34005677349' }}
+          github-token: ${{ github.token }}
+          path: verified-territory
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest backend/tests/test_cnes_quality.py backend/tests/test_catalog_release.py
+      - name: Build and verify a national-source catalog without inventing invalid records
+        env:
+          BDT_TERRITORY_SNAPSHOT: verified-territory/catalog.db
+          # Explicit ceiling for this evidence run, not a changed domain validator.
+          # Both limits must pass; any rejection remains publicly counted and partial.
+          BDT_MAX_QUARANTINED: '100'
+          BDT_MAX_QUARANTINED_FRACTION: '0.001'
+        run: python -u ops/cnes_quality_catalog.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cnes-public-catalog-quality-evidence
+          retention-days: 7
+          path: test-results/cnes-quality/public/
+# No private application database, original CNES ZIP, or citizen data is uploaded.
+# This creates a reproducible artifact, not a public deployment or certification.
