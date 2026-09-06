@@ -32,7 +32,9 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version-file: '.python-version'
+      - name: Verify exact Python runtime and configuration
+        run: python ops/check_toolchain.py --runtime python
       - uses: actions/download-artifact@v4
         with:
           artifact-ids: ${{ inputs.source_artifact_id || '9981549978' }}

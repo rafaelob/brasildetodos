@@ -1,12 +1,15 @@
-FROM node:24-bookworm-slim AS web
+FROM node:24.20.0-bookworm-slim AS web
 WORKDIR /app/web
-COPY web/package*.json ./
+RUN node -e "if (process.versions.node !== '24.20.0') process.exit(1)"
+COPY web/package*.json web/.npmrc ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY web/ ./
+COPY ops/check-node.mjs /app/ops/check-node.mjs
 RUN npm run build
 
-FROM python:3.13-slim-bookworm AS application
+FROM python:3.14.7-slim-bookworm AS application
 WORKDIR /app
+RUN python -c "import sys; assert sys.version_info[:3] == (3,14,7)"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 BDT_STATIC_DIR=/app/web/dist BDT_DATA_DIR=/app/data
 COPY pyproject.toml README.md LICENSE ./
 COPY backend/ backend/

@@ -16,7 +16,12 @@
 
 ## Iniciar localmente
 
-Requer Python 3.13+ e Node 22.12+ (Node 24 na imagem de build).
+Requer **Python 3.14.7** e **Node.js 24.20.0**, fixados em `.python-version`,
+`.nvmrc` e `.node-version`. CI, containers e desenvolvimento usam esses mesmos
+runtimes; não há fallback silencioso para outra versão.
+
+Validação: `python ops/check_toolchain.py --runtime python` e
+`node ops/check-node.mjs`. Veja `docs/TOOLCHAIN.md`.
 
 ```bash
 python -m venv .venv
@@ -85,7 +90,7 @@ Isso abre uma instância **local**, vazia, com volume SQLite; não publica um se
 - O importador Inep exige os cabeçalhos declarados. Uma nova edição com formato diferente deve receber perfil revisado; falha explícita é preferível a adivinhar campos.
 - CNES: o recorte atual é atendimento **ambulatorial SUS declarado**, não toda rede SUS, não prova de propriedade pública e não agenda em tempo real.
 - Obras entram como registros normalizados com referência; PNCP/Transferegov não geram pinos por endereço do comprador ou proximidade de nome.
-- O mapa exibe a página de resultados atual, não um mapa nacional completo de milhões de pontos. 3D depende de altura publicada e zoom; não é gêmeo digital, análise de acessibilidade ou fotografia atual.
+- O mapa consulta o recorte visível independentemente da página da lista, agrupando pontos quando necessário. Isso não certifica a completude do catálogo ou a renderização externa. 3D depende de altura publicada e zoom; não é gêmeo digital, análise de acessibilidade ou fotografia atual.
 - Não há Mapillary/Panoramax, grupos síncronos, envio automático a órgãos públicos ou autenticação gov.br.
 - Código não interpreta conformidade legal, não detecta corrupção e não substitui profissionais ou autoridades. Informação oficial, observação e hipótese permanecem distintas.
 

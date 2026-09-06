@@ -20,7 +20,9 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
+      - name: Verify exact Node runtime
+        run: node ops/check-node.mjs
       - name: Generate from the declared manifest and verify
         run: |
           git hash-object web/package.json > "$RUNNER_TEMP/manifest.sha"
