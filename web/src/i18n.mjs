@@ -105,7 +105,11 @@ export const messages = {
 export function translate(locale, key) { return messages[locale]?.[key] ?? messages['pt-BR'][key] ?? key; }
 export function money(cents, locale) {
   if (!Number.isSafeInteger(cents)) return '—';
-  return new Intl.NumberFormat(locale, {style:'currency', currency:'BRL'}).format(cents/100);
+  const absolute=BigInt(cents<0?-cents:cents), whole=absolute/100n;
+  const fraction=String(absolute%100n).padStart(2,'0');
+  const signed=cents<0?(whole===0n?-0:-whole):whole;
+  return new Intl.NumberFormat(locale,{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2})
+    .formatToParts(signed).map(part=>part.type==='fraction'?fraction:part.value).join('');
 }
 export function safeReference(value) {
   try { const url = new URL(value); return ['https:','http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; }

@@ -1,52 +1,95 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# Caminho de implementação
+# Plano vivo de implementação — Brasil de Todos
 
-A base desta PR é execução real da primeira fatia, não conclusão das 24 horas nem certificação nacional. Não recuar a piloto municipal para ocultar falta de cobertura; entregar cobertura progressiva explicitamente.
+Atualização: 06/09/2026. Trabalho exclusivamente no `main`, sem force push.
+Este plano substitui a lista antiga da PR inicial. `[x]` significa uma entrega
+implementada com a evidência indicada; não significa cobertura nacional ou deploy.
 
-## E1 — Certificar ingestão nacional (P0)
+## P0 — Catálogo nacional e publicação operacional
 
-- [ ] Obter edições oficiais e dicionários de municípios, escolas e CNES.
-- [ ] Validar cabeçalhos reais e implementar perfis de edição adicionais.
-- [ ] CNES bulk/paginação terminal comprovada, sem repetir páginas nem depender de amostra default.
-- [ ] Manifesto por fonte/UF com total esperado, aceito, excluído, inválido, sem geometria e período.
-- [ ] Snapshot nacional com troca atômica e retirada por ausência somente em escopo completo.
-- [ ] Benchmarks Postgres, índices textuais e geográficos, fonte de tiles/viewport nacional sem limite da página.
-- [ ] Certificação nacional somente após reconciliação; interface apresenta faltas enquanto isso.
+- [x] Importação territorial IBGE e reuso de snapshot com proveniência preservada.
+- [x] CNES: perfil observado no arquivo oficial, quarentena explícita, relatório
+  por UF e pacote público verificável. Evidência: 96.123 elegíveis, 27 UFs, sete
+  sem coordenadas, execução `34007758949`; aceite API `34008771230`.
+- [x] Inep: descoberta da edição e leitura apenas de tabelas escolares, validação
+  de encoding/identidades/ano/município/UF, transação e relatório. 44 testes.
+- [ ] Concluir download e ingestão real da edição 2025: tentativas oficiais
+  terminaram em ConnectTimeout. Não substituir por amostra ou edição antiga.
+- [ ] Certificar cobertura e reconciliação de todas as partições escolares e de
+  saúde segundo denominadores publicados. Presença em 27 UFs não é certificado.
+- [x] Instalação atômica de pacote público, sem contas, sessões ou observações.
+- [x] Agregação do mapa independente da página da lista; contabilidade dos 96.116
+  pontos CNES verificada na API. Falta avaliação visual externa e carga simultânea.
+- [ ] Atualização periódica, publicação durável do catálogo e alertas de falhas.
+- [ ] Domínio/HTTPS, ambiente cloud, operação de backups e rollback exercitado.
 
-## E2 — Recursos e intervenções (P0)
+## P0 — Recursos, contratos e intervenções
 
-- [ ] Perfis atuais Transferegov, propostas/instrumentos/metas/etapas/assinatura, aditivos e cronologia.
-- [ ] Paginação PNCP e revisita de contratos alterados; guardar metadados/documentos e IDs por sistema.
-- [ ] Obrasgov current API, geometrias e execução física como declaração da fonte.
-- [ ] Editor de vínculos direct/reviewed/territorial/candidate com evidência e histórico.
-- [ ] PDDE/FNS com granularidade correta; sem alocar gasto municipal por aproximação.
-- [ ] Reconciliação financeira entre fontes, estornos/correções e moeda/período consistentes.
+- [x] Editor privado de documentos e vínculos; trecho literal, revisão por outra
+  pessoa, publicação e retratação sem alocação automática de dinheiro.
+- [x] Inspeção dos OpenAPI PNCP, Transferegov Especiais e Obrasgov atuais no runner
+  (`34009291326`). Guardar esquemas e hashes, não inferir contrato de API futura.
+- [x] Perfis de metadados: contratos PNCP, planos de ação especiais e projetos
+  Obrasgov. Valores exatos, campo `receita`, escopo territorial e dados minimizados.
+- [x] Coleta por páginas, retomada, publicação transacional de consulta completa,
+  histórico de versões, detecção de regressão/conflito e preservação do anterior.
+- [x] API e interface trilíngue de busca de recursos, valores separados e histórico.
+  Suíte local nesta rodada: 446 Python, 28 Node. Build/browser/ensaio oficial devem
+  ser vinculados à revisão publicada, não deduzidos do teste unitário.
+- [ ] Validar a importação oficial completa da janela PNCP escolhida e exemplos
+  reais por identidade em Especiais/Obrasgov; registrar artefatos e falhas reais.
+- [ ] Incluir todos os módulos/tabelas Transferegov: assinatura, instrumentos,
+  metas, etapas, aditivos, desembolsos e pagamentos. Plano especial não é convênio.
+- [ ] Fila de documentos/anexos referenciados, metadados, hashes e revisão.
+- [ ] Geometrias e execução física Obrasgov, sem confundir endereço comprador.
+- [ ] PDDE e FNS preservando granularidade e identificação das unidades.
+- [ ] Reconciliação entre sistemas, estornos, alterações e destinatários; impedir
+  dupla contagem. Metadados de contrato/plano não criam lançamento financeiro.
+- [ ] Scheduler por janela sobreposta, resposta HTTP 204 explícita, reconciliação
+  temporal e monitoramento de esquema. A CLI paginada não é esse scheduler.
 
-## E3 — Documentos e OCR (P0/P1)
+## P0/P1 — Documentos e OCR
 
-- [ ] Fila isolada, quotas, status/retry/cancel, storage restrito e retenção.
-- [ ] Corpus oficial digitalizado licitamente obtido; ground truth de campos, taxa de erro e abstenção.
-- [ ] Classificadores determinísticos por família, tabelas multipágina, prazos/aditivos.
-- [ ] Editor documento/campo/trecho e revisão independente da associação ao lugar.
-- [ ] Tratar dados pessoais, assinaturas e versões derivadas antes de reexibição.
+- [x] Texto nativo, posições, tabelas e candidatos sem publicação automática.
+- [x] OCR seletivo local com original preservado, autorização, lease, rollback,
+  recuperação de tarefa interrompida e conteúdo privado. 28 testes.
+- [x] Uma página digitalizada sintética em português passou por Tesseract real
+  (`34008123457`). Prova de integração, não acurácia de corpus governamental.
+- [ ] Corpus oficial licitamente obtido e anotado, métricas por campo, abstenção,
+  documentos multipágina/assinados, imagens ruins e tabelas fragmentadas.
+- [ ] Fila operacional com quotas, cancelamento, retenção e expurgo automático.
+- [ ] Classificação por família e extração de aditivos/prazos em corpus real.
+- [ ] Política de reexibição, dados pessoais e arquivos derivados validada.
 
-## E4 — Colaboração e operação pública (P0)
+## P0 — Qualidade e colaboração
 
-- [ ] Migrações evolutivas e teste PostgreSQL real.
-- [ ] Fluxo de exclusão/exportação de conta, suporte, recuperação e expiração de rascunhos.
-- [ ] Retratação/revisão posterior de observações, justificativas e recurso do autor.
-- [ ] OIDC opcional e políticas de moderação com responsáveis.
-- [ ] Testes browser automatizados, acessibilidade humana, builds reproduzíveis/lockfiles, auditoria de dependências.
-- [ ] Domínio/HTTPS, backups restaurados, deploy e rollback por digest; sem segredos no Git.
+- [x] Autenticação, CSRF, revisão independente, exportação/desativação de conta,
+  retirada de contribuição e retratação de vínculos documentais.
+- [x] Browser nos três idiomas e em 320/390/1440 px: testes de colaboração e fluxo
+  documental, corrigindo falhas sem retirar gates (`34008376092`).
+- [x] PostgreSQL temporário e container não-root/read-only no runner; backup SQLite
+  com WAL e restauração em destino novo. Não equivalem à operação cloud validada.
+- [ ] Lockfiles transitivos revisados e incorporados, build reproduzível e gates
+  de vulnerabilidades com exceções justificadas (diagnóstico não basta).
+- [ ] Acessibilidade com leitor de tela, Safari/dispositivo físico, carga e índices.
+- [ ] Responsáveis de moderação, recurso do autor, recuperação de conta e retenção.
 
-## E5 — Experiência territorial (P1/P2)
+## P1/P2 — Experiência territorial e expansão
 
-- [ ] Mapillary/Panoramax opcional com data/licença, sem confundir imagem histórica e visita.
-- [ ] Terreno e modelos de obras quando disponíveis; distinguir visualização volumétrica de realidade atual.
-- [ ] Grupos de acompanhamento, tarefas e histórico coletivo, sem recompensa a acusações.
-- [ ] Upload de fachada apenas após privacidade, remoção EXIF, moderação e pipeline seguro.
-- [ ] IBGE setores, acessibilidade/Ipea, conectividade escolar/Giga e outras camadas documentadas.
+- [ ] Panoramax/Mapillary opcionais com data e licença; imagem histórica != visita.
+- [ ] Testar tiles/3D reais e versões para dispositivo limitado, sem bloquear lista.
+- [ ] Grupos, tarefas e histórico coletivo sem incentivar acusações.
+- [ ] Fotos apenas após remoção EXIF, revisão, exclusão e política operacional.
+- [ ] IBGE setores, Ipea/acesso, conectividade escolar/Giga e camadas globais.
+- [ ] Auditoria de licença por fonte, documentação de contribuição e governança.
 
-## Regras de aceite
+## Ordem seguinte e definição de conclusão
 
-Não há dados inventados em produção; cada vínculo publicado possui fonte; fases financeiras separadas; contribuições pendentes privadas; original PDF preservado; interface pt/en/es; lista sem mapa; núcleo sem API de LLM. Não afirmar "100% testado" por cobertura de linhas ou por fixtures sintéticas.
+1. Executar e reconciliar os conectores oficiais estritos; registrar bloqueios.
+2. Fechar educação nacional e publicações periódicas com logs verificáveis.
+3. Completar cadeia de instrumentos/documentos/financeiro e revisão de vínculos.
+4. Validar experiência territorial, desempenho, operação pública e deploy.
+
+Não usar percentual global de “pronto”. Reportar separadamente código publicado,
+testes executados, dados efetivamente importados e aplicação acessível ao público.
+Ver `RESOURCE_INGESTION.md`, `MAIN_IMPLEMENTATION_20260906.md`, `DATA.md` e `STATUS.md`.

@@ -1,0 +1,61 @@
+name: Versioned official resource intake
+on:
+  workflow_dispatch:
+    inputs:
+      publication_date:
+        description: Bounded PNCP publication date in YYYYMMDD
+        default: '20260904'
+        required: true
+      territory_run_id:
+        description: Same-repository run with verified territory snapshot
+        default: '34005677349'
+        required: true
+      territory_artifact_id:
+        description: Exact retained territory artifact ID
+        default: '9981020925'
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - backend/bdt/resource_profiles.py
+      - backend/bdt/resource_sync.py
+      - ops/resource_intake.py
+      - .github/workflows/resource-intake.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: resource-intake-main
+  cancel-in-progress: false
+jobs:
+  scoped-real-resources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ inputs.territory_artifact_id || '9981020925' }}
+          run-id: ${{ inputs.territory_run_id || '34005677349' }}
+          github-token: ${{ github.token }}
+          path: verified-territory
+          merge-multiple: true
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest backend/tests/test_resource_sync.py -q
+      - name: Collect bounded official queries, import atomically and query the public API
+        env:
+          BDT_PUBLICATION_DATE: ${{ inputs.publication_date || '20260904' }}
+        run: python -u ops/resource_intake.py --territory-snapshot verified-territory/catalog.db --date "$BDT_PUBLICATION_DATE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-resource-intake-evidence
+          retention-days: 7
+          path: test-results/resource-intake/public/
+# Artifacts expire; replace IDs with a retained same-repository snapshot for later
+# runs. No raw supplier records, database of users, or production credentials.

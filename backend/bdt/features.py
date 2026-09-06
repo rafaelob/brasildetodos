@@ -24,6 +24,8 @@ class DeleteAccount(StrictModel):
 
 def install(app, database, current_user, reviewer, rate_limit, check_password):
     initialize_extensions(database)
+    from .resource_routes import install as install_resource_routes
+    install_resource_routes(app, database)
 
     @app.get('/api/map/viewport')
     def map_view(bbox: str = Query(..., max_length=150), zoom: int = Query(4, ge=0, le=20),
@@ -38,16 +40,15 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
     @app.get('/api/resources')
     def resources(municipality_id: str | None = Query(None, pattern=r'^[0-9]{7}$'),
                   kind: Literal['contract', 'instrument', 'proposal', 'work'] | None = None,
-                  page: int = Query(1, ge=1, le=100000), limit: int = Query(30, ge=1, le=100)):
-        statement = select(Resource)
-        if municipality_id:
-            statement = statement.where(Resource.municipality_id == municipality_id)
-        if kind:
-            statement = statement.where(Resource.kind == kind)
-        with database.session() as session:
-            count = session.scalar(select(func.count()).select_from(statement.subquery()))
-            items = session.scalars(statement.order_by(Resource.id).offset((page-1)*limit).limit(limit))
-            return {'total': count, 'page': page, 'items': [row.payload for row in items]}
+                  page: int = Query(1, ge=1, le=100000), limit: int = Query(30, ge=1, le=100),
+                  q: str = Query('', max_length=200), profile: str | None = Query(None, max_length=80),
+                  state: str | None = Query(None, pattern=r'^[A-Z]{2}$')):
+        from .resource_routes import browse
+        try:
+            return browse(database, municipality_id=municipality_id, kind=kind,
+                          page=page, limit=limit, q=q, profile=profile, state=state)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
 
     @app.post('/api/workbench/resources', status_code=201)
     def resource_register(body: ResourceInput, request: Request, user=Depends(reviewer)):

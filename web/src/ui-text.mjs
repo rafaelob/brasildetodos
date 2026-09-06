@@ -1,3 +1,4 @@
+import {resourceMessages} from './resource-i18n.mjs';
 import {translate} from './i18n.mjs';
 import {featureMessages} from './features-i18n.mjs';
 export const additionalMessages={
@@ -10,7 +11,7 @@ export function uiText(locale,key){
   const token=String(key);
   // Place ineligibility and author withdrawal are different states.
   if(token==='withdrawn')return translate(language,token);
-  for(const catalog of [additionalMessages[language],featureMessages[language]]){
+  for(const catalog of [resourceMessages[language],additionalMessages[language],featureMessages[language]]){
     if(Object.hasOwn(catalog,token)&&typeof catalog[token]==='string')return catalog[token];
   }
   const value=translate(language,token);
