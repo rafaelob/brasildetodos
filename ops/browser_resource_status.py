@@ -71,6 +71,17 @@ def main():
                                         assert data['filters']['profile']=='pncp_contracts'
                                     elif fmt=='csv':assert len(list(csv.DictReader(io.StringIO(body))))==3
                                 assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'),(width,locale)
+                            # Native browser history must restore public criteria, not stale UI state.
+                            previous_url=page.url
+                            page.goto(origin+'#resources?'+urlencode({'q':'ABSENT_NO_MATCH','profile':'pncp_contracts','locale':'es'}),wait_until='domcontentloaded')
+                            expect(page.locator('.resource-card')).to_have_count(0)
+                            page.go_back(wait_until='domcontentloaded')
+                            expect(page).to_have_url(previous_url)
+                            expect(page.locator('.resource-card')).to_have_count(3)
+                            page.go_forward(wait_until='domcontentloaded')
+                            expect(page.locator('.resource-card')).to_have_count(0)
+                            page.go_back(wait_until='domcontentloaded')
+                            expect(page.locator('.resource-card')).to_have_count(3)
                             page.route('**/api/resource-coverage',lambda route:route.fulfill(status=503,body='{}',content_type='application/json'))
                             page.reload(wait_until='domcontentloaded');page.locator('.resource-status summary').click()
                             expect(page.get_by_role('button',name=TEXT['es'][5],exact=True)).to_be_visible()
@@ -81,7 +92,8 @@ def main():
                             assert not errors,errors
                             report['checks'].append({'width':width,'locales':3,'keyboard_panel':True,
                               'failed_import_keeps_data':True,'panel_failure_does_not_block_search':True,
-                              'selection_exports':['text','csv','json'],'exact_amounts':True,'no_private_import_data':True})
+                              'selection_exports':['text','csv','json'],'exact_amounts':True,'no_private_import_data':True,
+                              'browser_back_forward_restores_public_query':True})
                         except Exception:
                             page.screenshot(path=str(out/f'failure-{width}.png'),full_page=True);raise
                         finally:page.close()
