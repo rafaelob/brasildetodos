@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+.map-panel{min-width:0;overflow:hidden}
+.map-panel .map-actions{position:static;display:flex;flex-wrap:wrap;gap:.5rem;padding:.75rem;background:var(--card,#fff)}
+.map-panel .map-actions button,.map-panel .map-feedback button{min-height:44px;white-space:normal;overflow-wrap:anywhere}
+.map-panel .map-feedback,.map-panel .map-notes{padding:0 .85rem .85rem;overflow-wrap:anywhere}
+.map-panel .map-feedback p{margin:.35rem 0}
+.map-panel .map-notes small{display:block;line-height:1.5;margin:.25rem 0}
+.map-panel .map-caption{position:static;padding:0;margin:0;max-width:none;background:transparent}
+.map-panel .maplibregl-ctrl button{min-height:30px}
+.map-panel .map-canvas{min-height:360px}
+@media(max-width:420px){.map-panel .map-actions button{flex:1 1 120px}.map-panel .map-canvas{height:380px}}
+@media(prefers-reduced-motion:reduce){.map-panel *{scroll-behavior:auto!important}}

@@ -1,0 +1,46 @@
+name: External map acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - web/src/Map.tsx
+      - web/src/map-runtime.ts
+      - ops/browser_map.py
+      - .github/workflows/map-live.yml
+permissions:
+  contents: read
+concurrency:
+  group: external-map-main
+  cancel-in-progress: false
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Verify the exact runtimes
+        run: python ops/check_toolchain.py --runtime all
+      - name: Install locked backend and compiled frontend
+        run: |
+          python ops/install_locked.py --editable
+          python -m pip install playwright==1.56.0
+          cd web
+          npm ci
+          npm run build
+      - name: One bounded external map session with synthetic places only
+        run: python ops/browser_map.py --live
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: external-map-evidence
+          path: test-results/map-live/
+          retention-days: 7
