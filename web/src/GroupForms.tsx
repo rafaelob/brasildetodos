@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useId,useRef,useState} from 'react';
 import {api} from './api';
 import {groupText} from './group-text.mjs';
 import {groupFailure,ownObservations} from './group-tools.mjs';
 import type {Locale,Observation,Place} from './types';
-export type Write=(path:string,body:unknown,onSuccess?:(value:any)=>void)=>Promise<boolean>;
 export type Submission={action:'submit';observation_id:string;share_with_group:true};
 export function ConfirmAction({label,help,disabled,run,locale}:{label:string;help:string;disabled:boolean;run:()=>Promise<boolean>;locale:Locale}) {
  const [open,setOpen]=useState(false),[agreed,setAgreed]=useState(false);
@@ -40,6 +39,7 @@ export function NewGroupTask({locale,disabled,create}:{locale:Locale;disabled:bo
  </form></details>;
 }
 export function SubmitGroupTask({locale,placeId,disabled,submit}:{locale:Locale;placeId:string;disabled:boolean;submit:(body:Submission)=>Promise<boolean>}) {
+ const prefix=useId();
  const t=(key:string)=>groupText(locale,key),[rows,setRows]=useState<Observation[]>([]),[selection,setSelection]=useState('');
  const [loading,setLoading]=useState(true),[retry,setRetry]=useState(0),[error,setError]=useState(''),[saving,setSaving]=useState(false),[notice,setNotice]=useState('');
  const [consent,setConsent]=useState(false),alive=useRef(true),lock=useRef(false);
@@ -52,7 +52,8 @@ export function SubmitGroupTask({locale,placeId,disabled,submit}:{locale:Locale;
  return <div className="group-submission">
   <p>{t('privateObservation')}</p>
   <form onSubmit={async e=>{e.preventDefault();if(selection&&consent&&await submit({action:'submit',observation_id:selection,share_with_group:true}))setConsent(false);}}>
-   <label>{t('selectObservation')}<select value={selection} required disabled={loading||disabled} onChange={e=>{setSelection(e.target.value);setConsent(false);}}><option value="">{t('choose')}</option>{rows.map(row=><option key={row.id} value={row.id}>{row.observation.observed_on} · {row.observation.body.slice(0,100)}</option>)}</select></label>
+   <label htmlFor={prefix+'-observation'}>{t('selectObservation')}</label>
+   <select id={prefix+'-observation'} value={selection} required disabled={loading||disabled} onChange={e=>{setSelection(e.target.value);setConsent(false);}}><option value="">{t('choose')}</option>{rows.map(row=><option key={row.id} value={row.id}>{row.observation.observed_on} · {row.observation.body.slice(0,100)}</option>)}</select>
    {loading?<p>{t('loading')}</p>:!rows.length&&!error&&<p>{t('noObservations')}</p>}
    {error&&<p role="status">{t(error)}</p>}
    <button type="button" onClick={()=>setRetry(x=>x+1)} disabled={loading||saving}>{t('refreshObservations')}</button>
