@@ -1,52 +1,72 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# Estado verificável — 06/09/2026
+# Estado verificado — Brasil de Todos
 
-## Evidências consolidadas anteriores
+Atualizado em 2026-09-06. Somente `main`; sem force push ou PR de implementação novo.
+Este documento separa implementação, testes, dados carregados e operação pública.
 
-A implementação inicial foi integrada ao `main`. Não há trabalho novo em branches.
-A referência detalhada é `MAIN_IMPLEMENTATION_20260906.md`: catálogo CNES real com
-96.123 estabelecimentos elegíveis, sete sem coordenadas, 27 UFs; 5.571 registros
-territoriais preservados; OCR seletivo integrado; revisão documental e privacidade.
+## Revisão de código e testes
 
-A revisão `2131efbf222460b6c2a6b216a59b593f114a31c7` teve Quality aprovada em
-`34008771216` e catálogo real aprovado pela API em `34008771230`. OCR sintético em
-português: `34008123457`. Container/PostgreSQL: `34008376130`.
+Implementação integrada: `2d610889210bd1e1085a0783310f99fdf2b3869a`.
+Revisão posterior dos testes: `89584b82de13ab80633cb63ae96591ed94930e44`.
 
-## Continuidade atual: metadados públicos versionados
+Quality **34037586194**: aprovada. Backend, testes Node, build TypeScript/Vite e
+cinco jornadas de navegador aprovados. A última jornada inclui Voltar/Avançar
+nativos, recuperação do painel de importações e downloads de seleção.
 
-Implementação: perfis PNCP/Especiais/Obrasgov, coleta delimitada, versões imutáveis,
-API de histórico, busca por fonte/UF/texto, interface nos três idiomas, centavos
-exatos e ausência explícita de pagamentos/links automáticos.
+Suíte local integrada: **537 testes Python**, **95,12% cobertura de linhas**, piso
+de 85% preservado; **42 testes JavaScript**. Não é certificação universal.
 
-Inspeção de schemas e amostra oficial: `34009291326`, artefato `9981954097`.
-A amostra PNCP declarou 6.677 contratos em 04/09/2026; isso ainda não comprova
-importação de todos eles. O workflow de intake produz seu próprio resultado.
+Quality anterior **34037366152** e Runtime **34037366161** também aprovados para
+`2d610889`; runtime verificou PostgreSQL temporário e container real read-only.
+O código continua funcionando sem LLM obrigatório.
 
-CI da revisão `36aef1bcfd61d51298418722ea93968acf7ca4a4`: **Quality aprovada**
-(`34010614709`), incluindo build TypeScript/Vite e os três percursos de navegador.
-Novo percurso: recursos, filtros, histórico e valores separados em três idiomas
-e três larguras. Artefato de navegador `9982342210`.
+## Entregas desta continuidade
 
-Ensaio real `34010343797`: Transferegov plano 3221 e Obrasgov projeto 139010.35-00
-importados e consultados pela API; PNCP coletou 6.677 registros em 14 páginas,
-mas a importação foi integralmente desfeita por `invalid_decimal_resource_amount`.
-O job de fontes terminou **com falha**; isso não foi ocultado pelo resultado dos
-testes determinísticos. Não há cadastro PNCP novo nem deploy público.
+- Painel público de importações de recursos, separando registros carregados,
+  tentativa mais recente e resultado concluído. Falha não apaga dados anteriores.
+- Exportação de seleções de até 100 recursos em texto, CSV e JSON; filtros,
+  total correspondente, quantidade exportada e truncamento explícitos.
+- Preservação da exportação por recurso e revisão histórica, dos links públicos
+  e das funcionalidades concorrentes já publicadas.
+- Valores exatos, origens, referência temporal e integridade de versões;
+  nenhuma soma entre fases ou publicação de conteúdo documental privado.
+- Interface responsiva pt-BR/en/es, estados independentes de erro/recuperação
+  e controles exercitados em 320, 390 e 1440 pixels.
 
-Teste local: **446 Python aprovados**, cobertura de linhas **94,55%**, piso 85%
-preservado; **28 Node aprovados**. Há avisos de fechamento de conexões na suíte
-legada que permanecem para triagem. O ambiente local usa Python 3.13.5/Node 22;
-o build e browser foram executados no runner com as dependências do projeto.
+Os testes de navegador usam UI compilada e API real com fixtures sintéticas em
+banco temporário. Não são exemplos de dados oficiais publicados. Não avaliam
+Safari em aparelho físico, leitor de tela, tiles/3D externos ou carga de produção.
+Artefato final browser: **9990681235**.
+Detalhes e hashes: `RESOURCE_STATUS_EXPORT_20260906.md`.
 
-## Pendências e limites
+## Fontes oficiais — resultado separado
 
-Não há URL pública implantada. Educação 2025 continua sem carga concluída por
-ConnectTimeout no download. Nacionalidade do recorte CNES não certifica completude
-nem disponibilidade de atendimento. Não há conciliação financeira completa,
-avaliação de OCR em corpus oficial, panorama ou validação visual de 3D ao vivo.
+O catálogo CNES anteriormente verificado contém 96.123 estabelecimentos elegíveis
+pelo perfil ambulatorial SUS, incluindo sete sem coordenadas, com presença em
+27 UFs. Não significa completude de todos os serviços de saúde, natureza apenas
+pública, vagas disponíveis ou confirmação de funcionamento atual. É um pacote
+instalável verificado, não uma implantação nacional pública.
 
-O roteiro atualizado, com partes implementadas e restantes, está em `ROADMAP.md`.
-A integração nova tem contrato, comandos, fontes e limitações em `RESOURCE_INGESTION.md`.
-Cada execução posterior deve registrar o SHA testado e seu resultado real.
+O replay de recursos **34034998849**, após a correção de precisão monetária PNCP,
+recebeu 6.677 registros em 14 páginas e encontrou **invalid_resource_text**;
+a importação foi revertida. Não foram publicados novos contratos PNCP por esse
+ensaio. O campo/registro e sua causa exata ainda exigem diagnóstico. A alteração
+textual cuja publicação foi bloqueada não integra esta entrega nem foi contornada.
+Dois registros delimitados de Transferegov/Obrasgov foram aceitos em banco temporário.
 
-Detalhes da continuidade, commits e pendências: `RESOURCE_IMPLEMENTATION_20260906.md`.
+A carga nacional escolar 2025 continua não concluída: tentativas anteriores de
+download terminaram em ConnectTimeout. Nenhuma substituição silenciosa por
+edição antiga ou dados sintéticos foi usada.
+
+## Pendências principais
+
+Diagnóstico e importação reconciliada PNCP; educação nacional e denominadores de
+cobertura; demais módulos Transferegov, execução física/geometrias Obrasgov,
+PDDE/FNS e reconciliação financeira; corpus oficial para avaliação de OCR;
+mapas/3D/panoramas externos; lockfiles revisados; dispositivos e acessibilidade
+assistiva; operação contínua, publicação durável, backups e rollback.
+
+**Não há implantação pública comprovada nem declaração de conclusão integral.**
+Checks e plano: `../TODO.md` e `ROADMAP.md`. A página ampla de cobertura e histórico
+paginado de todas as importações segue o plano `SPRINT_20260906_COVERAGE.md`;
+o painel de recursos, sozinho, não encerra aquele escopo.
