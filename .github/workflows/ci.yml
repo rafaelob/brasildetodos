@@ -1,0 +1,62 @@
+name: Quality
+on:
+  push:
+    branches: [main, feat/national-platform-foundation]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest --cov=bdt --cov-report=xml --cov-report=term --cov-fail-under=85 --junitxml=test-results/backend.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-evidence
+          path: |
+            test-results/
+            coverage.xml
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install (lock file preferred)
+        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: |
+            web/dist/
+            web/package-lock.json
+  official-source-probe:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e .
+      - name: Inspect bounded official responses (not a national CNES load)
+        run: python ops/probe_sources.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-source-evidence
+          path: source-probe.json
