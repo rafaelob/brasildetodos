@@ -1,0 +1,54 @@
+name: Public catalog API acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Same-repository run containing a verified public catalog
+        default: '34007758949'
+        required: true
+      source_artifact_id:
+        description: Exact retained artifact ID (not a URL or an arbitrary repository)
+        default: '9981549978'
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - backend/bdt/catalog_acceptance.py
+      - backend/tests/test_catalog_acceptance.py
+      - .github/workflows/catalog-acceptance.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: public-catalog-acceptance-main
+  cancel-in-progress: false
+jobs:
+  installed-catalog-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ inputs.source_artifact_id || '9981549978' }}
+          run-id: ${{ inputs.source_run_id || '34007758949' }}
+          github-token: ${{ github.token }}
+          path: official-public-catalog
+          merge-multiple: true
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest backend/tests/test_catalog_acceptance.py -q
+      - name: Verify, install and query the real catalog with no model or remote data request
+        run: python -m bdt.catalog_acceptance official-public-catalog/catalog --output test-results/catalog-api-acceptance.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-catalog-api-acceptance-evidence
+          retention-days: 7
+          path: test-results/catalog-api-acceptance.json
+# Inputs reference expiring evidence, not a permanent production data service.
+# Replace IDs with a retained same-repository release for later manual executions.
