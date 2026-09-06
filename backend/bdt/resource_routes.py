@@ -31,6 +31,8 @@ def browse(database, *, municipality_id=None, kind=None, page=1, limit=30, q='',
 
 def install(app, database):
     initialize_resource_versions(database)
+    from .resource_export import install as install_exports
+    install_exports(app, database)
 
     @app.get('/api/resource-history/{resource_id:path}')
     def history(resource_id: str, page: int = Query(1, ge=1, le=100000), limit: int = Query(10, ge=1, le=30)):

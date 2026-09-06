@@ -1,0 +1,97 @@
+{
+  "code_revision": "e4d2554dfb59386d8e4fd3851c65d9d15974bd79",
+  "started_at": "2026-09-06T13:05:15.007661+00:00",
+  "finished_at": "2026-09-06T13:09:36.764846+00:00",
+  "status": "partial_with_explicit_failures",
+  "resources": 2,
+  "public_deployment": false,
+  "national_resources_certified": false,
+  "collections": [
+    {
+      "profile": "pncp_contracts",
+      "query": {
+        "dataInicial": "20260904",
+        "dataFinal": "20260904"
+      },
+      "collection": {
+        "status": "complete",
+        "records": 6677,
+        "terminal": "declared_total_pages",
+        "error_code": null
+      },
+      "status": "failed",
+      "reason": "invalid_resource_text"
+    },
+    {
+      "profile": "transferegov_special_plans",
+      "query": {
+        "id_plano_acao": "3221"
+      },
+      "collection": {
+        "status": "complete",
+        "records": 1,
+        "expected_records": 1,
+        "terminal": "declared_total_pages"
+      },
+      "status": "passed",
+      "import": {
+        "read": 1,
+        "created": 1,
+        "updated": 0,
+        "unchanged": 0,
+        "unresolved_municipality": 1,
+        "profile": "transferegov_special_plans",
+        "scope": {
+          "id_plano_acao": "3221"
+        },
+        "removed": 0,
+        "financial_events_created": 0,
+        "automatic_place_links": 0,
+        "subcent_records": 0,
+        "subcent_fields": 0,
+        "national_catalog_certified": false,
+        "status": "imported_complete_query",
+        "ingestion_id": "5e5bbf67-b8c6-4b56-85ff-2c00c63ec6c7",
+        "manifest_sha256": "2d5ababde82756b4097b1d8611b98cc482b80d730966e275b6e50e13d4cb14b3"
+      }
+    },
+    {
+      "profile": "obrasgov_projects",
+      "query": {
+        "id_projeto_investimento": "78092.41-08"
+      },
+      "collection": {
+        "status": "complete",
+        "records": 1,
+        "expected_records": 1,
+        "terminal": "declared_total_pages"
+      },
+      "status": "passed",
+      "import": {
+        "read": 1,
+        "created": 1,
+        "updated": 0,
+        "unchanged": 0,
+        "unresolved_municipality": 1,
+        "profile": "obrasgov_projects",
+        "scope": {
+          "id_projeto_investimento": "78092.41-08"
+        },
+        "removed": 0,
+        "financial_events_created": 0,
+        "automatic_place_links": 0,
+        "subcent_records": 0,
+        "subcent_fields": 0,
+        "national_catalog_certified": false,
+        "status": "imported_complete_query",
+        "ingestion_id": "1c0dddf2-d07e-421d-959c-e73e3e4ef4d4",
+        "manifest_sha256": "8115ce94b0d1fdcacce416b223ec882a647a9d0ac271b99b7c0348dd8bdd683d"
+      }
+    }
+  ],
+  "evidence": {
+    "run_id": 34034998849,
+    "artifact_id": 9989939474,
+    "artifact_sha256": "44eadf4b7d587833f25ceb9f376ecf3129140ef6217a11cc26cc4721c821bd97"
+  }
+}

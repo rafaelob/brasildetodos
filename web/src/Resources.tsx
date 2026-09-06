@@ -1,5 +1,8 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useState,useId} from 'react';
 import {api} from './api';
+import {ShareResource,ResourceDownloads} from './ResourceActions';
+import {parseResourceRoute,normalizeResourceRoute} from './resource-route.mjs';
+import './resources.css';
 import {money,safeReference} from './i18n.mjs';
 import {resourceAmounts,resourceAmountText} from './resource-i18n.mjs';
 import type {Locale,Source} from './types';
@@ -53,6 +56,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
     </div></>:<p>{t('resourceNoAmount')}</p>}
     {amounts.some(item=>'decimal' in item)&&<p className="callout">{t('resourcePrecision')}</p>}
     <Provenance source={row.source} t={t}/>
+    <div className="resource-actions"><ShareResource criteria={{id:row.id,locale}} t={t} label="resourceShareRecord"/><ResourceDownloads id={row.id} locale={locale} t={t}/></div>
     <button aria-expanded={show} onClick={()=>setShow(value=>!value)}>{t(show?'resourceHistoryClose':'resourceHistory')}</button>
     {show&&<section aria-label={t('resourceHistory')}><p>{t('resourceHistoryNotice')}</p>
       {error?<div role="status"><p>{t('failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
@@ -62,44 +66,65 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
           <p>{t('resourceCaptured')}: {version.observed_at}</p>
           <p>{version.revision===1?t('resourceInitial'):t('resourceChanges')+': '+version.changed_fields.join(', ')}</p>
           <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{resourceAmountText(item,locale)}</dd></div>)}</dl>
-          <Provenance source={version.resource.source} t={t}/>
+          <Provenance source={version.resource.source} t={t}/><ResourceDownloads id={row.id} locale={locale} t={t} revision={version.revision}/>
         </article>)}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button>
           <span>{page}</span><button disabled={page*5>=history.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></>}
     </section>}
   </article>;
 }
 
-export default function Resources({t,locale,municipalityId}:{t:T;locale:Locale;municipalityId?:string}) {
-  const [q,setQ]=useState(''),[profile,setProfile]=useState(''),[state,setState]=useState('');
+export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;locale:Locale;municipalityId?:string;routeHash?:string}) {
+  const incoming=normalizeResourceRoute(parseResourceRoute(routeHash)||{});
+  const [q,setQ]=useState(incoming.q),[profile,setProfile]=useState(incoming.profile),[state,setState]=useState(incoming.state);
+  const [focus,setFocus]=useState(incoming.id),[sharedTown,setSharedTown]=useState(incoming.municipality);
   const [page,setPage]=useState(1),[data,setData]=useState<{items:PublicResource[];total:number}|null>(null);
   const [error,setError]=useState(false),[attempt,setAttempt]=useState(0);
+  const controlId=useId();const town=municipalityId||sharedTown;
+  useEffect(()=>{const route=normalizeResourceRoute(parseResourceRoute(routeHash)||{});
+    setQ(route.q);setProfile(route.profile);setState(route.state);setFocus(route.id);setSharedTown(route.municipality);setPage(1);
+  },[routeHash]);
   useEffect(()=>{setPage(1);},[municipalityId]);
   useEffect(()=>{
     const controller=new AbortController();setData(null);setError(false);
     const timer=setTimeout(()=>{
       const params=new URLSearchParams({q,profile,state,page:String(page),limit:'10'});
-      if(municipalityId)params.set('municipality_id',municipalityId);
+      if(town)params.set('municipality_id',town);
       for(const[key,value]of [...params])if(!value)params.delete(key);
-      api<{items:PublicResource[];total:number}>('/resources?'+params,{signal:controller.signal})
-        .then(result=>{if(!controller.signal.aborted)setData(result);})
+      const query=focus?api<{resource:PublicResource}>('/resource-history/'+encodeURIComponent(focus)+'?limit=1',{signal:controller.signal})
+        .then(result=>({items:[result.resource],total:1}))
+        :api<{items:PublicResource[];total:number}>('/resources?'+params,{signal:controller.signal});
+      query.then(result=>{if(!controller.signal.aborted)setData(result);})
         .catch(()=>{if(!controller.signal.aborted)setError(true);});
     },200);
     return()=>{clearTimeout(timer);controller.abort();};
-  },[q,profile,state,page,municipalityId,attempt]);
-  return <section className={municipalityId?'resource-region':'page'} aria-label={t('resources')}>
-    {municipalityId?<h2>{t('resources')}</h2>:<h1>{t('resources')}</h1>}<p>{t('resourceIntro')}</p>
-    <div className="resource-filters"><label>{t('resourceSearch')}<input type="search" value={q} maxLength={200}
-      onChange={event=>{setQ(event.target.value);setPage(1);}}/></label>
-      <label htmlFor="resource-provider">{t('resourceProvider')}</label><select id="resource-provider" value={profile}
-        onChange={event=>{setProfile(event.target.value);setPage(1);}}><option value="">{t('allResourceProviders')}</option>
-        {providers.map(value=><option key={value} value={value}>{t(value)}</option>)}</select>
-      {!municipalityId&&<><label htmlFor="resource-state">{t('states')}</label><select id="resource-state" value={state}
-        onChange={event=>{setState(event.target.value);setPage(1);}}><option value="">{t('states')}</option>{states.map(value=><option key={value}>{value}</option>)}</select></>}
+  },[q,profile,state,page,town,focus,attempt]);
+  function clear(){setQ('');setProfile('');setState('');setSharedTown('');setPage(1);setFocus('');}
+  return <section className={municipalityId?'resource-region':'page resources-page'} aria-label={t('resources')}>
+    <header className="resource-heading"><span className="eyebrow">{t('resourceEyebrow')}</span>
+      {municipalityId?<h2>{t('resources')}</h2>:<h1>{t('resources')}</h1>}<p>{t('resourceIntro')}</p></header>
+    {focus?<div className="resource-focus"><span>{t('resourceFocus')}</span><button onClick={()=>setFocus('')}>← {t('resourceBack')}</button></div>:<>
+      <div className="resource-filters">
+        <div className="resource-search"><label htmlFor={controlId+'-search'}>{t('resourceSearch')}</label><input id={controlId+'-search'} type="search" value={q} maxLength={200}
+          onChange={event=>{setQ(event.target.value);setPage(1);}}/></div>
+        <div><label htmlFor={controlId+'-provider'}>{t('resourceProvider')}</label><select id={controlId+'-provider'} value={profile}
+          onChange={event=>{setProfile(event.target.value);setPage(1);}}><option value="">{t('allResourceProviders')}</option>
+          {providers.map(value=><option key={value} value={value}>{t(value)}</option>)}</select></div>
+        {!municipalityId&&<div><label htmlFor={controlId+'-state'}>{t('states')}</label><select id={controlId+'-state'} value={state}
+          onChange={event=>{setState(event.target.value);setSharedTown('');setPage(1);}}><option value="">{t('states')}</option>{states.map(value=><option key={value}>{value}</option>)}</select></div>}
+      </div>
+      <div className="resource-toolbar"><button onClick={clear}>{t('resourceClear')}</button>
+        <ShareResource criteria={{q,profile,state,municipality:town,locale}} t={t} label="resourceShare"/></div>
+      {sharedTown&&<p>{t('municipalityID')}: <code>{sharedTown}</code></p>}
+    </>}
+    <div aria-busy={!error&&data===null}>
+      {error?<div className="empty" role="status"><p>{t(focus?'resourceFocusMissing':'failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
+        :data===null?<p className="resource-loading" role="status">{t('loading')}</p>:<>
+          <p className="resource-count" role="status"><strong>{data.total.toLocaleString(locale)}</strong> {t('resourceResults')}</p>
+          {data.items.length?data.items.map(row=><ResourceCard key={row.id} row={row} t={t} locale={locale}/>):
+            <div className="empty"><h2>{t('resourceNoResults')}</h2><p>{t('resourceNoResultsHelp')}</p><button onClick={clear}>{t('resourceClear')}</button></div>}
+          {!focus&&<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span>
+            <button disabled={page*10>=data.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div>}
+        </>}
     </div>
-    {error?<div role="status"><p>{t('failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
-      :data===null?<p role="status">{t('loading')}</p>:<><p>{data.total.toLocaleString(locale)} {t('records')}</p>
-        {data.items.length?data.items.map(row=><ResourceCard key={row.id} row={row} t={t} locale={locale}/>):<p className="empty">{t('empty')}</p>}
-        <div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span>
-          <button disabled={page*10>=data.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></>}
   </section>;
 }

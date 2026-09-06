@@ -5,6 +5,7 @@ import {money,safeReference} from './i18n.mjs';
 import {uiText} from './ui-text.mjs';
 import MapView from './Map';
 import Resources from './Resources';
+import {parseResourceRoute} from './resource-route.mjs';
 import Workbench,{PlaceEvidence,PrivacyControls} from './Workbench';
 import type {Detail,Locale,Money,Observation,Place,Source,User} from './types';
 import './style.css';
@@ -19,9 +20,10 @@ const ref=(id:string)=>encodeURIComponent(id);
 const getStored=(key:string,fallback:unknown)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback;}catch{return fallback;}};
 
 function App(){
-  const [locale,setLocale]=useState<Locale>(()=>{const value=getStored('bdt:locale','pt-BR');return ['pt-BR','en','es'].includes(value)?value:'pt-BR';});
+  const [locale,setLocale]=useState<Locale>(()=>{const value=parseResourceRoute(window.location.hash)?.locale||getStored('bdt:locale','pt-BR');return ['pt-BR','en','es'].includes(value)?value:'pt-BR';});
   const t=(key:string)=>uiText(locale,key);
-  const [view,setView]=useState('explore'),[query,setQuery]=useState(''),[kind,setKind]=useState(''),[state,setState]=useState(''),[town,setTown]=useState(''),[bbox,setBbox]=useState('');
+  const [resourceRoute,setResourceRoute]=useState(window.location.hash);
+  const [view,setView]=useState(()=>parseResourceRoute(window.location.hash)?'resources':'explore'),[query,setQuery]=useState(''),[kind,setKind]=useState(''),[state,setState]=useState(''),[town,setTown]=useState(''),[bbox,setBbox]=useState('');
   const [towns,setTowns]=useState<Town[]>([]),[places,setPlaces]=useState<Place[]>([]),[page,setPage]=useState(1),[total,setTotal]=useState(0);
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[detail,setDetail]=useState<Detail|null>(null),[history,setHistory]=useState<History[]>([]);
   const [user,setUser]=useState<User|null>(null),[config,setConfig]=useState<Config|null>(null),[coverage,setCoverage]=useState<Coverage|null>(null);
@@ -31,6 +33,9 @@ function App(){
   const [tab,setTab]=useState('service');
   const searchVersion=useRef(0),detailVersion=useRef(0);
   function failure(){setNotice('failure');}
+  useEffect(()=>{const changed=()=>{const hash=window.location.hash,route=parseResourceRoute(hash);
+    if(route){setResourceRoute(hash);setView('resources');setDetail(null);setRegion(null);setLocale(route.locale as Locale);detailVersion.current++;}
+  };window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed);},[]);
   useEffect(()=>{document.documentElement.lang=locale;try{localStorage.setItem('bdt:locale',JSON.stringify(locale));}catch{}},[locale]);
   useEffect(()=>{api<Config>('/config').then(setConfig).catch(failure);api<User>('/auth/me').then(setUser).catch(()=>{});},[]);
   useEffect(()=>{let active=true;api<Town[]>('/municipalities'+(state?'?state='+state:'')).then(value=>{if(active)setTowns(value);}).catch(failure);return()=>{active=false;};},[state]);
@@ -39,7 +44,7 @@ function App(){
     api<{items:Place[];total:number}>('/places?'+params).then(result=>{if(id===searchVersion.current){setPlaces(result.items);setTotal(result.total);}}).catch(()=>{if(id===searchVersion.current)failure();}).finally(()=>{if(id===searchVersion.current)setBusy(false);});
   },220);return()=>{clearTimeout(timer);searchVersion.current++;};},[query,kind,state,town,bbox,page,view]);
   useEffect(()=>{if(view!=='saved')return;let active=true;Promise.allSettled(favorites.map(id=>api<Detail>('/places/'+ref(id)))).then(rows=>{if(active)setSaved(rows.flatMap(row=>row.status==='fulfilled'?[row.value.place]:[]));});return()=>{active=false;};},[view,favorites]);
-  async function navigate(next:string){setView(next);setDetail(null);setRegion(null);setNotice('');detailVersion.current++;
+  async function navigate(next:string){if(parseResourceRoute(window.location.hash)){window.history.replaceState(null,'',window.location.pathname+window.location.search);setResourceRoute('');}setView(next);setDetail(null);setRegion(null);setNotice('');detailVersion.current++;
     if(next==='coverage')try{setCoverage(await api<Coverage>('/coverage'));}catch{failure();}
     if(next==='account'&&user)try{setMine(await api<Observation[]>('/observations/mine'));}catch{failure();}
     if(next==='review')try{setQueue(await api<Observation[]>('/review'));}catch{failure();}
@@ -65,7 +70,7 @@ function App(){
   {tab==='community'&&<><h2>{t('community')}</h2>{detail.observations.length?<ObservationCards rows={detail.observations}/>:<p>{t('noCommunity')}</p>}<div className="panel"><h2>{t('contribute')}</h2><p>{t('observationNote')}</p>{!user?<button onClick={()=>navigate('account')}>{t('login')}</button>:<form onSubmit={submitObservation}><label>{t('mode')}<select name="mode" required><option value="field">{t('field')}</option><option value="document">{t('document')}</option><option value="street_image">{t('street_image')}</option></select></label><label>{t('when')}<input name="observed_on" type="date" required max={new Date().toISOString().slice(0,10)}/></label><label>{t('observation')}<textarea name="body" minLength={20} maxLength={1200} required rows={4}/></label><label>{t('referenceUrl')}<input type="url" name="reference_url" maxLength={2000}/></label><label className="check"><input type="checkbox" name="consent" required/>{t('consent')}</label><button className="primary" disabled={busy}>{t('submit')}</button></form>}</div></>}
   </section>:<>
   {view==='explore'&&<><section className="hero"><span className="eyebrow">BRASIL DE TODOS · OPEN SOURCE</span><h1>{t('tagline')}</h1><p>{t('intro')}</p></section><section className="filters" aria-label={t('search')}><label className="search-label"><span>{t('search')}</span><input type="search" placeholder={t('search')} value={query} maxLength={200} onChange={event=>{setQuery(event.target.value);setPage(1);}}/></label><label><span>{t('states')}</span><select value={state} onChange={event=>{setState(event.target.value);setTown('');setBbox('');setPage(1);}}><option value="">{t('states')}</option>{states.map(value=><option key={value}>{value}</option>)}</select></label><label><span>{t('towns')}</span><select value={town} onChange={event=>{setTown(event.target.value);setBbox('');setPage(1);}}><option value="">{t('towns')}</option>{towns.map(value=><option key={value.id} value={value.id}>{value.name} · {value.state}</option>)}</select></label><button onClick={()=>{setQuery('');setTown('');setState('');setKind('');setBbox('');setPage(1);}}>{t('clear')}</button></section><div className="category-tabs">{['','school','health','work'].map(value=><button key={value} aria-pressed={kind===value} className={kind===value?'selected':''} onClick={()=>{setKind(value);setPage(1);}}>{t(value||'all')}</button>)}</div><div className="explorer"><section aria-live="polite" aria-busy={busy}><div className="results-heading"><strong>{busy?t('loading'):total.toLocaleString(locale)+' '+t('records')}</strong>{bbox&&<button onClick={()=>setBbox('')}>{t('clear')} ⌖</button>}</div>{places.length?<Cards items={places}/>:!busy&&<div className="empty"><h2>{t('empty')}</h2><p>{t('emptyHelp')}</p><button onClick={()=>navigate('coverage')}>{t('coverage')}</button></div>}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span><button disabled={page*30>=total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></section><MapView places={places} select={select} t={t} filters={{q:query,kind,state,municipality_id:town}} onBounds={bounds=>{setBbox(bounds);setPage(1);}}/></div></>}
-  {view==='resources'&&<Resources t={t} locale={locale}/>}
+  {view==='resources'&&<Resources t={t} locale={locale} routeHash={resourceRoute}/>}
   {view==='saved'&&<section className="page"><h1>{t('saved')}</h1><p className="callout">{t('savedNote')}</p>{saved.length?<Cards items={saved}/>:<p className="empty">{t('empty')}</p>}</section>}
   {view==='region'&&region&&<section className="page"><h1>{t('regionTitle')} · {region.municipality.name}</h1><p className="callout">{t('regionNote')}</p><p>{region.events.length} / {region.total} {t('records')}</p><MoneyCards events={region.events}/><Resources municipalityId={region.municipality.id} t={t} locale={locale}/></section>}
   {view==='coverage'&&<section className="page"><h1>{t('coverage')}</h1><p className="callout">{t('coverageNote')}</p>{coverage?<><div className="stat"><strong>{coverage.municipalities.toLocaleString(locale)}</strong><span>{t('municipalities')}</span></div>{coverage.partitions.length?<div className="table-scroll"><table><thead><tr><th>{t('source')}</th><th>UF</th><th>{t('records')}</th><th>{t('geocoded')}</th></tr></thead><tbody>{coverage.partitions.map(partition=><tr key={partition.dataset+partition.state}><td>{partition.dataset}</td><td>{partition.state}</td><td>{partition.records}</td><td>{partition.geocoded}</td></tr>)}</tbody></table></div>:<p>{t('noneLoaded')}</p>}<h2>{t('runs')}</h2>{coverage.runs.map(run=><article className="panel" key={run.id}><h3>{run.dataset}</h3><code>{run.status}</code><pre>{JSON.stringify(run.counts,null,2)}</pre></article>)}</>:<p>{t('loading')}</p>}</section>}

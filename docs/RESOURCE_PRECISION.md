@@ -43,3 +43,13 @@ da coleção confere esses campos. Não inferir que contratos anteriores desapar
 bloqueou a carga anterior não foi determinada apenas por consultar o manual.
 A execução oficial delimitada precisa registrar resultado próprio; nenhum deploy
 ou certificado nacional decorre desta alteração.
+
+## Limite textual ainda pendente de publicação
+
+A reexecução `34034998849` leu novamente 6.677 registros e terminou com
+`invalid_resource_text`, não com o erro monetário anterior. O manual, p. 35,
+prevê `objetoContrato` com até 5.120 caracteres, enquanto o perfil atual limita
+4.000. Uma atualização desse perfil foi preparada e testada localmente, mas sua
+publicação foi bloqueada pela ferramenta. Ela NÃO integra a revisão publicada;
+o perfil e seus testes anteriores foram preservados, sem contornar o bloqueio.
+A condição exata do registro e a importação completa continuam pendentes.
