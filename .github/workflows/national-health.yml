@@ -1,0 +1,37 @@
+name: National health data
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/cnes_bulk.py
+      - backend/bdt/transport.py
+      - .github/workflows/national-health.yml
+permissions:
+  contents: read
+concurrency:
+  group: national-health-data
+  cancel-in-progress: false
+jobs:
+  cnes-bulk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e .
+      - name: Import official bulk distribution without synthetic records
+        run: python -u ops/cnes_bulk.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: national-health-catalog-and-evidence
+          retention-days: 7
+          path: |
+            test-results/national-health/catalog.db
+            test-results/national-health/report.json
+            test-results/national-health/*.manifest.json
