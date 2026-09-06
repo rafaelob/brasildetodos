@@ -1,12 +1,29 @@
 name: Quality
 on:
   push:
-    branches: [main, feat/national-platform-foundation]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: git archive --format=zip --output=source.zip HEAD && git rev-parse HEAD > revision.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-snapshot
+          retention-days: 7
+          path: |
+            source.zip
+            revision.txt
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -35,14 +52,18 @@ jobs:
           node-version: '24'
       - name: Install (lock file preferred)
         run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Dependency diagnostic
+        run: npm audit --json > npm-audit.json || true
       - run: npm test
       - run: npm run build
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: web-build
           path: |
             web/dist/
             web/package-lock.json
+            web/npm-audit.json
   browser:
     needs: web
     runs-on: ubuntu-latest
