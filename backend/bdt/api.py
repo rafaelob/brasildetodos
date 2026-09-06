@@ -308,6 +308,8 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
     from .place_tracking import install as install_tracking
     install_coverage(app, database)
     install_tracking(app, database)
+    from .regions import install as install_regions
+    install_regions(app, database)
     static = Path(os.getenv('BDT_STATIC_DIR', 'web/dist'))
     if static.is_dir():
         app.mount('/', StaticFiles(directory=static, html=True), name='web')

@@ -109,6 +109,8 @@ jobs:
         run: python ops/browser_place_comparison.py
       - name: Exercise guided field observations, review, downloads and withdrawal
         run: python ops/browser_guided_visit.py
+      - name: Exercise municipal discovery, context and independent recovery
+        run: python ops/browser_regions.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,6 +126,7 @@ jobs:
             test-results/browser-place-comparison/
             test-results/browser-map/
             test-results/browser-resource-lifecycle/
+            test-results/browser-regions/
   official-source-probe:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
