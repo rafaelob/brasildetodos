@@ -1,0 +1,82 @@
+name: National education intake
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Official Censo Escolar edition (not the current collection year)
+        default: '2025'
+        required: true
+      territory_run_id:
+        description: Same-repository run containing a verified IBGE municipality snapshot
+        default: '34005677349'
+        required: true
+      territory_artifact_id:
+        description: Exact artifact ID; avoids ambiguity across repeated attempts
+        default: '9981020925'
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - backend/bdt/education_bulk.py
+      - ops/education_bulk.py
+      - .github/workflows/national-education.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: national-education-main
+  cancel-in-progress: false
+jobs:
+  national-school-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ inputs.territory_artifact_id || '9981020925' }}
+          run-id: ${{ inputs.territory_run_id || '34005677349' }}
+          github-token: ${{ github.token }}
+          path: verified-territory
+          merge-multiple: true
+      - run: python -m pip install -e '.[test]'
+      - name: Verify archive/identity/territory behavior before official intake
+        run: python -m pytest backend/tests/test_education_bulk.py -q
+      - name: Import official school tables, never individual microdata
+        env:
+          BDT_CENSUS_YEAR: ${{ inputs.year || '2025' }}
+        run: python -u ops/education_bulk.py --year "$BDT_CENSUS_YEAR" --territory-snapshot verified-territory/catalog.db
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: national-education-public-catalog-and-evidence
+          retention-days: 7
+          path: |
+            test-results/national-education/report.json
+            test-results/national-education/*.manifest.json
+            test-results/national-education/public-catalog/
+      - name: Record actual result, not a national completeness claim
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path('test-results/national-education/report.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## National education intake\n\n')
+              if path.exists():
+                  report=json.loads(path.read_text())
+                  out.write('Result: '+report['status']+'\n\n')
+                  out.write('```json\n'+json.dumps(report.get('validation',{}).get('counts',{}),indent=2)+'\n```\n')
+              else:
+                  out.write('Intake did not start; inspect failed prerequisite steps.\n')
+              out.write('\nThis artifact is not a deployed service, verified vacancy list, or completeness certificate.\n')
+          PY
+# Retained artifacts expire. Future manual runs must select a currently retained
+# same-repository territorial artifact. ops/education_bulk.py can instead fetch
+# IBGE directly when no --territory-snapshot is provided. No synthetic fallback.
