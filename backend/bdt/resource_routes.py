@@ -6,7 +6,7 @@ from .resource_profiles import PROFILES, STATES
 from .resource_sync import ResourceRevision, initialize_resource_versions
 
 
-def browse(database, *, municipality_id=None, kind=None, page=1, limit=30, q='', profile=None, state=None):
+def resource_query(*, municipality_id=None, kind=None, q='', profile=None, state=None):
     if profile is not None and profile not in PROFILES:
         raise ValueError('unknown_resource_profile')
     if state is not None and state not in STATES:
@@ -22,6 +22,11 @@ def browse(database, *, municipality_id=None, kind=None, page=1, limit=30, q='',
         statement = statement.where(Resource.source['dataset'].as_string() == profile)
     if state:
         statement = statement.where(Resource.payload['attributes']['state'].as_string() == state)
+    return statement
+
+
+def browse(database, *, municipality_id=None, kind=None, page=1, limit=30, q='', profile=None, state=None):
+    statement = resource_query(municipality_id=municipality_id, kind=kind, q=q, profile=profile, state=state)
     with database.session() as session:
         count = session.scalar(select(func.count()).select_from(statement.subquery()))
         rows = session.scalars(statement.order_by(Resource.id).offset((page-1)*limit).limit(limit))
@@ -33,6 +38,13 @@ def install(app, database):
     initialize_resource_versions(database)
     from .resource_export import install as install_exports
     install_exports(app, database)
+    from .resource_collection import install as install_collection
+    install_collection(app, database)
+
+    @app.get('/api/resource-coverage')
+    def coverage():
+        from .resource_coverage import resource_coverage
+        return resource_coverage(database)
 
     @app.get('/api/resource-history/{resource_id:path}')
     def history(resource_id: str, page: int = Query(1, ge=1, le=100000), limit: int = Query(10, ge=1, le=30)):

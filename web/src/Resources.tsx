@@ -1,3 +1,4 @@
+import {ResourceCoverage,CollectionDownloads} from './ResourceStatus';
 import {useEffect,useState,useId} from 'react';
 import {api} from './api';
 import {ShareResource,ResourceDownloads} from './ResourceActions';
@@ -102,6 +103,7 @@ export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;lo
   return <section className={municipalityId?'resource-region':'page resources-page'} aria-label={t('resources')}>
     <header className="resource-heading"><span className="eyebrow">{t('resourceEyebrow')}</span>
       {municipalityId?<h2>{t('resources')}</h2>:<h1>{t('resources')}</h1>}<p>{t('resourceIntro')}</p></header>
+    {!municipalityId&&<ResourceCoverage t={t} locale={locale}/>}
     {focus?<div className="resource-focus"><span>{t('resourceFocus')}</span><button onClick={()=>setFocus('')}>← {t('resourceBack')}</button></div>:<>
       <div className="resource-filters">
         <div className="resource-search"><label htmlFor={controlId+'-search'}>{t('resourceSearch')}</label><input id={controlId+'-search'} type="search" value={q} maxLength={200}
@@ -113,7 +115,7 @@ export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;lo
           onChange={event=>{setState(event.target.value);setSharedTown('');setPage(1);}}><option value="">{t('states')}</option>{states.map(value=><option key={value}>{value}</option>)}</select></div>}
       </div>
       <div className="resource-toolbar"><button onClick={clear}>{t('resourceClear')}</button>
-        <ShareResource criteria={{q,profile,state,municipality:town,locale}} t={t} label="resourceShare"/></div>
+        <ShareResource criteria={{q,profile,state,municipality:town,locale}} t={t} label="resourceShare"/><CollectionDownloads criteria={{q,profile,state,municipality:town}} locale={locale}/></div>
       {sharedTown&&<p>{t('municipalityID')}: <code>{sharedTown}</code></p>}
     </>}
     <div aria-busy={!error&&data===null}>
