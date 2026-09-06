@@ -5,6 +5,7 @@ import {groupText} from './group-text.mjs';
 import {groupFailure,ownObservations} from './group-tools.mjs';
 import type {Locale,Observation,Place} from './types';
 export type Write=(path:string,body:unknown,onSuccess?:(value:any)=>void)=>Promise<boolean>;
+export type Submission={action:'submit';observation_id:string;share_with_group:true};
 export function ConfirmAction({label,help,disabled,run,locale}:{label:string;help:string;disabled:boolean;run:()=>Promise<boolean>;locale:Locale}) {
  const [open,setOpen]=useState(false),[agreed,setAgreed]=useState(false);
  const t=(key:string)=>groupText(locale,key);
@@ -38,7 +39,7 @@ export function NewGroupTask({locale,disabled,create}:{locale:Locale;disabled:bo
   <button disabled={disabled||!place}>{t('createTask')}</button>
  </form></details>;
 }
-export function SubmitGroupTask({locale,placeId,disabled,submit}:{locale:Locale;placeId:string;disabled:boolean;submit:(body:unknown)=>Promise<boolean>}) {
+export function SubmitGroupTask({locale,placeId,disabled,submit}:{locale:Locale;placeId:string;disabled:boolean;submit:(body:Submission)=>Promise<boolean>}) {
  const t=(key:string)=>groupText(locale,key),[rows,setRows]=useState<Observation[]>([]),[selection,setSelection]=useState('');
  const [loading,setLoading]=useState(true),[retry,setRetry]=useState(0),[error,setError]=useState(''),[saving,setSaving]=useState(false),[notice,setNotice]=useState('');
  const [consent,setConsent]=useState(false),alive=useRef(true),lock=useRef(false);
