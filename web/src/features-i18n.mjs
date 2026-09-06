@@ -1,0 +1,54 @@
+export const featureMessages = {
+  'pt-BR': {
+    workbench:'Revisão documental', resourcesTitle:'Instrumentos e contratações', links:'Vínculos documentados', linksEmpty:'Nenhum vínculo revisado disponível para este lugar.',
+    candidate:'Candidato', reviewed:'Revisado', rejected:'Rejeitado', retracted:'Retirado da publicação', withdrawn:'Retirado pelo autor',
+    documentTitle:'Título do documento', registerDocument:'Registrar documento', sourceDataset:'Conjunto de dados de origem', sourceRecord:'Identificador na origem', sourceHash:'SHA-256 dos bytes do documento',
+    collectedAt:'Data de coleta', referenceDate:'Data ou período de referência', sourceURL:'Endereço da fonte', documentID:'Identificador do documento', resourceID:'Identificador do instrumento ou contratação',
+    resourceKind:'Tipo de registro', municipalityID:'Código IBGE do município', extractionOperator:'O original é processado pelo operador em ambiente restrito. Registrar metadados não executa OCR nem publica o documento.',
+    loadPage:'Abrir texto extraído', pageNumber:'Página', excerpt:'Trecho literal da página', justification:'Justificativa da associação', proposeLink:'Propor vínculo para revisão',
+    independentReview:'Outra pessoa deve revisar a associação antes da publicação.', publicExcerptCheck:'Conferi o trecho, sua associação e a adequação para publicação; ele não expõe dados pessoais desnecessários.',
+    reviewAction:'Decisão sobre o vínculo', linkNotice:'Este vínculo identifica documentos relacionados. Não comprova entrega, funcionamento ou valor destinado exclusivamente ao lugar.',
+    registerResource:'Registrar instrumento ou contratação', added:'Registro salvo.', privacyTitle:'Seus dados e contribuições', exportAccount:'Exportar meus dados', withdrawContribution:'Retirar contribuição',
+    deactivateAccount:'Desativar minha conta', deactivationNote:'Remove o nome de usuário e os textos das suas observações, retira sua publicação e encerra sessões. Histórico pseudônimo de moderação e vínculos com fontes públicas permanecem; backups seguem a política do operador.',
+    deactivationConfirm:'Entendi o que será removido e o que será mantido.', deletePassword:'Confirme sua senha', deleteButton:'Desativar e remover minhas observações',
+    mapRecords:'registros georreferenciados nesta área', mapDataFail:'Os dados desta área não carregaram. A lista permanece disponível.', refresh:'Atualizar',
+    resourceContract:'Contrato', resourceInstrument:'Instrumento de transferência', resourceProposal:'Proposta', resourceWork:'Obra', title:'Título', selectedDocument:'Documento selecionado',
+    sourceRestricted:'Texto restrito à revisão', missingExtraction:'Extração ainda não disponível.', relationshipAuthor:'Autor do vínculo', resourceScope:'Registro administrativo; confira a abrangência na fonte.',
+    openWorkbench:'Abrir revisão documental', noticeData:'As informações descrevem registros carregados, não disponibilidade de vagas ou atendimento em tempo real.'
+  },
+  en: {
+    workbench:'Document review', resourcesTitle:'Agreements and procurement', links:'Documented relationships', linksEmpty:'No reviewed relationship is available for this place.',
+    candidate:'Candidate', reviewed:'Reviewed', rejected:'Rejected', retracted:'Publication retracted', withdrawn:'Withdrawn by author',
+    documentTitle:'Document title', registerDocument:'Register document', sourceDataset:'Source dataset', sourceRecord:'Source record identifier', sourceHash:'SHA-256 of the document bytes',
+    collectedAt:'Collection date', referenceDate:'Reference date or period', sourceURL:'Source address', documentID:'Document identifier', resourceID:'Agreement or procurement identifier',
+    resourceKind:'Record type', municipalityID:'Municipality IBGE code', extractionOperator:'The operator processes the original in a restricted environment. Registering metadata does not run OCR or publish the document.',
+    loadPage:'Open extracted text', pageNumber:'Page', excerpt:'Exact passage from the page', justification:'Relationship justification', proposeLink:'Propose relationship for review',
+    independentReview:'Another person must review the relationship before publication.', publicExcerptCheck:'I checked the passage, its relationship and suitability for publication; it exposes no unnecessary personal data.',
+    reviewAction:'Relationship decision', linkNotice:'This relationship identifies relevant documents. It does not prove delivery, operation or money allocated exclusively to this place.',
+    registerResource:'Register agreement or procurement', added:'Record saved.', privacyTitle:'Your data and contributions', exportAccount:'Export my data', withdrawContribution:'Withdraw contribution',
+    deactivateAccount:'Deactivate my account', deactivationNote:'Removes your username and observation texts, withdraws publication and ends sessions. Pseudonymous moderation history and links to public sources remain; backups follow the operator policy.',
+    deactivationConfirm:'I understand what will be removed and retained.', deletePassword:'Confirm your password', deleteButton:'Deactivate and remove my observations',
+    mapRecords:'geocoded records in this area', mapDataFail:'Data for this area could not load. The list remains available.', refresh:'Refresh',
+    resourceContract:'Contract', resourceInstrument:'Transfer agreement', resourceProposal:'Proposal', resourceWork:'Public work', title:'Title', selectedDocument:'Selected document',
+    sourceRestricted:'Review-restricted text', missingExtraction:'Extraction is not available yet.', relationshipAuthor:'Relationship author', resourceScope:'Administrative record; check its scope in the source.',
+    openWorkbench:'Open document review', noticeData:'Information describes loaded records, not real-time places or appointments.'
+  },
+  es: {
+    workbench:'Revisión documental', resourcesTitle:'Convenios y contrataciones', links:'Relaciones documentadas', linksEmpty:'No hay una relación revisada disponible para este lugar.',
+    candidate:'Candidato', reviewed:'Revisado', rejected:'Rechazado', retracted:'Publicación retirada', withdrawn:'Retirado por el autor',
+    documentTitle:'Título del documento', registerDocument:'Registrar documento', sourceDataset:'Conjunto de datos de origen', sourceRecord:'Identificador de origen', sourceHash:'SHA-256 de los bytes del documento',
+    collectedAt:'Fecha de recopilación', referenceDate:'Fecha o período de referencia', sourceURL:'Dirección de la fuente', documentID:'Identificador del documento', resourceID:'Identificador del convenio o contratación',
+    resourceKind:'Tipo de registro', municipalityID:'Código IBGE del municipio', extractionOperator:'El operador procesa el original en un entorno restringido. Registrar metadatos no ejecuta OCR ni publica el documento.',
+    loadPage:'Abrir texto extraído', pageNumber:'Página', excerpt:'Fragmento literal de la página', justification:'Justificación de la relación', proposeLink:'Proponer relación para revisión',
+    independentReview:'Otra persona debe revisar la relación antes de publicarla.', publicExcerptCheck:'Comprobé el fragmento, su relación y su idoneidad para publicación; no expone datos personales innecesarios.',
+    reviewAction:'Decisión sobre la relación', linkNotice:'Esta relación identifica documentos pertinentes. No acredita la entrega, el funcionamiento ni dinero destinado exclusivamente al lugar.',
+    registerResource:'Registrar convenio o contratación', added:'Registro guardado.', privacyTitle:'Tus datos y contribuciones', exportAccount:'Exportar mis datos', withdrawContribution:'Retirar contribución',
+    deactivateAccount:'Desactivar mi cuenta', deactivationNote:'Elimina tu nombre de usuario y los textos de tus observaciones, retira su publicación y cierra las sesiones. El historial seudónimo de moderación y las relaciones con fuentes públicas se conservan; las copias de seguridad siguen la política del operador.',
+    deactivationConfirm:'Entiendo qué se eliminará y qué se conservará.', deletePassword:'Confirma tu contraseña', deleteButton:'Desactivar y eliminar mis observaciones',
+    mapRecords:'registros georreferenciados en esta área', mapDataFail:'No se cargaron los datos de esta área. La lista sigue disponible.', refresh:'Actualizar',
+    resourceContract:'Contrato', resourceInstrument:'Convenio de transferencia', resourceProposal:'Propuesta', resourceWork:'Obra pública', title:'Título', selectedDocument:'Documento seleccionado',
+    sourceRestricted:'Texto restringido a revisión', missingExtraction:'La extracción todavía no está disponible.', relationshipAuthor:'Autor de la relación', resourceScope:'Registro administrativo; comprueba su alcance en la fuente.',
+    openWorkbench:'Abrir revisión documental', noticeData:'La información describe registros cargados, no plazas o citas disponibles en tiempo real.'
+  }
+};
+export function featureText(locale, key) { return featureMessages[locale]?.[key]; }
