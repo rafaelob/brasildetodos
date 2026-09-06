@@ -98,3 +98,11 @@ reconciliação de pagamentos, estornos e aditivos; scheduler temporal com janel
 sobreposta e relatórios de atraso; tratamento explícito de 204; análise de índices
 e retenção do histórico. Os perfis são estritos: divergência exige evidência e
 novos testes, não relaxamento silencioso de validações.
+
+## Resultado do primeiro ensaio completo
+
+Em `34010343797`, a coleta PNCP recebeu as 14 páginas/6.677 registros. A
+normalização recusou um valor decimal e reverteu toda a consulta. Não houve
+arredondamento nem publicação parcial. Os exemplos por ID do Transferegov e
+Obrasgov foram importados e consultados pela API. Veja
+`RESOURCE_IMPLEMENTATION_20260906.md` e `reports/20260906-resource-intake.json`.

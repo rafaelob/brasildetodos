@@ -34,16 +34,20 @@ implementada com a evidência indicada; não significa cobertura nacional ou dep
 - [x] Coleta por páginas, retomada, publicação transacional de consulta completa,
   histórico de versões, detecção de regressão/conflito e preservação do anterior.
 - [x] API e interface trilíngue de busca de recursos, valores separados e histórico.
-  Suíte local nesta rodada: 446 Python, 28 Node. Build/browser/ensaio oficial devem
-  ser vinculados à revisão publicada, não deduzidos do teste unitário.
-- [ ] Validar a importação oficial completa da janela PNCP escolhida e exemplos
-  reais por identidade em Especiais/Obrasgov; registrar artefatos e falhas reais.
+  Suíte local nesta rodada: 446 Python, 28 Node. Build e browser aprovados na CI
+  `34010614709`: três idiomas e 320/390/1440 px. A falha da coleta/importação
+  oficial é registrada separadamente e não tratada como aprovação global.
+- [x] Importar e consultar na API um plano Especiais e um projeto Obrasgov reais,
+  via consultas completas por identidade. Execução `34010343797`, artefato `9982323950`.
+- [ ] Concluir importação PNCP: 6.677 registros recebidos em 14 páginas, mas rollback
+  por `invalid_decimal_resource_amount`. Identificar campo/tipo/escala antes de
+  definir representação de valores; não arredondar ou transformar em zero.
 - [ ] Incluir todos os módulos/tabelas Transferegov: assinatura, instrumentos,
   metas, etapas, aditivos, desembolsos e pagamentos. Plano especial não é convênio.
 - [ ] Fila de documentos/anexos referenciados, metadados, hashes e revisão.
 - [ ] Geometrias e execução física Obrasgov, sem confundir endereço comprador.
 - [ ] PDDE e FNS preservando granularidade e identificação das unidades.
-- [ ] Reconciliação entre sistemas, estornos, alterações e destinatários; impedir
+- [ ] Reconciliação entre sistemas, estornos/correções e destinatários; impedir
   dupla contagem. Metadados de contrato/plano não criam lançamento financeiro.
 - [ ] Scheduler por janela sobreposta, resposta HTTP 204 explícita, reconciliação
   temporal e monitoramento de esquema. A CLI paginada não é esse scheduler.

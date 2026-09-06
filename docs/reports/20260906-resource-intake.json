@@ -1,0 +1,81 @@
+{
+  "started_at": "2026-09-06T03:59:40.741652+00:00",
+  "finished_at": "2026-09-06T04:05:06.518895+00:00",
+  "code_revision": "ae451b286fdc45d59ac081c2544d877e09c93fc4",
+  "public_deployment": false,
+  "national_resources_certified": false,
+  "status": "partial_with_explicit_failures",
+  "resources": 2,
+  "versions": 2,
+  "by_profile": {
+    "obrasgov_projects": 1,
+    "transferegov_special_plans": 1
+  },
+  "api_acceptance": "passed",
+  "resources_sha256": "b02f6e7c2e026005bedb18989af24b0879e7576a657ac69c9f624348c646d191",
+  "artifact": {
+    "run_id": 34010343797,
+    "artifact_id": 9982323950,
+    "sha256": "112195def1d70918af09165e1908bf303a891fedcd793d1efa6a2506402f9faa"
+  },
+  "pncp": {
+    "dates": [
+      "20260904",
+      "20260904"
+    ],
+    "collected_records": 6677,
+    "collected_pages": 14,
+    "collected_bytes": 11621911,
+    "collection_status": "complete",
+    "import_status": "rolled_back",
+    "published_records": 0,
+    "error_type": "ValueError",
+    "reason": "invalid_decimal_resource_amount"
+  },
+  "complete_identity_queries": [
+    {
+      "profile": "transferegov_special_plans",
+      "query": {
+        "id_plano_acao": "3221"
+      },
+      "read": 1,
+      "created": 1,
+      "unchanged_on_reimport": 1,
+      "financial_events_created": 0,
+      "automatic_place_links": 0,
+      "source": {
+        "url": "https://api-publica.transferegov.gestao.gov.br/especiais/planos-acao-especiais?id_plano_acao=3221&pagina=1&tamanho_da_pagina=10",
+        "sha256": "229278a9884957e806e6a495c964f74966d69cc6c2dcba22f0a206925ab772f7",
+        "bytes": 1406,
+        "collected_at": "2026-09-06T04:05:05.560547+00:00",
+        "etag": null,
+        "index": 0,
+        "file": "page-000000.json",
+        "records": 1
+      },
+      "manifest_sha256": "28dedb00ca042607f7abb55cc8bb9c4773842b6efde8bc2e995232bebed0e8ae"
+    },
+    {
+      "profile": "obrasgov_projects",
+      "query": {
+        "id_projeto_investimento": "139010.35-00"
+      },
+      "read": 1,
+      "created": 1,
+      "unchanged_on_reimport": 1,
+      "financial_events_created": 0,
+      "automatic_place_links": 0,
+      "source": {
+        "url": "https://api-publica.obrasgov.gestao.gov.br/obras/projeto-investimento?id_projeto_investimento=139010.35-00&pagina=1&tamanho_da_pagina=10",
+        "sha256": "26430e99622b207b26d1488d45e6b2f1542ed2ea1298ff0724d46471d3e7a873",
+        "bytes": 3199,
+        "collected_at": "2026-09-06T04:05:06.254570+00:00",
+        "etag": "21b08ef7dc74a95db165c404e756c048ab7e205134a3b5503e6050ac02f3852d",
+        "index": 0,
+        "file": "page-000000.json",
+        "records": 1
+      },
+      "manifest_sha256": "dda1b0ea25dc5b21c045ee7b8ca5d7ebd5f1b518b50808a7eba844c5c74bf761"
+    }
+  ]
+}

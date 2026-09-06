@@ -22,10 +22,21 @@ Inspeção de schemas e amostra oficial: `34009291326`, artefato `9981954097`.
 A amostra PNCP declarou 6.677 contratos em 04/09/2026; isso ainda não comprova
 importação de todos eles. O workflow de intake produz seu próprio resultado.
 
+CI da revisão `36aef1bcfd61d51298418722ea93968acf7ca4a4`: **Quality aprovada**
+(`34010614709`), incluindo build TypeScript/Vite e os três percursos de navegador.
+Novo percurso: recursos, filtros, histórico e valores separados em três idiomas
+e três larguras. Artefato de navegador `9982342210`.
+
+Ensaio real `34010343797`: Transferegov plano 3221 e Obrasgov projeto 139010.35-00
+importados e consultados pela API; PNCP coletou 6.677 registros em 14 páginas,
+mas a importação foi integralmente desfeita por `invalid_decimal_resource_amount`.
+O job de fontes terminou **com falha**; isso não foi ocultado pelo resultado dos
+testes determinísticos. Não há cadastro PNCP novo nem deploy público.
+
 Teste local: **446 Python aprovados**, cobertura de linhas **94,55%**, piso 85%
 preservado; **28 Node aprovados**. Há avisos de fechamento de conexões na suíte
 legada que permanecem para triagem. O ambiente local usa Python 3.13.5/Node 22;
-o build e browser devem ser confirmados na CI com as dependências do projeto.
+o build e browser foram executados no runner com as dependências do projeto.
 
 ## Pendências e limites
 
@@ -37,3 +48,5 @@ avaliação de OCR em corpus oficial, panorama ou validação visual de 3D ao vi
 O roteiro atualizado, com partes implementadas e restantes, está em `ROADMAP.md`.
 A integração nova tem contrato, comandos, fontes e limitações em `RESOURCE_INGESTION.md`.
 Cada execução posterior deve registrar o SHA testado e seu resultado real.
+
+Detalhes da continuidade, commits e pendências: `RESOURCE_IMPLEMENTATION_20260906.md`.
