@@ -9,7 +9,7 @@ import tempfile
 import time
 from pathlib import Path
 import httpx
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 from bdt.api import password_hash
 from bdt.domain import PlaceInput, Source, now
 from bdt.ingest import import_finance
@@ -89,7 +89,8 @@ def main():
                     page.get_by_label('O que você observou?', exact=True).fill(text)
                     page.get_by_role('checkbox').check()
                     page.get_by_role('button', name='Enviar para revisão', exact=True).click()
-                    page.get_by_text('Sua contribuição foi salva e aguarda revisão. Ainda não está pública.', exact=True).wait_for()
+                    # The live region also contains a close button; match its message, not the entire element text.
+                    expect(page.get_by_role('status')).to_contain_text('Sua contribuição foi salva e aguarda revisão. Ainda não está pública.')
                     page.get_by_text('Ainda não há contribuições aprovadas para este lugar.', exact=True).wait_for()
                     page.get_by_role('button', name='participant', exact=True).click()
                     page.get_by_role('button', name='Sair', exact=True).click()
