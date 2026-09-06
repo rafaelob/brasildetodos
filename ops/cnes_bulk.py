@@ -4,6 +4,7 @@ import codecs
 import csv
 import io
 import json
+import os
 import zipfile
 from collections import Counter
 from pathlib import Path
@@ -13,6 +14,7 @@ from bdt.domain import now
 from bdt.ingest import IBGE_URL, csv_records, file_source, import_ibge, import_places
 from bdt.storage import Database, Place
 from bdt.sync import atomic_json, download_retry
+from bdt.territory import import_territory_snapshot
 from bdt.transport import download_registered
 
 URL='https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_csv.zip'
@@ -38,9 +40,14 @@ def main():
     database=Database('sqlite:///'+str(ROOT/'catalog.db'));database.initialize()
     success=False
     try:
-        path=ROOT/'municipalities.json';meta=download_retry(IBGE_URL,path,16*1024*1024)
-        total=import_ibge(database,path,file_source(path,'ibge',IBGE_URL,None))
-        report['stages'].append({'stage':'municipalities','status':'imported','records':total,'sha256':meta['sha256']})
+        snapshot=os.getenv('BDT_TERRITORY_SNAPSHOT')
+        if snapshot:
+            territorial=import_territory_snapshot(database,Path(snapshot))
+        else:
+            path=ROOT/'municipalities.json';meta=download_retry(IBGE_URL,path,16*1024*1024)
+            total=import_ibge(database,path,file_source(path,'ibge',IBGE_URL,None))
+            territorial={'records':total,'sha256':meta['sha256'],'mode':'upstream_import'}
+        report['stages'].append({'stage':'municipalities','status':'imported',**territorial})
         print(json.dumps(report['stages'][-1]),flush=True)
         path=ROOT/'cnes.csv.zip';meta=download_registered(URL,path,768*1024*1024)
         report['distribution']=meta
