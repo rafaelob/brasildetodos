@@ -24,6 +24,8 @@ class DeleteAccount(StrictModel):
 
 def install(app, database, current_user, reviewer, rate_limit, check_password):
     initialize_extensions(database)
+    from .groups import account_export as export_groups, install as install_groups
+    install_groups(app, database, current_user, rate_limit)
     from .resource_routes import install as install_resource_routes
     install_resource_routes(app, database)
 
@@ -180,13 +182,15 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             return {'username': user['username'], 'exported_at': now(),
                 'observations': [{'id': row.id, 'status': row.status, 'created_at': row.created_at,
                     'observation': row.payload, 'review_note': row.review_note} for row in observations],
-                'proposed_links': [link_payload(row) for row in links], 'credentials_included': False}
+                'proposed_links': [link_payload(row) for row in links], 'credentials_included': False,
+                'collaboration': export_groups(session, user['id'])}
 
     @app.post('/api/account/delete')
     def delete_account(body: DeleteAccount, request: Request, response: Response, user=Depends(current_user)):
         rate_limit(request, 'account_delete', 3)
         with database.session() as session:
-            row = session.get(User, user['id'])
+            from .groups import active_actor, deactivate_user
+            row = active_actor(session, user['id'], lock=True)
             if not check_password(body.password, row.password_hash):
                 raise HTTPException(403, 'reauthentication_failed')
             for observation in session.scalars(select(Observation).where(Observation.author_id == row.id)):
@@ -194,6 +198,7 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                 observation.payload = {'place_id': observation.place_id, 'mode': 'field',
                     'observed_on': observation.payload.get('observed_on'), 'body': '', 'consent': False, 'erased': True}
                 observation.review_note = None
+            deactivate_user(session, row.id)
             session.execute(delete(LoginSession).where(LoginSession.user_id == row.id))
             row.username = 'deleted_' + row.id.replace('-', '')
             row.password_hash = 'disabled:' + secrets.token_hex(32)

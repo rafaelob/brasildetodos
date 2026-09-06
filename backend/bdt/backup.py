@@ -137,6 +137,8 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
             with connection:
                 connection.execute('DELETE FROM sessions')
                 connection.execute('DELETE FROM rate_buckets')
+                if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='group_invites'").fetchone():
+                    connection.execute("UPDATE group_invites SET token_hash=NULL,status='revoked'")
             check_database(connection)
         with target.open('rb') as stream:
             os.fsync(stream.fileno())
