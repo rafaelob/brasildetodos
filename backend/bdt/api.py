@@ -261,18 +261,6 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
             return {'total': total, 'truncated': total > 1000, 'municipality': {'id': row.id, 'name': row.name, 'state': row.state},
                     'events': events, 'cells': financial_cells(events), 'limit': 1000, 'scope': 'loaded_records_only'}
 
-    @app.get('/api/coverage')
-    def coverage():
-        with database.session() as session:
-            grouped = session.execute(select(Place.dataset, Place.state, func.count(Place.id), func.count(Place.latitude))
-                .where(Place.catalogue_eligible.is_(True)).group_by(Place.dataset, Place.state)).all()
-            runs = session.scalars(select(Ingestion).order_by(Ingestion.started_at.desc()).limit(30))
-            return {'national_catalog_certified': False, 'note': 'Counts describe loaded records, not complete national coverage.',
-                'municipalities': session.scalar(select(func.count()).select_from(Municipality)),
-                'partitions': [{'dataset': d, 'state': s, 'records': c, 'geocoded': g} for d, s, c, g in grouped],
-                'runs': [{'id': r.id, 'dataset': r.dataset, 'status': r.status, 'counts': r.counts,
-                         'source': r.source, 'finished_at': r.finished_at} for r in runs]}
-
     @app.post('/api/observations', status_code=201)
     def observe(body: ObservationInput, request: Request, user=Depends(current_user)):
         rate_limit(request, 'observation', 20)
@@ -316,6 +304,10 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
 
     from .features import install
     install(app, database, current_user, reviewer, rate_limit, check_password)
+    from .coverage_dashboard import install as install_coverage
+    from .place_tracking import install as install_tracking
+    install_coverage(app, database)
+    install_tracking(app, database)
     static = Path(os.getenv('BDT_STATIC_DIR', 'web/dist'))
     if static.is_dir():
         app.mount('/', StaticFiles(directory=static, html=True), name='web')

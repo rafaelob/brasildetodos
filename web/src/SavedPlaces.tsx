@@ -45,7 +45,7 @@ export default function SavedPlaces({ids,locale,t,onSelect,onRemove,onExplore}:{
    {error&&<button onClick={()=>setRefresh(v=>v+1)}>{t('watchRetry')}</button>}
    <div className="watch-grid" aria-busy={loading}>
    {result?.items.map(item=><article className="watch-card" key={item.id}>
-     <div className="watch-card-top"><div><span className="eyebrow">{item.place?`${t(item.place.kind)} · ${item.place.state}`:t('unknown')}</span><h2>{item.place?.name||item.id}</h2></div><button className="watch-remove" onClick={()=>onRemove(item.id)} aria-label={t('watchRemove')+' '+(item.place?.name||item.id)}>★ <span>{t('watchRemove')}</span></button></div>
+     <div className="watch-card-top"><div><span className="eyebrow">{item.place?`${t(item.place.kind)} · ${item.place.state}`:t('unknown')}</span><h2>{item.place?<button className="watch-title-link" onClick={()=>onSelect(item.id)}>{item.place.name}</button>:item.id}</h2></div><button className="watch-remove" onClick={()=>onRemove(item.id)} aria-label={t('watchRemove')+' '+(item.place?.name||item.id)}>★ <span>{t('watchRemove')}</span></button></div>
      {item.place?<><p>{item.place.address||t('noAddress')}</p>{item.status==='outside_current_profile'&&<p className="watch-warning">{t('withdrawn')}</p>}{item.place.latitude===null&&<p className="quiet">{t('noGeo')}</p>}
        <p className="watch-source">{item.place.source.dataset} · {t('reference')}: {item.place.source.reference_date||t('unknown')}</p>
        <button className="primary" onClick={()=>onSelect(item.id)}>{t('watchDetails')}</button>

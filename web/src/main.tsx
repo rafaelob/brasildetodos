@@ -5,6 +5,9 @@ import {money,safeReference} from './i18n.mjs';
 import {uiText} from './ui-text.mjs';
 import MapView from './Map';
 import Resources from './Resources';
+import SavedPlaces from './SavedPlaces';
+import CatalogCoverage from './CatalogCoverage';
+import {favoriteIds} from './watch-state.mjs';
 import {parseResourceRoute} from './resource-route.mjs';
 import Workbench,{PlaceEvidence,PrivacyControls} from './Workbench';
 import type {Detail,Locale,Money,Observation,Place,Source,User} from './types';
@@ -13,7 +16,6 @@ import './workbench.css';
 
 type Town={id:string;name:string;state:string};
 type History={at:string;type:string;fields:string[];before:Place|null;after:Place};
-type Coverage={municipalities:number;partitions:{dataset:string;state:string;records:number;geocoded:number}[];runs:{id:string;dataset:string;status:string;counts:Record<string,number>}[]};
 type Config={registration_enabled:boolean;source_code:string;revision:string};
 const states='AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 const ref=(id:string)=>encodeURIComponent(id);
@@ -26,9 +28,9 @@ function App(){
   const [view,setView]=useState(()=>parseResourceRoute(window.location.hash)?'resources':'explore'),[query,setQuery]=useState(''),[kind,setKind]=useState(''),[state,setState]=useState(''),[town,setTown]=useState(''),[bbox,setBbox]=useState('');
   const [towns,setTowns]=useState<Town[]>([]),[places,setPlaces]=useState<Place[]>([]),[page,setPage]=useState(1),[total,setTotal]=useState(0);
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[detail,setDetail]=useState<Detail|null>(null),[history,setHistory]=useState<History[]>([]);
-  const [user,setUser]=useState<User|null>(null),[config,setConfig]=useState<Config|null>(null),[coverage,setCoverage]=useState<Coverage|null>(null);
-  const [favorites,setFavorites]=useState<string[]>(()=>{const value=getStored('bdt:favorites',[]);return Array.isArray(value)?value.filter((v:unknown)=>typeof v==='string'):[];});
-  const [saved,setSaved]=useState<Place[]>([]),[mine,setMine]=useState<Observation[]>([]),[queue,setQueue]=useState<Observation[]>([]);
+  const [user,setUser]=useState<User|null>(null),[config,setConfig]=useState<Config|null>(null);
+  const [favorites,setFavorites]=useState<string[]>(()=>{const value=getStored('bdt:favorites',[]);return favoriteIds(value);});
+  const [mine,setMine]=useState<Observation[]>([]),[queue,setQueue]=useState<Observation[]>([]);
   const [region,setRegion]=useState<{municipality:Town;events:Money[];total:number;truncated:boolean}|null>(null);
   const [tab,setTab]=useState('service');
   const searchVersion=useRef(0),detailVersion=useRef(0);
@@ -43,9 +45,7 @@ function App(){
     setBusy(true);const params=new URLSearchParams({q:query,kind,state,municipality_id:town,page:String(page),limit:'30'});for(const[key,value]of [...params])if(!value)params.delete(key);if(bbox)params.set('bbox',bbox);
     api<{items:Place[];total:number}>('/places?'+params).then(result=>{if(id===searchVersion.current){setPlaces(result.items);setTotal(result.total);}}).catch(()=>{if(id===searchVersion.current)failure();}).finally(()=>{if(id===searchVersion.current)setBusy(false);});
   },220);return()=>{clearTimeout(timer);searchVersion.current++;};},[query,kind,state,town,bbox,page,view]);
-  useEffect(()=>{if(view!=='saved')return;let active=true;Promise.allSettled(favorites.map(id=>api<Detail>('/places/'+ref(id)))).then(rows=>{if(active)setSaved(rows.flatMap(row=>row.status==='fulfilled'?[row.value.place]:[]));});return()=>{active=false;};},[view,favorites]);
   async function navigate(next:string){if(parseResourceRoute(window.location.hash)){window.history.replaceState(null,'',window.location.pathname+window.location.search);setResourceRoute('');}setView(next);setDetail(null);setRegion(null);setNotice('');detailVersion.current++;
-    if(next==='coverage')try{setCoverage(await api<Coverage>('/coverage'));}catch{failure();}
     if(next==='account'&&user)try{setMine(await api<Observation[]>('/observations/mine'));}catch{failure();}
     if(next==='review')try{setQueue(await api<Observation[]>('/review'));}catch{failure();}
   }
@@ -71,9 +71,9 @@ function App(){
   </section>:<>
   {view==='explore'&&<><section className="hero"><span className="eyebrow">BRASIL DE TODOS · OPEN SOURCE</span><h1>{t('tagline')}</h1><p>{t('intro')}</p></section><section className="filters" aria-label={t('search')}><label className="search-label"><span>{t('search')}</span><input type="search" placeholder={t('search')} value={query} maxLength={200} onChange={event=>{setQuery(event.target.value);setPage(1);}}/></label><label><span>{t('states')}</span><select value={state} onChange={event=>{setState(event.target.value);setTown('');setBbox('');setPage(1);}}><option value="">{t('states')}</option>{states.map(value=><option key={value}>{value}</option>)}</select></label><label><span>{t('towns')}</span><select value={town} onChange={event=>{setTown(event.target.value);setBbox('');setPage(1);}}><option value="">{t('towns')}</option>{towns.map(value=><option key={value.id} value={value.id}>{value.name} · {value.state}</option>)}</select></label><button onClick={()=>{setQuery('');setTown('');setState('');setKind('');setBbox('');setPage(1);}}>{t('clear')}</button></section><div className="category-tabs">{['','school','health','work'].map(value=><button key={value} aria-pressed={kind===value} className={kind===value?'selected':''} onClick={()=>{setKind(value);setPage(1);}}>{t(value||'all')}</button>)}</div><div className="explorer"><section aria-live="polite" aria-busy={busy}><div className="results-heading"><strong>{busy?t('loading'):total.toLocaleString(locale)+' '+t('records')}</strong>{bbox&&<button onClick={()=>setBbox('')}>{t('clear')} ⌖</button>}</div>{places.length?<Cards items={places}/>:!busy&&<div className="empty"><h2>{t('empty')}</h2><p>{t('emptyHelp')}</p><button onClick={()=>navigate('coverage')}>{t('coverage')}</button></div>}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span><button disabled={page*30>=total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></section><MapView locale={locale} places={places} select={select} t={t} filters={{q:query,kind,state,municipality_id:town}} onBounds={bounds=>{setBbox(bounds);setPage(1);}}/></div></>}
   {view==='resources'&&<Resources t={t} locale={locale} routeHash={resourceRoute}/>}
-  {view==='saved'&&<section className="page"><h1>{t('saved')}</h1><p className="callout">{t('savedNote')}</p>{saved.length?<Cards items={saved}/>:<p className="empty">{t('empty')}</p>}</section>}
+  {view==='saved'&&<SavedPlaces ids={favorites} locale={locale} t={t} onSelect={select} onRemove={favorite} onExplore={()=>navigate('explore')}/>}
   {view==='region'&&region&&<section className="page"><h1>{t('regionTitle')} · {region.municipality.name}</h1><p className="callout">{t('regionNote')}</p><p>{region.events.length} / {region.total} {t('records')}</p><MoneyCards events={region.events}/><Resources municipalityId={region.municipality.id} t={t} locale={locale}/></section>}
-  {view==='coverage'&&<section className="page"><h1>{t('coverage')}</h1><p className="callout">{t('coverageNote')}</p>{coverage?<><div className="stat"><strong>{coverage.municipalities.toLocaleString(locale)}</strong><span>{t('municipalities')}</span></div>{coverage.partitions.length?<div className="table-scroll"><table><thead><tr><th>{t('source')}</th><th>UF</th><th>{t('records')}</th><th>{t('geocoded')}</th></tr></thead><tbody>{coverage.partitions.map(partition=><tr key={partition.dataset+partition.state}><td>{partition.dataset}</td><td>{partition.state}</td><td>{partition.records}</td><td>{partition.geocoded}</td></tr>)}</tbody></table></div>:<p>{t('noneLoaded')}</p>}<h2>{t('runs')}</h2>{coverage.runs.map(run=><article className="panel" key={run.id}><h3>{run.dataset}</h3><code>{run.status}</code><pre>{JSON.stringify(run.counts,null,2)}</pre></article>)}</>:<p>{t('loading')}</p>}</section>}
+  {view==='coverage'&&<CatalogCoverage locale={locale} t={t}/>}
   {view==='account'&&<section className="page narrow"><h1>{t('account')}</h1><p>{t('authNote')}</p>{user?<><p><strong>{user.username}</strong></p><button onClick={async()=>{try{await api('/auth/logout',{method:'POST'});setUser(null);setMine([]);}catch{failure();}}}>{t('logout')}</button><h2>{t('myContributions')}</h2><ObservationCards rows={mine}/><PrivacyControls rows={mine} t={t} onChange={()=>{api<Observation[]>('/observations/mine').then(setMine).catch(failure);}} onDeleted={()=>{setUser(null);setMine([]);}}/></>:<form className="panel" onSubmit={authentication}><label>{t('username')}<input name="username" autoComplete="username" pattern="[a-zA-Z0-9_-]{3,40}" required/></label><label>{t('password')}<input name="password" type="password" autoComplete="current-password" minLength={12} maxLength={128} required/></label><button className="primary" disabled={busy}>{t('login')}</button>{config?.registration_enabled?<button disabled={busy} type="button" onClick={event=>{const form=event.currentTarget.form;if(form?.reportValidity())authentication({preventDefault(){},currentTarget:form} as React.FormEvent<HTMLFormElement>,true);}}>{t('register')}</button>:<p>{t('registrationOff')}</p>}</form>}</section>}
   {view==='review'&&user?.role==='reviewer'&&<section className="page"><h1>{t('review')}</h1>{queue.length?queue.map(row=><article className="panel" key={row.id}><button onClick={()=>select(row.place_id)}>{row.place_id}</button><ObservationCards rows={[row]}/><form onSubmit={event=>review(event,row.id)}><label>{t('reviewNote')}<textarea required name="note" minLength={10} maxLength={1000}/></label><select name="decision" aria-label={t('review')}><option value="approved">{t('approve')}</option><option value="rejected">{t('reject')}</option></select><button className="primary">{t('submit')}</button></form></article>):<p>{t('noReview')}</p>}</section>}
   {view==='workbench'&&user?.role==='reviewer'&&<Workbench t={t}/>}
