@@ -87,6 +87,8 @@ jobs:
       - run: python ops/browser_smoke.py
       - name: Exercise documents, independent review, withdrawal and account deletion
         run: python ops/browser_extended.py
+      - name: Exercise resource filtering, immutable versions and monetary precision
+        run: python ops/browser_resources.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -94,6 +96,7 @@ jobs:
           path: |
             test-results/browser/
             test-results/browser-extended/
+            test-results/browser-resources/
   official-source-probe:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
