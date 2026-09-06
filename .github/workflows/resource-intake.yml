@@ -19,6 +19,9 @@ on:
     paths:
       - backend/bdt/resource_profiles.py
       - backend/bdt/resource_sync.py
+      - backend/bdt/resource_validation.py
+      - backend/bdt/resource_diagnostics.py
+      - backend/bdt/evidence.py
       - ops/resource_intake.py
       - .github/workflows/resource-intake.yml
 permissions:

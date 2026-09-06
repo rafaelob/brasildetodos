@@ -25,3 +25,8 @@ for(const locale of ['pt-BR','en','es'])test('complete-object copy '+locale,()=>
  assert.notEqual(objectText(locale,'full'),'full');assert.notEqual(objectText(locale,'characters'),'characters');
 });
 test('invalid input fails explicitly',()=>assert.throws(()=>objectPresentation(null)));
+for(const locale of ['pt-BR','en','es'])test('short descriptions are flagged without expansion '+locale,()=>{
+ const item=objectPresentation('TEST');
+ assert.equal(item.heading,'TEST');assert.equal(item.text,'TEST');
+ assert.notEqual(objectText(locale,'short'),'short');
+});

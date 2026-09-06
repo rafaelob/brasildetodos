@@ -22,11 +22,11 @@ from browser_resource_sharing import add_precise
 
 LONG_OBJECT = 'OBJETO LONGO DE TESTE: ' + 'Á'*5098
 
-def add_long_object(database, folder):
-    row={'numeroControlePNCP':'12345678000199-2-000005/2026','anoContrato':2026,'sequencialContrato':5,
+def add_long_object(database, folder, *, title=LONG_OBJECT, number=5):
+    row={'numeroControlePNCP':f'12345678000199-2-{number:06}/2026','anoContrato':2026,'sequencialContrato':number,
         'orgaoEntidade':{'cnpj':'12345678000199','razaoSocial':'SYNTHETIC buyer'},
         'unidadeOrgao':{'codigoIbge':'1234567','ufSigla':'BA'},
-        'objetoContrato':LONG_OBJECT,'dataAtualizacao':'2026-09-04T12:00:00',
+        'objetoContrato':title,'dataAtualizacao':'2026-09-04T12:00:00',
         'dataPublicacaoPncp':'2026-09-04T12:00:00','valorInicial':'100.01','receita':False}
     plan=collection_plan('pncp_contracts',start='20260904',end='20260904')
     def loader(url,path,budget):
@@ -61,7 +61,7 @@ def main():
     report={'synthetic_test_only':True,'public_deployment':False,'controlled_client_timing':True,'status':'started','checks':[]}
     with tempfile.TemporaryDirectory(prefix='bdt-lifecycle-') as tmp:
         root=Path(tmp);dburl='sqlite:///'+str(root/'test.db');db=Database(dburl);db.initialize()
-        try:seed(db,root/'seed');add_precise(db,root/'precise');add_long_object(db,root/'long')
+        try:seed(db,root/'seed');add_precise(db,root/'precise');add_long_object(db,root/'long');add_long_object(db,root/'short',title='TEST',number=6)
         finally:db.engine.dispose()
         origin='http://127.0.0.1:8044'
         env=os.environ|{'BDT_DATABASE_URL':dburl,'BDT_PUBLIC_ORIGIN':origin,'BDT_STATIC_DIR':str(Path('web/dist').resolve()),'BDT_DATA_DIR':tmp,'BDT_ALLOW_REGISTRATION':'0'}
@@ -128,6 +128,12 @@ def main():
                                 assert not page.evaluate('document.documentElement.scrollWidth > innerWidth')
                                 report['checks'].append({'full_long_object_keyboard_access':True,'width':width,'locale':locale,'cancel_discards_late_export':True,'filter_change_discards_late_export':True,'late_copy_does_not_confirm_new_link':True,'new_export_still_works':True,'return_to_previous_selection_has_no_stuck_busy':True})
                                 page.screenshot(path=str(out/f'lifecycle-{locale}-{width}.png'),full_page=True)
+                                page.goto(origin+'#resources?'+urlencode({'id':'pncp_contracts:12345678000199-2-000006/2026','locale':locale}),wait_until='domcontentloaded')
+                                expect(page.get_by_role('heading',name='TEST',exact=True)).to_be_visible()
+                                expect(page.locator('.resource-object-short')).to_be_visible()
+                                expect(page.locator('.resource-object details')).to_have_count(0)
+                                report['checks'][-1]['short_source_object_preserved_and_flagged']=True
+                                page.screenshot(path=str(out/f'short-object-{locale}-{width}.png'),full_page=True)
                             except Exception:
                                 page.screenshot(path=str(out/f'failure-{locale}-{width}.png'),full_page=True);raise
                             finally:page.close()

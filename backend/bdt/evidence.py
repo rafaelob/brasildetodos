@@ -78,14 +78,14 @@ MAX_PNCP_OBJECT_CHARS = 16384  # Local processing budget, not a claimed PNCP max
 class ResourceInput(StrictModel):
     id: str = Field(pattern=r'^[a-z0-9_-]+:[A-Za-z0-9._/-]+$', max_length=200)
     kind: Literal['contract', 'instrument', 'proposal', 'work']
-    title: str = Field(min_length=5, max_length=MAX_PNCP_OBJECT_CHARS)
+    title: str = Field(min_length=1, max_length=MAX_PNCP_OBJECT_CHARS)
     municipality_id: str | None = Field(default=None, pattern=r'^[0-9]{7}$')
     source: Source
     attributes: dict = Field(default_factory=dict)
 
     @model_validator(mode='after')
     def bounded_attributes(self):
-        if len(self.title) > 4000 and not (self.kind == 'contract'
+        if not 5 <= len(self.title) <= 4000 and not (self.kind == 'contract'
                 and self.source.dataset == 'pncp_contracts'
                 and self.attributes.get('profile') == 'pncp_contracts'):
             raise ValueError('resource_title_profile_limit')
