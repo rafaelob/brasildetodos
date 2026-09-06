@@ -1,0 +1,41 @@
+name: Local Portuguese OCR integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - backend/bdt/document_ocr.py
+      - backend/bdt/documents.py
+      - backend/tests/test_document_ocr.py
+      - ops/ocr_runtime.py
+      - .github/workflows/document-ocr.yml
+permissions:
+  contents: read
+concurrency:
+  group: document-ocr-main
+  cancel-in-progress: false
+jobs:
+  portuguese-ocr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-por
+      - run: python -m pip install -e '.[test]'
+      - name: Verify private OCR, lease, rollback and operator authorization
+        run: python -m pytest backend/tests/test_document_ocr.py -q
+      - name: One real Portuguese OCR pass on a synthetic scanned page
+        run: python ops/ocr_runtime.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portuguese-ocr-synthetic-evidence
+          retention-days: 7
+          path: |
+            test-results/ocr-runtime/result.json
+            test-results/ocr-runtime/SYNTHETIC-*
