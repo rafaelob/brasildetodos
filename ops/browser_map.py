@@ -137,14 +137,14 @@ def main() -> None:
                                     expect(panel.get_by_role('button',name=hide,exact=True)).to_be_visible()
                                 # A newer failing query must clear the previous count and clickable points.
                                 flags['fail_data']=True
-                                page.get_by_label('Busque por nome ou endereço',exact=True).fill('Filtro Sintético')
+                                page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('Filtro Sintético')
                                 expect(panel.locator('.map-caption')).to_have_count(0)
                                 expect(panel.get_by_role('button',name='Atualizar',exact=True)).to_be_visible()
                                 flags['fail_data']=False
-                                page.get_by_label('Busque por nome ou endereço',exact=True).fill('')
+                                page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('')
                                 expect(panel.locator('.map-caption')).to_contain_text('1 registros')
                                 flags['bad_counts']=True
-                                page.get_by_label('Busque por nome ou endereço',exact=True).fill('Escola')
+                                page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('Escola')
                                 expect(panel.get_by_role('button',name='Atualizar',exact=True)).to_be_visible()
                                 expect(panel.locator('.map-caption')).to_have_count(0)
                                 flags['bad_counts']=False
