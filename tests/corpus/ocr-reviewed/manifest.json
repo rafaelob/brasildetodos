@@ -1,0 +1,62 @@
+{
+  "classification": "synthetic-test-only",
+  "expected_candidate_fields": {
+    "agreement_reference": "977950/2025",
+    "estimated_cents": 364261056,
+    "planned_capacity": 170,
+    "proposal_reference": "036806/2025"
+  },
+  "files": [
+    {
+      "bytes": 1655,
+      "path": "SYNTHETIC-native.pdf",
+      "role": "original-artifact-file",
+      "sha256": "0f7c3d77ffb7ee6d32b323ef141f8d8b9586ea76c9d8eb195d7bc2aa6f385074"
+    },
+    {
+      "bytes": 62544,
+      "path": "SYNTHETIC-page.png",
+      "role": "original-artifact-file",
+      "sha256": "52d42ffcab848e242f9dc9ea2bb35e804f939bbd2a79d108b123f1d01cd4700e"
+    },
+    {
+      "bytes": 59932,
+      "path": "SYNTHETIC-scanned.pdf",
+      "role": "original-artifact-file",
+      "sha256": "feb3c4ca92775e36d04b77204d84af23c5579d3807f63d44e714cde974a22a7a"
+    },
+    {
+      "bytes": 5067,
+      "path": "native-extraction.json",
+      "role": "derived-test-evidence",
+      "sha256": "1f23f0aa24663c00d049d197ed1693f23bad7d9d15cfc80669f061b71fb83700"
+    },
+    {
+      "bytes": 174,
+      "path": "recognized-text.txt",
+      "role": "derived-test-evidence",
+      "sha256": "8745d17f505bde210f9d85d0fab6882f3cbbc426231d1709f3b435ec9c67f3b2"
+    },
+    {
+      "bytes": 915,
+      "path": "result.json",
+      "role": "original-artifact-file",
+      "sha256": "df2a8f0fbb2d343a82ced6e3a96375fb1e783977c430be5e9cd5d94b8952c4fc"
+    }
+  ],
+  "license": "CC-BY-4.0",
+  "ocr_reexecuted_by_archive": false,
+  "official_document": false,
+  "original_bytes_preserved": true,
+  "privacy_review": "Synthetic text only; no people, signatures or attachments; visually inspected.",
+  "production_import_allowed": false,
+  "schema": "bdt.reviewed-ocr-corpus.v1",
+  "source": {
+    "archive_sha256": "3c7bf8d708869e7c620b44cac150930b3be50759b0b814d040535d2d43b96857",
+    "artifact_id": 9981605829,
+    "artifact_name": "portuguese-ocr-synthetic-evidence",
+    "repository": "rafaelob/brasildetodos",
+    "revision": "c6724cf38019a1c1a4d0938a911cb56bea111392",
+    "run_id": 34008123457
+  }
+}

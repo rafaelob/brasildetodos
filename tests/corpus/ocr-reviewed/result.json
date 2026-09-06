@@ -1,0 +1,25 @@
+{
+  "revision": "c6724cf38019a1c1a4d0938a911cb56bea111392",
+  "fixture": "synthetic-scanned-Portuguese",
+  "official_corpus_evaluated": false,
+  "engine": "tesseract 5.3.4",
+  "engine_calls": 1,
+  "expected_fields": {
+    "agreement_reference": "977950/2025",
+    "proposal_reference": "036806/2025",
+    "estimated_cents": 364261056,
+    "planned_capacity": 170
+  },
+  "recognized_test_text": "DOCUMENTO SINTETICO PARA TESTE\nCONVENIO 977950/2025\n\nPROPOSTA 036806/2025\n\nVALOR ESTIMADO: R$ 3.642.610,56\nATÉ 170 CRIANÇAS\n\nSem validade administrativa. Dados fictícios.\n",
+  "result": {
+    "document_id": "c6c64eff4d7d3fee3d360de842a024edc3c977dd511d092ea3df75da3d05d09f",
+    "pages": [
+      1
+    ],
+    "state": "extracted",
+    "original_sha256": "feb3c4ca92775e36d04b77204d84af23c5579d3807f63d44e714cde974a22a7a",
+    "original_preserved": true,
+    "public": false,
+    "review_required": true
+  }
+}
