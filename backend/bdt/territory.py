@@ -4,6 +4,7 @@ A failed upstream request must not turn valid prior territorial identities into
 invented data or silently refresh their reference/collection dates.
 """
 from __future__ import annotations
+from contextlib import closing
 import json
 import re
 import sqlite3
@@ -18,7 +19,7 @@ def import_territory_snapshot(database, path: Path) -> dict:
     if not path.is_file() or path.stat().st_size > 512*1024*1024:
         raise ValueError('territory_snapshot_missing_or_too_large')
     uri='file:'+quote(str(path.resolve()))+'?mode=ro'
-    with sqlite3.connect(uri,uri=True) as source:
+    with closing(sqlite3.connect(uri,uri=True)) as source:
         source.execute('PRAGMA query_only=ON')
         rows=source.execute('SELECT id,name,state,source FROM municipalities ORDER BY id').fetchmany(10001)
     if not rows or len(rows)>10000:

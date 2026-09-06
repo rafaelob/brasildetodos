@@ -1,8 +1,8 @@
 FROM node:24.20.0-bookworm-slim AS web
 WORKDIR /app/web
 RUN node -e "if (process.versions.node !== '24.20.0') process.exit(1)"
-COPY web/package*.json web/.npmrc ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY web/package.json web/package-lock.json web/.npmrc ./
+RUN npm ci
 COPY web/ ./
 COPY ops/check-node.mjs /app/ops/check-node.mjs
 RUN npm run build
@@ -13,7 +13,9 @@ RUN python -c "import sys; assert sys.version_info[:3] == (3,14,7)"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 BDT_STATIC_DIR=/app/web/dist BDT_DATA_DIR=/app/data
 COPY pyproject.toml README.md LICENSE ./
 COPY backend/ backend/
-RUN pip install --no-cache-dir '.[postgres]' && useradd --uid 10001 --create-home app && mkdir -p /app/data && chown app:app /app/data
+COPY requirements/ requirements/
+COPY ops/install_locked.py ops/python_lock_manifest.py ops/
+RUN python ops/install_locked.py && useradd --uid 10001 --create-home app && mkdir -p /app/data && chown app:app /app/data
 COPY --from=web /app/web/dist web/dist
 ARG REVISION=development
 ENV BDT_REVISION=${REVISION}

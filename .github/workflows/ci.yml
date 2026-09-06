@@ -35,7 +35,7 @@ jobs:
           python-version-file: '.python-version'
       - name: Verify exact Python runtime and configuration
         run: python ops/check_toolchain.py --runtime python
-      - run: python -m pip install -e '.[test]'
+      - run: python ops/install_locked.py --editable
       - run: python -m pytest --cov=bdt --cov-report=xml --cov-report=term --cov-fail-under=85 --junitxml=test-results/backend.xml
       - uses: actions/upload-artifact@v4
         if: always()
@@ -58,8 +58,8 @@ jobs:
           node-version-file: '.nvmrc'
       - name: Verify exact Node runtime
         run: node ../ops/check-node.mjs
-      - name: Install (lock file preferred)
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Install the verified web lock
+        run: npm ci
       - name: Dependency diagnostic
         run: npm audit --json > npm-audit.json || true
       - run: npm test
@@ -89,7 +89,7 @@ jobs:
         with:
           name: web-build
           path: web
-      - run: python -m pip install -e '.[test]' playwright==1.56.0
+      - run: python ops/install_locked.py --editable && python -m pip install playwright==1.56.0
       - run: python ops/browser_smoke.py
       - name: Exercise documents, independent review, withdrawal and account deletion
         run: python ops/browser_extended.py
