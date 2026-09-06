@@ -1,0 +1,13 @@
+{
+  "schema": "bdt.python-lock.v1",
+  "python": "3.14.7",
+  "system": "Linux",
+  "architecture": "x86_64",
+  "pyproject_sha256": "c371b5acb142465741d49ebbf2949d2cf1c6bb29d553c5b41e373740fec87092",
+  "lock_sha256": "7a2b0871796b3b71bda0483afae8be8c32ff650afe315095e8417d11a144609a",
+  "packages": 37,
+  "scope": "runtime_test_postgres_and_build_dependencies",
+  "installed_versions_verified": true,
+  "hash_checked_installation_required": true,
+  "not_a_vulnerability_audit": true
+}
