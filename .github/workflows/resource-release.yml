@@ -1,0 +1,61 @@
+name: Combined public resource release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - backend/bdt/resource_release.py
+      - ops/resource_release_acceptance.py
+      - .github/workflows/resource-release.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: combined-resource-release-main
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify exact Python runtime and configuration
+        run: python ops/check_toolchain.py --runtime python
+      - run: python ops/install_locked.py --editable
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '9981549978'
+          run-id: '34007758949'
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: input-health
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '9993985086'
+          run-id: '34048819034'
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: input-resources
+      - name: Install exact selected public bytes, replay and verify the application API
+        run: >-
+          python ops/resource_release_acceptance.py
+          --catalog input-health/catalog
+          --resources input-resources
+          --catalog-sha256 beacb31c3c12713fd818db5abbf61e9d10d7088fdc4852af4bb7fdc434595af9
+          --report-sha256 34554d95fe0fa4d0a0211d1c804b9d9c187232ba0f7602b508c7cff8a7b3d3d0
+          --resources-sha256 d18d05e8a7d98847dad8be3cd774591c35649193be0490f9a0c5ccaa9da76245
+          --output test-results/combined-release/acceptance.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: combined-resource-release-evidence
+          retention-days: 7
+          path: test-results/combined-release/acceptance.json
+# This repeats a pinned data acceptance case, not fresh collection or production
+# deployment. If retained inputs expire, select and review new artifacts/hashes.
+# Never upload temporary databases, user content or original raw datasets.
