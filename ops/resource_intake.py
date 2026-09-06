@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 from urllib.parse import quote
-
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from bdt.api import create_app
@@ -13,6 +12,7 @@ from bdt.domain import now
 from bdt.evidence import Resource
 from bdt.resource_profiles import PROFILES, collection_plan
 from bdt.resource_diagnostics import ResourceTextError
+from bdt.resource_validation import validate_collection
 from bdt.resource_sync import ResourceRevision, decode, import_resources
 from bdt.storage import Database, Finance
 from bdt.sync import atomic_json, collect, file_hash
@@ -34,8 +34,6 @@ def main():
     try:
         report['territory']=import_territory_snapshot(database,args.territory_snapshot)
         plans=[collection_plan('pncp_contracts',start=args.date,end=args.date,page_size=500,max_pages=20)]
-        # Discovery is explicitly partial and is NEVER imported. It only identifies
-        # one real record to run a separate, complete identity-filtered query.
         for profile in ('transferegov_special_plans','obrasgov_projects'):
             folder=root/(profile+'-discovery')
             try:
@@ -56,8 +54,10 @@ def main():
                 collection=collect(plan,folder)
                 entry['collection']={key:collection.get(key) for key in ('status','records','expected_records','terminal')}
                 entry['pages']=collection['pages']
+                entry['preflight']=validate_collection(database,folder)
+                if entry['preflight']['status']!='valid':
+                    raise ValueError('resource_preflight_rejected')
                 entry['import']=import_resources(database,folder)
-                # A second import must not create another version or any payment.
                 again=import_resources(database,folder)
                 if again['updated'] or again['created'] or again['unchanged']!=again['read']:
                     raise ValueError('resource_import_not_idempotent')
@@ -84,8 +84,6 @@ def main():
             report['by_profile']=partition
             with (public/'resources.jsonl').open('w',encoding='utf-8') as out:
                 for row in rows:out.write(json.dumps(row.payload,ensure_ascii=False)+'\n')
-            # No full database, accounts, raw supplier fields or raw collections
-            # are uploaded. This export is normalized metadata, not source bytes.
             report['resources_sha256']=file_hash(public/'resources.jsonl')
         app=create_app(url,testing=True)
         with TestClient(app) as client:

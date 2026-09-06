@@ -1,11 +1,9 @@
 """Atomic, versioned resource metadata from complete, bounded official queries.
 
-No HTTP data are accepted through public write endpoints. Original pages remain
-operator-private; only profile-allowlisted metadata are published. A completed
-query is not national coverage and absence from a query never removes a record.
+Original pages remain operator-private; only allowlisted metadata are published.
+A completed query is not national coverage and absence never removes a record.
 """
 from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -13,16 +11,14 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
-
-from sqlalchemy import Column, ForeignKey, Integer, JSON, String, UniqueConstraint, func, select
+from sqlalchemy import Column, ForeignKey, Integer, JSON, String, UniqueConstraint, select
 from sqlalchemy.exc import IntegrityError
-
 from .domain import Source, digest, now
-from .evidence import Resource, ResourceInput, initialize_extensions
+from .evidence import Resource, initialize_extensions
 from .resource_profiles import PROFILES, collection_plan, normalize_resource
 from .resource_diagnostics import ResourceTextError
 from .storage import Base, Database, Ingestion, Municipality
-from .sync import PagePlan, atomic_json, collect, file_hash, page_url
+from .sync import PagePlan, atomic_json, collect, page_url
 
 
 class ResourceRevision(Base):
@@ -61,8 +57,6 @@ def decode(raw: bytes):
 
 
 def semantic(payload):
-    # A query URL/page, byte hash or local collection date is provenance, not a
-    # change in the contract. Keep the first exact source of an unchanged version.
     source = {k: v for k, v in payload['source'].items()
               if k not in {'url', 'collected_at', 'snapshot_sha256'}}
     attributes = {k: v for k, v in payload['attributes'].items()
@@ -139,7 +133,7 @@ def _reviewed_plan(report):
     return plan
 
 
-def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalities: dict):
+def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalities: dict, *, on_invalid=None):
     entries = report.get('pages')
     if not isinstance(entries, list) or not entries or len(entries) > plan.max_pages:
         raise ValueError('invalid_resource_page_manifest')
@@ -159,7 +153,7 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
                     or raw != b'' or entry.get('records') != 0 or report.get('records') != 0
                     or report.get('expected_records') != 0 or report.get('terminal') != 'http_204_no_content'):
                 raise ValueError('invalid_resource_no_content_evidence')
-            return  # Proven empty query, never deletion or national certification.
+            return
         if entry.get('status_code', 200) != 200:
             raise ValueError('invalid_resource_http_status')
         payload = decode(raw)
@@ -185,14 +179,18 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
             seen.add(identity)
             source = Source(dataset=plan.dataset, record_id=identity, url=entry['url'], reference_date=None,
                 collected_at=entry['collected_at'], snapshot_sha256=entry['sha256'])
+            total += 1
             try:
                 body = normalize_resource(plan.dataset, row, source, municipalities)
-            except ResourceTextError as error:
-                error.with_reference(plan.dataset, identity, entry["sha256"])
-                raise
-            _check_scope(plan, row, body)
+                _check_scope(plan, row, body)
+            except ValueError as error:
+                if isinstance(error, ResourceTextError):
+                    error.with_reference(plan.dataset, identity, entry['sha256'])
+                if on_invalid is None:
+                    raise
+                on_invalid(error, plan.dataset, identity, entry['sha256'])
+                continue
             yield body
-            total += 1
     if (len(entries) != max(declared_pages, 1) or total != declared_records or total != report.get('records')
             or report.get('expected_records') != declared_records):
         raise ValueError('resource_terminal_reconciliation_failure')
