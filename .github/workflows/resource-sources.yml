@@ -1,0 +1,36 @@
+name: Official resource schema inspection
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/resource_source_probe.py
+      - .github/workflows/resource-sources.yml
+permissions:
+  contents: read
+concurrency:
+  group: resource-schema-inspection
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e .
+      - name: Inspect schemas and one bounded PNCP page
+        run: python ops/resource_source_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-resource-schema-evidence
+          retention-days: 7
+          path: |
+            test-results/resource-sources/report.json
+            test-results/resource-sources/*-openapi.json
+            test-results/resource-sources/*-openapi.json.manifest.json
