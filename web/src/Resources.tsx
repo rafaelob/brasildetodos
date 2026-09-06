@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {api} from './api';
 import {money,safeReference} from './i18n.mjs';
-import {resourceAmounts} from './resource-i18n.mjs';
+import {resourceAmounts,resourceAmountText} from './resource-i18n.mjs';
 import type {Locale,Source} from './types';
 
 type T=(key:string)=>string;
@@ -47,10 +47,11 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
       ['starts_on','resourceStart'],['ends_on','resourceEnd']].map(([key,label])=>typeof a[key]==='string'
         ? <div className="resource-fact" key={key}><dt>{t(label)}</dt><dd>{String(a[key])}</dd></div>:null)}</dl>
     {amounts.length||planned.length?<><p>{t('resourceNotPayment')}</p><div className="money-grid">
-      {amounts.map(item=><div className="money" key={item.key}><span>{t(item.label)}</span><h3>{money(item.cents,locale)}</h3></div>)}
+      {amounts.map(item=><div className="money" key={item.key}><span>{t(item.label)}</span><h3>{resourceAmountText(item,locale)}</h3></div>)}
       {planned.map((entry,index)=><div className="money" key={index}><span>{t('resourceProjectAmount')}</span>
         <h3>{money(Number(entry.planned_cents),locale)}</h3><p>{typeof entry.source_name==='string'?entry.source_name:t('unknown')}</p></div>)}
     </div></>:<p>{t('resourceNoAmount')}</p>}
+    {amounts.some(item=>'decimal' in item)&&<p className="callout">{t('resourcePrecision')}</p>}
     <Provenance source={row.source} t={t}/>
     <button aria-expanded={show} onClick={()=>setShow(value=>!value)}>{t(show?'resourceHistoryClose':'resourceHistory')}</button>
     {show&&<section aria-label={t('resourceHistory')}><p>{t('resourceHistoryNotice')}</p>
@@ -60,7 +61,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
           <h3>{t('resourceRevision')} {version.revision}</h3>
           <p>{t('resourceCaptured')}: {version.observed_at}</p>
           <p>{version.revision===1?t('resourceInitial'):t('resourceChanges')+': '+version.changed_fields.join(', ')}</p>
-          <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{money(item.cents,locale)}</dd></div>)}</dl>
+          <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{resourceAmountText(item,locale)}</dd></div>)}</dl>
           <Provenance source={version.resource.source} t={t}/>
         </article>)}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button>
           <span>{page}</span><button disabled={page*5>=history.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></>}

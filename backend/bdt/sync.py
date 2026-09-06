@@ -73,6 +73,12 @@ def page_url(plan: PagePlan, index: int) -> str:
 def download_retry(url: str, target: Path, max_bytes: int, *, attempts: int = 3, sleep=time.sleep):
     for attempt in range(attempts):
         try:
+            parsed = urlsplit(url)
+            # Only the documented PNCP contract endpoints may use a bodyless
+            # HTTP 204 as query evidence; ordinary file downloads remain strict.
+            if parsed.hostname == 'pncp.gov.br' and parsed.path in {
+                    '/api/consulta/v1/contratos', '/api/consulta/v1/contratos/atualizacao'}:
+                return safe_download(url, target, max_bytes, allow_no_content=True)
             return safe_download(url, target, max_bytes)
         except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as error:
             retryable = not isinstance(error, httpx.HTTPStatusError) or error.response.status_code in {429, 500, 502, 503, 504}
@@ -109,6 +115,21 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                 metadata = loader(url, path, plan.max_bytes_per_page)
                 if file_hash(path) != metadata['sha256']:
                     raise ValueError('download_hash_mismatch')
+            if metadata.get('status_code') == 204:
+                if (plan.dataset != 'pncp_contracts' or index != 0 or report['records'] != 0
+                        or urlsplit(plan.url).hostname != 'pncp.gov.br'
+                        or urlsplit(plan.url).path not in {'/api/consulta/v1/contratos', '/api/consulta/v1/contratos/atualizacao'}
+                        or path.stat().st_size != 0 or metadata.get('bytes') != 0):
+                    raise ValueError('unexpected_no_content_response')
+                report['pages'].append({key: metadata.get(key) for key in
+                    ('url', 'sha256', 'bytes', 'collected_at', 'etag', 'status_code')} |
+                    {'index': 0, 'file': path.name, 'records': 0})
+                report.update(status='complete', terminal='http_204_no_content',
+                              expected_records=0, finished_at=now())
+                atomic_json(checkpoint, report)
+                return report
+            if metadata.get('status_code', 200) != 200:
+                raise ValueError('unexpected_page_http_status')
             payload = json.loads(path.read_text(encoding='utf-8-sig'))
             rows = payload.get(plan.root) if isinstance(payload, dict) else None
             if not isinstance(rows, list):
@@ -136,6 +157,8 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                     raise ValueError('duplicate_source_identity_across_pages')
                 identities.add(identity)
             entry = {key: metadata.get(key) for key in ('url', 'sha256', 'bytes', 'collected_at', 'etag')}
+            if 'status_code' in metadata:
+                entry['status_code'] = metadata['status_code']
             entry.update(index=index, file=path.name, records=len(rows))
             report['pages'].append(entry)
             report['records'] += len(rows)

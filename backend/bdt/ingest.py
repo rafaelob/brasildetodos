@@ -27,7 +27,7 @@ HOSTS = frozenset({
     "api-publica.transferegov.gestao.gov.br", "api-publica.obrasgov.gestao.gov.br", "pncp.gov.br",
 })
 
-def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024) -> dict:
+def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *, allow_no_content: bool = False) -> dict:
     """Operator-only downloader. Use a network-restricted worker, never public HTTP."""
     parsed = urlsplit(url)
     if parsed.scheme != "https" or parsed.hostname not in HOSTS or parsed.port not in {None, 443} or parsed.username or parsed.password:
@@ -42,7 +42,8 @@ def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024) ->
         with httpx.Client(timeout=httpx.Timeout(60, connect=15), follow_redirects=False, trust_env=False) as client:
             with client.stream("GET", url, headers={"User-Agent": "BrasilDeTodos/0.1 (+https://github.com/rafaelob/brasildetodos)"}) as response:
                 response.raise_for_status()
-                if response.status_code != 200:
+                no_content = allow_no_content and response.status_code == 204
+                if response.status_code != 200 and not no_content:
                     raise ValueError("Expected full HTTP 200 response; redirects require reviewed source configuration")
                 with part.open("wb") as handle:
                     for block in response.iter_bytes():
@@ -51,9 +52,11 @@ def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024) ->
                             raise ValueError("Download exceeds configured byte budget")
                         handle.write(block)
                         sha.update(block)
-                if total == 0:
+                if total == 0 and not no_content:
                     raise ValueError("Empty download")
-                metadata = {"url": url, "sha256": sha.hexdigest(), "bytes": total, "collected_at": now(), "etag": response.headers.get("etag")}
+                if no_content and total != 0:
+                    raise ValueError("HTTP 204 must not contain a body")
+                metadata = {"url": url, "sha256": sha.hexdigest(), "bytes": total, "collected_at": now(), "etag": response.headers.get("etag"), "status_code": response.status_code}
         os.replace(part, target)
         target.with_suffix(target.suffix + ".manifest.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         return metadata

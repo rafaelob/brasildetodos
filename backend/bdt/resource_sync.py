@@ -153,6 +153,14 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
         raw = path.read_bytes()
         if len(raw) != entry.get('bytes') or hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
             raise ValueError('resource_page_integrity_failure')
+        if entry.get('status_code') == 204:
+            if (plan.dataset != 'pncp_contracts' or index != 0 or len(entries) != 1
+                    or raw != b'' or entry.get('records') != 0 or report.get('records') != 0
+                    or report.get('expected_records') != 0 or report.get('terminal') != 'http_204_no_content'):
+                raise ValueError('invalid_resource_no_content_evidence')
+            return  # Proven empty query, never deletion or national certification.
+        if entry.get('status_code', 200) != 200:
+            raise ValueError('invalid_resource_http_status')
         payload = decode(raw)
         if not isinstance(payload, dict) or not isinstance(payload.get(plan.root), list):
             raise ValueError('resource_response_schema_changed')
@@ -195,7 +203,7 @@ def import_resources(database, folder: Path) -> dict:
     initialize_resource_versions(database)
     result = {'read': 0, 'created': 0, 'updated': 0, 'unchanged': 0, 'unresolved_municipality': 0,
               'profile': plan.dataset, 'scope': plan.parameters, 'removed': 0,
-              'financial_events_created': 0, 'automatic_place_links': 0, 'national_catalog_certified': False}
+              'financial_events_created': 0, 'automatic_place_links': 0, 'subcent_records': 0, 'subcent_fields': 0, 'national_catalog_certified': False}
     with database.session() as session:
         load = Ingestion(dataset=plan.dataset, source={'url': plan.url, 'query': plan.parameters,
             'manifest_sha256': hashlib.sha256(raw_manifest).hexdigest()})
@@ -210,6 +218,9 @@ def import_resources(database, folder: Path) -> dict:
                 last = session.scalar(select(ResourceRevision).where(ResourceRevision.resource_id == body.id)
                                       .order_by(ResourceRevision.revision.desc()).limit(1))
                 result['read'] += 1
+                precise = body.attributes.get('precise_amounts', {})
+                result['subcent_records'] += bool(precise)
+                result['subcent_fields'] += len(precise)
                 result['unresolved_municipality'] += body.municipality_id is None
                 if row is not None:
                     if last is None or digest(semantic(row.payload)) != last.fingerprint:

@@ -25,3 +25,25 @@ test('amount cards are separate and never include an implied sum or unknown fina
   assert.ok(rows.every(row=>Object.hasOwn(amountFields,row.key)));
   assert.deepEqual(resourceAmounts({initial_cents:true,global_cents:Number.MAX_SAFE_INTEGER+1}),[]);
 });
+
+test('PNCP subcent amounts keep exact decimal metadata, never become payment cents',async()=>{
+  const {resourceAmountText}=await import('../src/resource-i18n.mjs');
+  const rows=resourceAmounts({profile:'pncp_contracts',initial_cents:null,global_cents:10,
+    precise_amounts:{initial:'100.0001'}});
+  assert.equal(rows.length,2);assert.equal(rows[0].cents,null);
+  assert.equal(rows[0].decimal,'100.0001');assert.equal(rows[1].cents,10);
+  for(const locale of ['pt-BR','en','es']){
+    assert.match(resourceAmountText(rows[0],locale),/[.,]0001/);
+    const big={decimal:'90071992547409.9099',cents:null};
+    assert.match(resourceAmountText(big,locale),/[.,]9099/);
+  }
+});
+
+test('unsupported precision is not silently rounded or replaced with a conflicting cent value',()=>{
+  for(const value of ['0.00001','bad','1e-4',1.2345,'-1.2345','90071992547409.9199']){
+    const result=resourceAmounts({profile:'pncp_contracts',initial_cents:123,
+      precise_amounts:{initial:value}});
+    assert.deepEqual(result,[]);
+  }
+  assert.deepEqual(resourceAmounts({initial_cents:123,precise_amounts:{initial:'0.0001'}}).map(a=>a.cents),[123]);
+});

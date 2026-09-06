@@ -1,3 +1,4 @@
+import {money} from './i18n.mjs';
 export const resourceMessages = {
   'pt-BR': {
     resources:'Obras e recursos',resourceIntro:'Explore contratos, planos e projetos carregados. Esta seleção não representa todos os gastos públicos.',
@@ -13,6 +14,7 @@ export const resourceMessages = {
     resourceInitialAmount:'Valor inicial informado',resourceGlobalAmount:'Valor global informado',
     resourceAccumulatedAmount:'Valor acumulado informado',resourceOperatingAmount:'Custeio previsto no plano',
     resourceInvestmentAmount:'Investimento previsto no plano',resourceProjectAmount:'Investimento previsto por fonte',
+    resourcePrecision:'A fonte publica frações de centavo. A precisão foi preservada, sem arredondamento.',
     resourceNoAmount:'Nenhum valor estruturado neste registro.',resourceStatus:'Situação declarada',resourceBuyer:'Órgão comprador',
     resourceStart:'Início de vigência informado',resourceEnd:'Fim de vigência informado',resourceOfficialUpdate:'Atualização informada pela fonte',
     resourceProposalNotice:'Plano de ação de transferência especial. Não equivale a convênio assinado ou repasse realizado.',
@@ -35,6 +37,7 @@ export const resourceMessages = {
     resourceInitialAmount:'Declared initial amount',resourceGlobalAmount:'Declared global amount',
     resourceAccumulatedAmount:'Declared accumulated amount',resourceOperatingAmount:'Planned operating amount',
     resourceInvestmentAmount:'Planned investment amount',resourceProjectAmount:'Planned investment by source',
+    resourcePrecision:'The source publishes fractions of a cent. Precision is preserved without rounding.',
     resourceNoAmount:'No structured amount in this record.',resourceStatus:'Declared status',resourceBuyer:'Purchasing organization',
     resourceStart:'Declared validity start',resourceEnd:'Declared validity end',resourceOfficialUpdate:'Publisher-declared update',
     resourceProposalNotice:'Special-transfer action plan. It is not a signed agreement or an executed transfer.',
@@ -57,6 +60,7 @@ export const resourceMessages = {
     resourceInitialAmount:'Importe inicial declarado',resourceGlobalAmount:'Importe global declarado',
     resourceAccumulatedAmount:'Importe acumulado declarado',resourceOperatingAmount:'Gasto corriente previsto en el plan',
     resourceInvestmentAmount:'Inversión prevista en el plan',resourceProjectAmount:'Inversión prevista por fuente',
+    resourcePrecision:'La fuente publica fracciones de céntimo. Se conserva la precisión sin redondear.',
     resourceNoAmount:'No hay un importe estructurado en este registro.',resourceStatus:'Situación declarada',resourceBuyer:'Órgano comprador',
     resourceStart:'Inicio de vigencia declarado',resourceEnd:'Fin de vigencia declarado',resourceOfficialUpdate:'Actualización declarada por la fuente',
     resourceProposalNotice:'Plan de acción de transferencia especial. No equivale a un convenio firmado ni a una transferencia realizada.',
@@ -72,6 +76,27 @@ export const amountFields = Object.freeze({initial_cents:'resourceInitialAmount'
 export function resourceAmounts(attributes={}) {
   // Explicit allowlist; neither unknown numeric fields nor monetary phases are
   // summed or promoted to a payment. Null is missing, never zero.
-  return Object.entries(amountFields).flatMap(([key,label])=>Number.isSafeInteger(attributes[key])&&attributes[key]>=0
-    ? [{key,label,cents:attributes[key]}] : []);
+  return Object.entries(amountFields).flatMap(([key,label])=>{
+    const name=key.replace(/_cents$/,'');
+    const precise=attributes.profile==='pncp_contracts'?attributes.precise_amounts:undefined;
+    if(precise&&Object.hasOwn(precise,name)) {
+      return validDecimal(precise[name]) ? [{key,label,cents:null,decimal:precise[name]}] : [];
+    }
+    return Number.isSafeInteger(attributes[key])&&attributes[key]>=0 ? [{key,label,cents:attributes[key]}] : [];
+  });
+}
+
+function validDecimal(value) {
+  if(typeof value!=='string'||! /^(0|[1-9][0-9]{0,13})\.[0-9]{3,4}$/.test(value))return false;
+  const [whole,fraction]=value.split('.');
+  return BigInt(whole)*10000n+BigInt(fraction.padEnd(4,'0'))<=900719925474099100n;
+}
+export function resourceAmountText(item,locale) {
+  if(!item.decimal)return money(item.cents,locale);
+  if(!validDecimal(item.decimal))return '—';
+  const [whole,fraction]=item.decimal.split('.');
+  const language=['pt-BR','en','es'].includes(locale)?locale:'pt-BR';
+  return new Intl.NumberFormat(language,{style:'currency',currency:'BRL',
+    minimumFractionDigits:fraction.length,maximumFractionDigits:fraction.length})
+    .formatToParts(BigInt(whole)).map(part=>part.type==='fraction'?fraction:part.value).join('');
 }

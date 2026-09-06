@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 from .domain import Source, cnpj, decimal_cents
 from .evidence import ResourceInput
 from .sync import PagePlan
+from .resource_money import metadata_amount
 
 Profile = Literal['pncp_contracts', 'transferegov_special_plans', 'obrasgov_projects']
 PROFILES = {
@@ -144,9 +145,16 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
             except TypeError:
                 raise ValueError('inconsistent_pncp_timestamp_timezones') from None
         fields = {'initial_cents': 'valorInicial', 'global_cents': 'valorGlobal', 'accumulated_cents': 'valorAcumulado'}
-        amounts = {key: money(row.get(original)) for key, original in fields.items()}
-        if amounts['initial_cents'] is None:
+        amounts, precise = {}, {}
+        for key, original in fields.items():
+            cents, decimal = metadata_amount(row.get(original))
+            amounts[key] = cents
+            if decimal is not None:
+                precise[key.removesuffix('_cents')] = decimal
+        if row['valorInicial'] is None:
             raise ValueError('pncp_initial_amount_required')
+        if precise:
+            attributes['precise_amounts'] = precise
         revenue = row.get('receita')
         if revenue is not None and not isinstance(revenue, bool):
             raise ValueError('invalid_pncp_revenue_indicator')
