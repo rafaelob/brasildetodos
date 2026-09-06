@@ -17,7 +17,11 @@ def test_runtime_acceptance_counts_unlocated_and_located_records(database,place,
     assert result['records']==2 and result['geocoded']==1 and result['without_geometry']==1
     assert result['national_catalog_certified'] is False
     assert result['public_deployment'] is False
-    assert len(result['checks'])==5
+    assert len(result['checks'])==6
+    assert result['saved_places']['sampled_records'] >= 1
+    assert result['saved_places']['without_geometry_included'] == 1
+    assert result['saved_places']['favorites_persisted'] is False
+    assert result['saved_places']['new_remote_collection'] is False
 
 
 def test_empty_release_is_tested_as_empty_not_national(database,tmp_path):

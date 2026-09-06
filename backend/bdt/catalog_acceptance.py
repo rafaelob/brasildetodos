@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from .api import create_app
 from .catalog_release import install_catalog
 from .domain import now
+from .place_tracking import WatchRequest, watch_summary
 from .storage import Database, LoginSession, Observation, Place, User
 from .sync import file_hash
 
@@ -58,10 +59,13 @@ def exercise_catalog(folder: Path) -> dict:
                 return response.json()
             if get('/api/places',limit=1)['total'] != expected:
                 raise ValueError('catalog_api_total_mismatch')
+            watched = list(missing)
             for state,kind,count,_ in groups:
                 listing=get('/api/places',state=state,kind=kind,limit=3)
                 if listing['total']!=count or len(listing['items'])!=min(3,count):
                     raise ValueError('catalog_partition_mismatch')
+                if listing['items']:
+                    watched.append(listing['items'][0]['id'])
                 for row in listing['items']:
                     if row['state']!=state or row['kind']!=kind:
                         raise ValueError('catalog_filter_mismatch')
@@ -69,6 +73,26 @@ def exercise_catalog(folder: Path) -> dict:
                     if detail['place']!=row or detail['observations']:
                         raise ValueError('catalog_detail_or_privacy_mismatch')
             report['checks'].append('all_loaded_state_kind_partitions_match_database_and_detail')
+            # Exercise the bounded read-query module proposed for saved-place cards. No
+            # interest list is stored, and no external call is made here.
+            watched = list(dict.fromkeys(watched))
+            watched_count = 0
+            for offset in range(0, len(watched), 30):
+                batch = watched[offset:offset+30]
+                result = watch_summary(app.state.database, WatchRequest(
+                    place_ids=batch, versions_per_place=2))
+                if result['favorites_persisted'] or [item['id'] for item in result['items']] != batch:
+                    raise ValueError('catalog_watch_scope_failure')
+                for item in result['items']:
+                    if item['status'] != 'available' or item['history']['included'] > 2:
+                        raise ValueError('catalog_watch_projection_failure')
+                    if item['id'] in missing and item['place']['latitude'] is not None:
+                        raise ValueError('catalog_watch_invented_geometry')
+                watched_count += len(batch)
+            report['saved_places'] = {'sampled_records': watched_count,
+                'without_geometry_included': len(missing), 'batch_limit': 30,
+                'new_remote_collection': False, 'favorites_persisted': False, 'integration': 'query_module_only_not_public_endpoint'}
+            report['checks'].append('saved_places_query_sample_matches_catalog_without_persisting_interests')
             mapped=get('/api/map/viewport',bbox='-180,-90,180,90',zoom=3)
             if (mapped['matched_records']!=expected_geocoded or mapped['represented_records']!=expected_geocoded
                     or len(mapped['features'])>500

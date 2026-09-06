@@ -16,6 +16,7 @@ from pathlib import Path
 import httpx
 
 from bdt.catalog_release import export_catalog, verify_catalog
+from bdt.catalog_acceptance import exercise_catalog
 from bdt.domain import Source, now
 from bdt.education_bulk import ANCHOR, Limits, discover_distribution, import_school_archive
 from bdt.ingest import IBGE_URL, file_source, import_ibge
@@ -98,6 +99,13 @@ def main(argv=None) -> int:
         report['public_catalog']={'manifest_sha256':file_hash(root/'public-catalog'/'manifest.json'),
                                   'verification':verified}
         stage('public_catalog',status='verified',tables=manifest.get('tables',{}))
+        # Read the exported package through the production API in a fresh DB.
+        # This checks current API routes, geography accounting and the separate
+        # saved-place query module; no new HTTP route is claimed.
+        accepted = exercise_catalog(root/'public-catalog')
+        report['api_acceptance'] = accepted
+        stage('api_acceptance', status=accepted['status'],
+              records=accepted['records'], saved_places=accepted['saved_places'])
         report['status']='imported'
         status=0
     except Exception as error:

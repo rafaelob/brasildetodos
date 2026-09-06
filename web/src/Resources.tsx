@@ -1,5 +1,6 @@
 import {ResourceCoverage,CollectionDownloads} from './ResourceStatus';
 import ResourceObject from './ResourceObject';
+import ResourceComparison from './ResourceComparison';
 import {useEffect,useState,useId} from 'react';
 import {api} from './api';
 import {ShareResource,ResourceDownloads} from './ResourceActions';
@@ -64,7 +65,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
     {show&&<section aria-label={t('resourceHistory')}><p>{t('resourceHistoryNotice')}</p>
       {error?<div role="status"><p>{t('failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
         :history===null?<p role="status">{t('loading')}</p>:history.total===0?<p>{t('resourceHistoryEmpty')}</p>
-        :<>{history.versions.map(version=><article className="source" key={version.revision}>
+        :<>{history.versions.map((version,index)=><article className="source" key={version.revision}>
           <h3>{t('resourceRevision')} {version.revision}</h3>
           <p>{t('resourceCaptured')}: {version.observed_at}</p>
           {version.revision===1?<p>{t('resourceInitial')}</p>:<>
@@ -72,6 +73,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
             <details><summary>{historyText(locale,'technical')}</summary><ul>{version.changed_fields.map((key,index)=><li key={index}><code>{key}</code></li>)}</ul></details>
           </>}
           <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{resourceAmountText(item,locale)}</dd></div>)}</dl>
+          {history.versions[index+1]&&<ResourceComparison key={version.revision+'-'+locale} older={history.versions[index+1]} newer={version} locale={locale}/>}
           <Provenance source={version.resource.source} t={t}/><ResourceDownloads id={row.id} locale={locale} t={t} revision={version.revision}/>
         </article>)}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button>
           <span>{page}</span><button disabled={page*5>=history.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></>}
@@ -127,7 +129,7 @@ export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;lo
       {error?<div className="empty" role="status"><p>{t(focus?'resourceFocusMissing':'failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
         :data===null?<p className="resource-loading" role="status">{t('loading')}</p>:<>
           <p className="resource-count" role="status"><strong>{data.total.toLocaleString(locale)}</strong> {t('resourceResults')}</p>
-          {data.items.length?data.items.map(row=><ResourceCard key={row.id} row={row} t={t} locale={locale}/>):
+          {data.items.length?data.items.map(row=><ResourceCard key={row.id} row={row} t={t} locale={locale}/> ):
             <div className="empty"><h2>{t('resourceNoResults')}</h2><p>{t('resourceNoResultsHelp')}</p><button onClick={clear}>{t('resourceClear')}</button></div>}
           {!focus&&<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span>
             <button disabled={page*10>=data.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div>}

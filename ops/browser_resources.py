@@ -108,12 +108,21 @@ def main():
                                 expect(page.get_by_role('heading',name=heading,exact=True)).to_be_visible()
                                 expect(card.get_by_role('heading',name=version+' 1',exact=True)).to_be_visible()
                                 expect(card.get_by_role('heading',name=version+' 2',exact=True)).to_be_visible()
+                                compare_label={'pt-BR':'Comparar com a versão anterior','en':'Compare with the previous version','es':'Comparar con la versión anterior'}[locale]
+                                comparison=card.locator('.resource-comparison')
+                                button=comparison.get_by_role('button',name=compare_label,exact=True)
+                                button.focus();button.press('Enter')
+                                expect(comparison.locator('.comparison-field')).to_have_count(3)
+                                expected_amount='150.02' if locale=='en' else '150,02'
+                                expect(comparison.locator('.comparison-fields')).to_contain_text(expected_amount)
+                                expect(comparison.locator('.comparison-origins a')).to_have_count(2)
+                                expect(comparison.locator('.comparison-fields')).not_to_contain_text('300,01')
                                 assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'), (width,locale)
                             page.screenshot(path=str(out/f'resources-history-{width}.png'),full_page=True)
                             assert not errors,errors
                             report['checks'].append({'width':width,'locales':3,'source_filter':True,'state_filter':True,
                                 'literal_percent_search':True,'immutable_versions':2,'financial_amounts_not_summed':True,
-                                'horizontal_overflow':False,'javascript_errors':errors})
+                                'horizontal_overflow':False,'keyboard_before_after_comparison':True,'separate_version_sources':True,'javascript_errors':errors})
                         except Exception:
                             page.screenshot(path=str(out/f'failure-{width}.png'),full_page=True)
                             raise

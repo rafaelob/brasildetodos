@@ -1,3 +1,4 @@
+import {watchMessages} from './watch-i18n.mjs';
 import {actionMessages} from './resource-actions.mjs';
 import {resourceMessages} from './resource-i18n.mjs';
 import {translate} from './i18n.mjs';
@@ -12,7 +13,7 @@ export function uiText(locale,key){
   const token=String(key);
   // Place ineligibility and author withdrawal are different states.
   if(token==='withdrawn')return translate(language,token);
-  for(const catalog of [actionMessages[language],resourceMessages[language],additionalMessages[language],featureMessages[language]]){
+  for(const catalog of [watchMessages[language],actionMessages[language],resourceMessages[language],additionalMessages[language],featureMessages[language]]){
     if(Object.hasOwn(catalog,token)&&typeof catalog[token]==='string')return catalog[token];
   }
   const value=translate(language,token);
