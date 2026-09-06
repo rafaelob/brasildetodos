@@ -48,7 +48,8 @@ def main():
                     for width in [320, 390, 1440]:
                         page = browser.new_page(viewport={'width':width, 'height':1000})
                         errors = []; page.on('pageerror', lambda e: errors.append(str(e)))
-                        page.goto('http://127.0.0.1:8034', wait_until='networkidle')
+                        # UI assertions, not network-idle, establish application readiness.
+                        page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
                         page.get_by_role('button', name=item.name, exact=True).wait_for()
                         assert not page.evaluate('document.documentElement.scrollWidth > window.innerWidth'), f'Horizontal overflow at {width}'
                         page.get_by_text('Localização no mapa não confirmada', exact=True).wait_for()
@@ -59,7 +60,7 @@ def main():
                         page.get_by_role('button', name='Acompanhar '+item.name, exact=True).click()
                         page.get_by_role('button', name='Meus lugares', exact=True).click()
                         page.get_by_role('button', name=item.name, exact=True).wait_for()
-                        page.reload(wait_until='networkidle')
+                        page.reload(wait_until='domcontentloaded')
                         page.get_by_role('button', name='Meus lugares', exact=True).click()
                         page.get_by_role('button', name=item.name, exact=True).click()
                         page.get_by_role('heading', name=item.name, exact=True).wait_for()
@@ -71,7 +72,7 @@ def main():
                         report['checks'].append({'viewport':width, 'languages':3, 'favorites_persisted':True, 'financial_stages_separate':True, 'javascript_errors':errors})
                         page.close()
                     page = browser.new_page(viewport={'width':1440, 'height':1000})
-                    page.goto('http://127.0.0.1:8034', wait_until='networkidle')
+                    page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
                     def login(username):
                         page.get_by_role('button', name='Participar', exact=True).click()
                         page.get_by_label('Nome de usuário', exact=True).fill(username)
