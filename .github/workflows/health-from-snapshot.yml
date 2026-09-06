@@ -1,0 +1,48 @@
+name: Health catalog with verified territorial snapshot
+on:
+  workflow_dispatch:
+    inputs:
+      territory_run_id:
+        description: Run containing the verified national-health-catalog-and-evidence artifact
+        required: true
+        default: '34005677349'
+  push:
+    branches: [main]
+    paths: [.github/workflows/health-from-snapshot.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          name: national-health-catalog-and-evidence
+          run-id: ${{ inputs.territory_run_id || '34005677349' }}
+          github-token: ${{ github.token }}
+          path: verified-territory
+      - run: python -m pip install -e .
+      - name: Import using original territorial provenance, not a fabricated fresh fetch
+        env:
+          BDT_TERRITORY_SNAPSHOT: verified-territory/catalog.db
+        run: python -u ops/cnes_bulk.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: national-health-with-verified-territory
+          retention-days: 7
+          path: |
+            test-results/national-health/catalog.db
+            test-results/national-health/report.json
+            test-results/national-health/*.manifest.json
+# This is a bounded bootstrap/evidence job, not a permanent production dependency.
+# The selected artifact expires; a future manual run must select a retained,
+# verified territorial artifact. It never silently falls back to synthetic data.
