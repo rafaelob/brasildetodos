@@ -21,7 +21,7 @@ export default function MapView({select,t,onBounds,filters={}}:Props){
     setReady(false);setFailed(false);setDataFailed(false);setMatched(null);
     async function start(){
       try{
-        const {default:lib}=await import('maplibre-gl');
+        const lib=await import('maplibre-gl');
         await import('maplibre-gl/dist/maplibre-gl.css');
         if(cancelled||!host.current)return;
         const instance=new lib.Map({container:host.current,style:'https://tiles.openfreemap.org/styles/liberty',
@@ -44,8 +44,7 @@ export default function MapView({select,t,onBounds,filters={}}:Props){
               const collection=await api<Collection>('/map/viewport?'+parameters,{signal:controller.signal});
               if(cancelled||version!==generation)return;
               if(collection.represented_records!==collection.matched_records)throw new Error('map-accounting-mismatch');
-              const source=instance.getSource('bdt-places') as GeoJSONSource|undefined;
-              source?.setData(collection);
+              (instance.getSource('bdt-places') as GeoJSONSource|undefined)?.setData(collection);
               setMatched(collection.matched_records);setDataFailed(false);
             }catch(error){if(!cancelled&&version===generation&&!(error instanceof DOMException&&error.name==='AbortError'))setDataFailed(true);}
           },250);
@@ -77,8 +76,7 @@ export default function MapView({select,t,onBounds,filters={}}:Props){
             instance.on('mouseenter',layer,()=>{instance.getCanvas().style.cursor='pointer';});
             instance.on('mouseleave',layer,()=>{instance.getCanvas().style.cursor='';});
           }
-          const sources=instance.getStyle().sources;
-          const vectorSource=Object.entries(sources).find(([,value])=>value.type==='vector')?.[0];
+          const vectorSource=Object.entries(instance.getStyle().sources).find(([,value])=>value.type==='vector')?.[0];
           if(vectorSource){
             instance.addLayer({id:'bdt-buildings',source:vectorSource,'source-layer':'building',type:'fill-extrusion',minzoom:15,
               layout:{visibility:'none'},filter:['all',['has','render_height'],['>',['get','render_height'],0]],
@@ -92,18 +90,14 @@ export default function MapView({select,t,onBounds,filters={}}:Props){
     start();
     return()=>{cancelled=true;generation++;clearTimeout(timer);controller?.abort();refreshRef.current=()=>{};map.current?.remove();map.current=null;};
   },[enabled]);
+  useEffect(()=>{if(map.current){map.current.jumpTo({center:[-51,-15],zoom:3.2});refreshRef.current();}},[filterKey]);
   useEffect(()=>{
-    if(!map.current)return;
-    map.current.jumpTo({center:[-51,-15],zoom:3.2});refreshRef.current();
-  },[filterKey]);
-  useEffect(()=>{
-    const instance=map.current;
-    if(!instance||!ready)return;
+    const instance=map.current;if(!instance||!ready)return;
     if(instance.getLayer('bdt-buildings'))instance.setLayoutProperty('bdt-buildings','visibility',threeD?'visible':'none');
     instance.easeTo({pitch:threeD?55:0,duration:300});
   },[threeD,ready]);
   return <aside className="map-panel" aria-label={t('map')}>
-    {!enabled?<div className="map-placeholder"><h2>{t('map')}</h2><p>{t('mapNote')}</p><button className="primary" onClick={()=>setEnabled(true)}>{t('loadMap')}</button></div>:<>
+    {!enabled?<div className="map-start"><h2>{t('map')}</h2><p>{t('mapNote')}</p><button className="primary" onClick={()=>setEnabled(true)}>{t('loadMap')}</button></div>:<>
       <div ref={host} className="map-canvas"/>
       <div className="map-actions"><button disabled={!ready} onClick={()=>{const b=map.current?.getBounds();if(b)onBounds([Math.max(-180,b.getWest()),Math.max(-90,b.getSouth()),Math.min(180,b.getEast()),Math.min(90,b.getNorth())].join(','));}}>{t('mapHere')}</button>
         <button disabled={!ready} aria-pressed={threeD} onClick={()=>setThreeD(value=>!value)}>{t('buildings')}</button></div>
