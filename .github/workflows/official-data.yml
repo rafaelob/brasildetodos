@@ -1,0 +1,50 @@
+name: Official data evidence
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/source_inventory.py
+      - .github/workflows/official-data.yml
+permissions:
+  contents: read
+concurrency:
+  group: official-data-main
+  cancel-in-progress: false
+jobs:
+  national-source-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e .
+      - name: Inspect official distributions and import validated school profile
+        run: python -u ops/source_inventory.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-catalog-and-evidence
+          retention-days: 7
+          path: |
+            test-results/official-data/report.json
+            test-results/official-data/catalog.db
+            test-results/official-data/*.manifest.json
+      - name: Record scope separately from code tests
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('test-results/official-data/report.json')
+          if path.exists():
+              report = json.loads(path.read_text())
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+                  out.write('## Official data evidence\n\nThis artifact is not a public deployment or a national completeness certificate.\n\n')
+                  for item in report['sources']:
+                      out.write(f"- {item['dataset']}: {item['status']}\n")
+          PY
