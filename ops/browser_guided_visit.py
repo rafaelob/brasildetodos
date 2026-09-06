@@ -16,9 +16,9 @@ from bdt.storage import Database, Municipality, User, upsert_place
 PASSWORD='synthetic-browser-password'
 HEAD={'X-BDT-Client':'web'}
 TEXT={
- 'pt-BR':{'community':'Comunidade','open':'Registrar visita guiada','note':'Contexto da sua observação','date':'Data da visita','submit':'Enviar roteiro para revisão','saved':'Roteiro enviado. Suas respostas estão privadas até uma revisão independente.','changed':'A ficha ou o roteiro mudou. Carregue a referência atual e revise as respostas antes de enviar.','retry':'Carregar roteiro novamente','download':'Baixar observação publicada','yes':'Sim','no':'Não','unknown':'Não sei'},
- 'en':{'community':'Community','open':'Record a guided visit','note':'Observation context','date':'Visit date','submit':'Submit guide for review','saved':'Guide submitted. Your answers remain private until independent review.','changed':'The place record or guide changed. Load the current reference and review your answers before submitting.','retry':'Reload guide','download':'Download published observation','yes':'Yes','no':'No','unknown':'Unknown'},
- 'es':{'community':'Comunidad','open':'Registrar visita guiada','note':'Contexto de la observación','date':'Fecha de la visita','submit':'Enviar guía para revisión','saved':'Guía enviada. Las respuestas son privadas hasta una revisión independiente.','changed':'La ficha o la guía cambió. Cargue la referencia actual y revise las respuestas antes de enviar.','retry':'Cargar guía de nuevo','download':'Descargar observación publicada','yes':'Sí','no':'No','unknown':'No sé'},
+ 'pt-BR':{'community':'Contribuições da comunidade','open':'Registrar visita guiada','note':'Contexto da sua observação','date':'Data da visita','submit':'Enviar roteiro para revisão','saved':'Roteiro enviado. Suas respostas estão privadas até uma revisão independente.','download':'Baixar observação publicada','yes':'Sim','no':'Não','unknown':'Não sei'},
+ 'en':{'community':'Community contributions','open':'Record a guided visit','note':'Observation context','date':'Visit date','submit':'Submit guide for review','saved':'Guide submitted. Your answers remain private until independent review.','download':'Download published observation','yes':'Yes','no':'No','unknown':'Unknown'},
+ 'es':{'community':'Contribuciones de la comunidad','open':'Registrar visita guiada','note':'Contexto de la observación','date':'Fecha de la visita','submit':'Enviar guía para revisión','saved':'Guía enviada. Las respuestas son privadas hasta una revisión independiente.','download':'Descargar observación publicada','yes':'Sí','no':'No','unknown':'No sé'},
 }
 
 
@@ -74,6 +74,7 @@ def main():
                                     form.get_by_label(labels['note'],exact=True).fill('Synthetic field observation made from a public area; test only.')
                                     form.get_by_role('checkbox').check()
                                 fill()
+                                page.screenshot(path=str(out/f'guided-form-{locale}-{width}.png'),full_page=True)
                                 form.get_by_role('button',name=labels['submit'],exact=True).click()
                                 expect(page.get_by_text(labels['saved'],exact=True)).to_be_visible()
                                 rows=context.request.get(origin+'/api/observations/mine').json();created=rows[0]

@@ -5,6 +5,8 @@ import {safeReference} from './i18n.mjs';
 import {watchDate,watchPage,watchValue} from './watch-state.mjs';
 import type {Locale,Place,Source} from './types';
 import './watch.css';
+import PlaceComparison from './PlaceComparison';
+import {comparisonSelection,comparisonText,toggleComparison} from './place-comparison.mjs';
 
 type T=(key:string)=>string;
 type Version={id:string;recorded_at:string|null;type:'started'|'updated'|'source_revision';source:Source;previous_source:Source|null;fields:{key:string;before:unknown;after:unknown}[]};
@@ -25,6 +27,8 @@ function VersionEntry({entry,locale,t}:{entry:Version;locale:Locale;t:T}){
 
 export default function SavedPlaces({ids,locale,t,onSelect,onRemove,onExplore}:{ids:string[];locale:Locale;t:T;onSelect:(id:string)=>void;onRemove:(id:string)=>void;onExplore:()=>void}){
  const [page,setPage]=useState(1),[refresh,setRefresh]=useState(0),[response,setResult]=useState<{key:string;data:Summary}|null>(null),[error,setError]=useState(false),[loading,setLoading]=useState(false);
+ const [chosen,setChosen]=useState<string[]>([]),[compareOpen,setCompareOpen]=useState(false);
+ const comparison=comparisonSelection(chosen,ids),words=comparisonText[locale];
  const selection=watchPage(ids,page),key=JSON.stringify(selection.ids);
  const result=response?.key===key?response.data:null;
  useEffect(()=>{
@@ -40,6 +44,8 @@ export default function SavedPlaces({ids,locale,t,onSelect,onRemove,onExplore}:{
   <header className="watch-heading"><div><h1 id="watch-title">{t('watchTitle')}</h1><p>{t('watchIntro')}</p></div>{selection.total>0&&<button disabled={loading} onClick={()=>setRefresh(v=>v+1)}>{t('watchRefresh')}</button>}</header>
   <p className="callout">{t('watchPrivacy')}</p>
   {selection.total===0?<div className="watch-empty"><span aria-hidden="true">☆</span><h2>{t('watchEmptyTitle')}</h2><p>{t('watchEmptyBody')}</p><button className="primary" onClick={onExplore}>{t('watchExplore')}</button></div>:<>
+   <div className="comparison-selector"><p>{words.limit}</p><strong>{comparison.length} / 3 {words.selected}</strong><button disabled={comparison.length<2} onClick={()=>setCompareOpen(true)}>{words.open}</button>{comparison.length>0&&<button onClick={()=>{setChosen([]);setCompareOpen(false);}}>{words.clear}</button>}</div>
+   {compareOpen&&<PlaceComparison ids={comparison} locale={locale} t={t} onSelect={onSelect} onClose={()=>setCompareOpen(false)}/>}
    <p>{selection.total.toLocaleString(locale)} {t('watchCount')}</p><p className="quiet">{t('watchHint')}</p>
    <div aria-live="polite" role="status" className="watch-status">{loading?t('loading'):error?t('watchFailure'):result?<>{t('watchUpdated')}: {watchDate(result.generated_at,locale,t)}</>:null}</div>
    {error&&<button onClick={()=>setRefresh(v=>v+1)}>{t('watchRetry')}</button>}
@@ -48,6 +54,7 @@ export default function SavedPlaces({ids,locale,t,onSelect,onRemove,onExplore}:{
      <div className="watch-card-top"><div><span className="eyebrow">{item.place?`${t(item.place.kind)} · ${item.place.state}`:t('unknown')}</span><h2>{item.place?<button className="watch-title-link" onClick={()=>onSelect(item.id)}>{item.place.name}</button>:item.id}</h2></div><button className="watch-remove" onClick={()=>onRemove(item.id)} aria-label={t('watchRemove')+' '+(item.place?.name||item.id)}>★ <span>{t('watchRemove')}</span></button></div>
      {item.place?<><p>{item.place.address||t('noAddress')}</p>{item.status==='outside_current_profile'&&<p className="watch-warning">{t('withdrawn')}</p>}{item.place.latitude===null&&<p className="quiet">{t('noGeo')}</p>}
        <p className="watch-source">{item.place.source.dataset} · {t('reference')}: {item.place.source.reference_date||t('unknown')}</p>
+       <label className="comparison-checkbox"><input type="checkbox" aria-label={words.select+' '+item.place.name} checked={comparison.includes(item.id)} disabled={!comparison.includes(item.id)&&comparison.length>=3} onChange={()=>setChosen(old=>toggleComparison(old,item.id,ids))}/>{words.select}</label>
        <button className="primary" onClick={()=>onSelect(item.id)}>{t('watchDetails')}</button>
        <section className="watch-history" aria-label={t('watchLatest')}><h3>{t('watchLatest')} <span>{item.history?.total_versions.toLocaleString(locale)} {t('watchVersions')}</span></h3>
          {item.history?.versions.length?<ol>{item.history.versions.map(entry=><VersionEntry key={entry.id} entry={entry} locale={locale} t={t}/>)}</ol>:<p>{t('watchNoHistory')}</p>}

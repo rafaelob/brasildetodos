@@ -105,6 +105,8 @@ jobs:
         run: python ops/browser_map.py
       - name: Exercise integrated favorites and catalog coverage in three locales
         run: python ops/browser_catalog_journeys.py
+      - name: Exercise saved-place comparison, limits and independent recovery
+        run: python ops/browser_place_comparison.py
       - name: Exercise guided field observations, review, downloads and withdrawal
         run: python ops/browser_guided_visit.py
       - uses: actions/upload-artifact@v4
@@ -119,6 +121,7 @@ jobs:
             test-results/browser-resource-status/
             test-results/browser-catalog/
             test-results/browser-guided/
+            test-results/browser-place-comparison/
             test-results/browser-map/
             test-results/browser-resource-lifecycle/
   official-source-probe:
