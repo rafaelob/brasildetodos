@@ -1,0 +1,71 @@
+name: Preserve reviewed OCR evidence
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/archive-reviewed-ocr.yml
+      - ops/archive_ocr_evidence.py
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: reviewed-ocr-preservation-main
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.ref == 'refs/heads/main' && github.repository == 'rafaelob/brasildetodos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify exact runtime and install verified dependencies
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+          git rev-parse HEAD > "$RUNNER_TEMP/archive-tested-sha"
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '9981605829'
+          run-id: '34008123457'
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/reviewed-originals
+      - name: Reconcile exact reviewed originals and derive only labelled evidence
+        run: |
+          python -m pytest backend/tests/test_archive_ocr_evidence.py --junitxml=test-results/archive-ocr.xml
+          python ops/archive_ocr_evidence.py archive "$RUNNER_TEMP/reviewed-originals" --destination "$RUNNER_TEMP/reviewed-corpus"
+          python ops/archive_ocr_evidence.py verify "$RUNNER_TEMP/reviewed-corpus"
+      - name: Preserve concurrent changes and commit only the inspected corpus
+        run: |
+          git fetch origin main
+          git merge --ff-only origin/main
+          test -z "$(git diff "$(cat "$RUNNER_TEMP/archive-tested-sha")" HEAD -- ops/archive_ocr_evidence.py backend/bdt/documents.py backend/bdt/domain.py requirements/ .python-version backend/tests/test_archive_ocr_evidence.py .github/workflows/archive-reviewed-ocr.yml)"
+          python ops/archive_ocr_evidence.py archive "$RUNNER_TEMP/reviewed-originals" --destination tests/corpus/ocr-reviewed
+          python ops/archive_ocr_evidence.py verify tests/corpus/ocr-reviewed
+          git add tests/corpus/ocr-reviewed/SYNTHETIC-native.pdf tests/corpus/ocr-reviewed/SYNTHETIC-scanned.pdf tests/corpus/ocr-reviewed/SYNTHETIC-page.png tests/corpus/ocr-reviewed/result.json tests/corpus/ocr-reviewed/native-extraction.json tests/corpus/ocr-reviewed/recognized-text.txt tests/corpus/ocr-reviewed/manifest.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --signoff -m 'test: preserve reviewed synthetic OCR originals and exact extraction evidence'
+            git push origin HEAD:main
+          fi
+          git rev-parse HEAD > "$RUNNER_TEMP/archive-published-sha"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reviewed-ocr-preservation-receipt
+          retention-days: 90
+          path: |
+            test-results/archive-ocr.xml
+            tests/corpus/ocr-reviewed/manifest.json
+            ${{ runner.temp }}/archive-tested-sha
+            ${{ runner.temp }}/archive-published-sha
+# Explicit same-repository, exact-artifact preservation requested by the owner.
+# No external upload, runtime private documents, source data or secret is archived.
+# There is no force push, and concurrent changes to the verifier stop publication.
