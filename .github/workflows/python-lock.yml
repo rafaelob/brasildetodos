@@ -1,0 +1,76 @@
+name: Verified Python dependency lock
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/python-lock.yml]
+permissions:
+  contents: write
+concurrency:
+  group: python-dependency-lock-main
+  cancel-in-progress: false
+jobs:
+  lock:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify exact Python runtime and configuration
+        run: python ops/check_toolchain.py --runtime python
+      - name: Resolve hashed dependencies for this Python and operating system
+        run: |
+          git rev-parse HEAD > "$RUNNER_TEMP/tested-sha"
+          git hash-object pyproject.toml > "$RUNNER_TEMP/python-manifest.sha"
+          python -m pip install pip-tools==7.6.1
+          mkdir -p requirements
+          python -m piptools compile --generate-hashes --all-extras --all-build-deps \
+            --allow-unsafe --strip-extras --no-emit-index-url --no-emit-trusted-host \
+            --output-file=requirements/linux-py314.lock pyproject.toml
+      - name: Install in a clean environment using hash checking and run the backend suite
+        run: |
+          python -m venv "$RUNNER_TEMP/bdt-locked"
+          P="$RUNNER_TEMP/bdt-locked/bin/python"
+          "$P" -m pip install --require-hashes --only-binary=:all: -r requirements/linux-py314.lock
+          "$P" -m pip install --no-deps --no-build-isolation -e .
+          "$P" -m pip check
+          "$P" ops/check_toolchain.py --runtime python
+          "$P" -m pytest --cov=bdt --cov-report=xml --cov-fail-under=85 --junitxml=test-results/python-lock.xml
+          "$P" ops/python_lock_manifest.py record
+          "$P" ops/python_lock_manifest.py verify
+          cp requirements/linux-py314.lock "$RUNNER_TEMP/verified-python.lock"
+          cp requirements/linux-py314.json "$RUNNER_TEMP/verified-python.json"
+      - name: Publish only the verified lock without replacing concurrent work
+        run: |
+          git fetch origin main
+          git merge --ff-only origin/main
+          test "$(git hash-object pyproject.toml)" = "$(cat "$RUNNER_TEMP/python-manifest.sha")"
+          cp "$RUNNER_TEMP/verified-python.lock" requirements/linux-py314.lock
+          cp "$RUNNER_TEMP/verified-python.json" requirements/linux-py314.json
+          python ops/python_lock_manifest.py verify
+          git add requirements/linux-py314.lock requirements/linux-py314.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --signoff -m 'build: record hash-verified Linux Python 3.14.7 dependency graph'
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-lock-evidence
+          retention-days: 7
+          path: |
+            requirements/linux-py314.lock
+            requirements/linux-py314.json
+            test-results/python-lock.xml
+            coverage.xml
+# --allow-unsafe is pip-tools' option to include build tools such as setuptools,
+# not permission to disable TLS, execute untrusted data, or suppress checks.
+# Generated only on trusted main. No raw data, user databases or secrets uploaded.
+# A lock is not a vulnerability audit; advisories and image digests remain pending.
