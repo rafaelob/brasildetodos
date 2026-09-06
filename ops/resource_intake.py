@@ -12,6 +12,7 @@ from bdt.domain import now
 from bdt.evidence import Resource
 from bdt.resource_profiles import PROFILES, collection_plan
 from bdt.resource_diagnostics import ResourceTextError
+from bdt.resource_artifact import verify_resource_artifact
 from bdt.resource_validation import validate_collection
 from bdt.resource_sync import ResourceRevision, decode, import_resources
 from bdt.storage import Database, Finance
@@ -19,12 +20,12 @@ from bdt.sync import atomic_json, collect, file_hash
 from bdt.territory import import_territory_snapshot
 
 
-def main():
+def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--territory-snapshot',required=True,type=Path)
     parser.add_argument('--output',type=Path,default=Path('test-results/resource-intake'))
     parser.add_argument('--date',default='20260904')
-    args=parser.parse_args()
+    args=parser.parse_args(argv)
     root=args.output;root.mkdir(parents=True,exist_ok=False)
     public=root/'public';public.mkdir()
     url='sqlite:///'+str((root/'working.db').resolve())
@@ -108,6 +109,16 @@ def main():
     finally:
         report['finished_at']=now();atomic_json(public/'report.json',report)
         database.engine.dispose()
+    if report['status']=='passed':
+        try:
+            # Check the actual exported bytes, not only the database queries.
+            # Keep evidence separate so its report hash names the final report.
+            checked=verify_resource_artifact(public)
+            atomic_json(public/'artifact-check.json',checked)
+        except Exception as error:
+            report.update(status='failed',error_type=type(error).__name__,
+                          reason='public_resource_artifact_reconciliation_failed')
+            atomic_json(public/'report.json',report)
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if report['status']!='passed':raise SystemExit(1)
 
