@@ -72,16 +72,23 @@ class Audit(Base):
     detail = Column(JSON, nullable=False, default=dict)
 
 
+MAX_PNCP_OBJECT_CHARS = 16384  # Local processing budget, not a claimed PNCP maximum.
+
+
 class ResourceInput(StrictModel):
     id: str = Field(pattern=r'^[a-z0-9_-]+:[A-Za-z0-9._/-]+$', max_length=200)
     kind: Literal['contract', 'instrument', 'proposal', 'work']
-    title: str = Field(min_length=5, max_length=4000)
+    title: str = Field(min_length=5, max_length=MAX_PNCP_OBJECT_CHARS)
     municipality_id: str | None = Field(default=None, pattern=r'^[0-9]{7}$')
     source: Source
     attributes: dict = Field(default_factory=dict)
 
     @model_validator(mode='after')
     def bounded_attributes(self):
+        if len(self.title) > 4000 and not (self.kind == 'contract'
+                and self.source.dataset == 'pncp_contracts'
+                and self.attributes.get('profile') == 'pncp_contracts'):
+            raise ValueError('resource_title_profile_limit')
         if len(json.dumps(self.attributes, ensure_ascii=False)) > 16000:
             raise ValueError('resource_metadata_too_large')
         return self

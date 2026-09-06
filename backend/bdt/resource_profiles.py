@@ -13,7 +13,7 @@ from typing import Literal
 from urllib.parse import urlencode
 
 from .domain import Source, cnpj, decimal_cents
-from .evidence import ResourceInput
+from .evidence import ResourceInput, MAX_PNCP_OBJECT_CHARS
 from .sync import PagePlan
 from .resource_money import metadata_amount
 from .resource_diagnostics import ResourceTextError
@@ -57,7 +57,7 @@ def date_value(value, *, timestamp=False):
             date.fromisoformat(value)
     except ValueError:
         raise ValueError('invalid_resource_date') from None
-    return value  # Do not invent a timezone for a publisher's local timestamp.
+    return value
 
 
 def money(value):
@@ -135,7 +135,7 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         municipality = str(unit['codigoIbge'])
         if municipality not in municipalities or municipalities[municipality][1] != unit['ufSigla']:
             raise ValueError('unknown_or_conflicting_buyer_territory')
-        title = text(row['objetoContrato'], required=True, field='objetoContrato')
+        title = text(row['objetoContrato'], limit=MAX_PNCP_OBJECT_CHARS, required=True, field='objetoContrato')
         updated = date_value(row['dataAtualizacao'], timestamp=True)
         if not updated:
             raise ValueError('pncp_update_timestamp_required')
@@ -169,8 +169,6 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         purchase = row.get('numeroControlePncpCompra')
         if purchase:
             attributes['purchase_control_number'] = identifier(purchase)
-        # Field names retain publisher casing; supplier names, CPF, banking and
-        # complementary free text are deliberately not copied into this catalog.
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': updated}))
         kind = 'contract'
     elif profile == 'transferegov_special_plans':
@@ -188,7 +186,7 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
             planned_operating_cents=money(row['valor_custeio_plano_acao']),
             planned_investment_cents=money(row['valor_investimento_plano_acao']))
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': str(year)}))
-        kind = 'proposal'  # A special-transfer action plan is NOT a signed convenio.
+        kind = 'proposal'
     else:
         require(row, ['desc_nome', 'situacao', 'uf_principal', 'investimentos_previstos'])
         title = text(row['desc_nome'], required=True, field='desc_nome')
@@ -210,8 +208,6 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         kind = 'work'
     attributes['version_basis'] = 'publisher_update' if profile == 'pncp_contracts' else 'collection_snapshot'
     record_url = base + '?' + urlencode({identity_key: identity}) if profile != 'pncp_contracts' else source.url
-    # Record URL is a reference only. Its content hash still refers to the exact
-    # collection page, which is separately retained in the attributes.
     attributes['collection_page_url'] = source.url
     attributes['record_reference_url'] = record_url
     return ResourceInput(id=f'{profile}:{identity}', kind=kind, title=title,

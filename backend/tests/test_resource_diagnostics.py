@@ -48,8 +48,7 @@ def test_exact_profile_field_is_identified():
 
 
 def test_reference_is_attached_after_verified_page_and_nothing_is_published(database,stored,tmp_path):
-    # stored fixture supplies the synthetic municipality required by these tests.
-    root=tmp_path/'input';save_collection(root,[contract(),contract(2,objetoContrato='SECRET '*1000)])
+    root=tmp_path/'input';save_collection(root,[contract(),contract(2,objetoContrato='SECRET '*3000)])
     with pytest.raises(ResourceTextError) as caught:
         import_resources(database,root)
     diagnostic=caught.value.public_diagnostic()
