@@ -1,12 +1,25 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # TODO de implementação — Brasil de Todos
 
-Atualizado em 2026-09-06. Base inspecionada: `6313573364a69f0f66cc17783b150c26d3b95234`.
+Atualizado em 2026-09-06. Base inspecionada: `e4d2554dfb59386d8e4fd3851c65d9d15974bd79`.
 Trabalho somente no `main`, sem force push. Este checklist acompanha a execução;
 `docs/ROADMAP.md` mantém a visão completa. Só marcar `[x]` com código e evidência.
 Código implementado, teste aprovado, coleta real e deploy são resultados distintos.
 
-## Rodada atual — dados, API, experiência e qualidade
+## Rodada em execução — concluir integração e compartilhamento
+
+- [x] R01 — Ler main e AGENTS; comparar o incremento anterior com alterações remotas antes de integrar.
+- [x] R02 — Registrar plano de backend, frontend, design e testes antes de alterar o produto.
+- [ ] R03 — Integrar painel público de importações e tratamento de estados sem expor consultas, arquivos ou dados privados.
+- [ ] R04 — Criar exportação pública limitada de recursos/histórico, com precisão preservada, filtros, referências e indicação de truncamento.
+- [ ] R05 — Criar consultas compartilháveis e navegação voltar/avançar, sem incluir favoritos, credenciais ou contribuições privadas na URL.
+- [ ] R06 — Aprimorar leitura mobile, ações de compartilhar/exportar, estados de carregamento/erro e acessibilidade nos três idiomas.
+- [ ] R07 — Testar API, precisão, limites, privacidade, histórico, filtros e tradução; manter gates anteriores.
+- [ ] R08 — Publicar no main e executar build e percursos reais de navegador, corrigindo falhas sem remover testes.
+- [ ] R09 — Consultar o replay real PNCP após correção; registrar contagem, causa comprovada ou bloqueio sem inferir sucesso.
+- [ ] R10 — Atualizar os checks abaixo e ROADMAP/STATUS, registrando SHA testado e pendências nacionais/deploy.
+
+## Rodada anterior — dados, API, experiência e qualidade
 
 - [x] T01 — Consultar main, contrato AGENTS e pendências reais do roadmap.
 - [x] T02 — Registrar este plano antes da implementação.
@@ -21,7 +34,7 @@ Código implementado, teste aprovado, coleta real e deploy são resultados disti
 - [ ] T11 — Atualizar ROADMAP, STATUS e registro de implementação com resultados, limitações e próximos passos.
 - [ ] T12 — Confirmar commits no main e resultados de CI da revisão publicada.
 
-### Evidência parcial da rodada
+### Evidência parcial da rodada anterior
 
 T04/T05: 478 testes Python (95,05% linhas, piso 85% mantido), 30 Node.
 Manual PNCP Consulta v1, p. 37: valores cadastrais admitem quatro casas;
@@ -29,8 +42,8 @@ p. 38: 204 representa ausência de conteúdo. O parser agora preserva frações
 como texto decimal, sem alterar o contrato de eventos em centavos. HTTP 204
 só encerra a primeira página vazia dos endpoints PNCP explicitamente aceitos;
 resposta vazia posterior, total conflitante ou outro provedor continuam falhas.
-A suíte é determinística; a reexecução oficial e o build remoto seguem pendentes.
-T03 permanece aberto até confirmar o resultado da janela real.
+A suíte é determinística; a reexecução oficial e o build remoto têm evidências
+próprias. T03 permanece aberto até confirmar o resultado da janela real.
 
 ## Pendências nacionais e de lançamento (não dadas como concluídas)
 
