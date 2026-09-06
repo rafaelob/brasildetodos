@@ -1,0 +1,109 @@
+name: Runtime integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - web/**
+      - Dockerfile
+      - pyproject.toml
+      - ops/postgres_smoke.py
+      - .github/workflows/runtime-validation.yml
+permissions:
+  contents: read
+concurrency:
+  group: runtime-validation-main
+  cancel-in-progress: false
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: bdt_ci
+          POSTGRES_PASSWORD: ephemeral-test-only
+          POSTGRES_DB: bdt_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bdt_ci -d bdt_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e '.[postgres,test]'
+      - name: Verify PostgreSQL behavior and portable public catalogs
+        env:
+          BDT_EPHEMERAL_TEST: '1'
+          BDT_RUNTIME_TEST_DATABASE_URL: postgresql+psycopg://bdt_ci:ephemeral-test-only@127.0.0.1:5432/bdt_ci
+        run: python ops/postgres_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-postgres-evidence
+          path: test-results/runtime/
+          retention-days: 7
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the actual application image
+        run: docker build --build-arg REVISION="$GITHUB_SHA" -t bdt-runtime:test .
+      - name: Run with a read-only filesystem and isolated temporary data
+        run: |
+          docker run -d --name bdt-runtime --read-only --cap-drop=ALL \
+            --security-opt=no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,noexec,size=64m \
+            --tmpfs /app/data:rw,nosuid,noexec,uid=10001,gid=10001,size=64m \
+            -p 127.0.0.1:18080:8000 bdt-runtime:test
+          python - <<'PY'
+          import json, os, time, urllib.request
+          from pathlib import Path
+          base='http://127.0.0.1:18080'
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen(base+'/api/health',timeout=2) as response:
+                      health=json.load(response)
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              raise RuntimeError('Container did not become healthy')
+          assert health['status']=='ok' and health['llm_required'] is False
+          with urllib.request.urlopen(base+'/api/config') as response:config=json.load(response)
+          assert config['revision']==os.environ['GITHUB_SHA']
+          assert config['registration_enabled'] is False
+          with urllib.request.urlopen(base+'/api/places') as response:
+              assert json.load(response)['total']==0, 'No synthetic bootstrap permitted'
+          with urllib.request.urlopen(base) as response:
+              html=response.read().decode()
+              assert 'root' in html
+              assert response.headers['X-Content-Type-Options']=='nosniff'
+              assert 'frame-ancestors' in response.headers['Content-Security-Policy']
+          folder=Path('test-results/runtime');folder.mkdir(parents=True,exist_ok=True)
+          (folder/'container.json').write_text(json.dumps({'revision':os.environ['GITHUB_SHA'],
+              'health':True,'compiled_frontend_served':True,'empty_initial_catalog':True,
+              'read_only_container':True,'public_deployment':False},indent=2))
+          PY
+          test "$(docker exec bdt-runtime id -u)" = "10001"
+      - name: Record container result and stop it
+        if: always()
+        run: |
+          mkdir -p test-results/runtime
+          docker logs bdt-runtime > test-results/runtime/container.log 2>&1 || true
+          docker rm -f bdt-runtime || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-container-evidence
+          path: test-results/runtime/
+          retention-days: 7
