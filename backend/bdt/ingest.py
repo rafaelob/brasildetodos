@@ -38,8 +38,15 @@ def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *,
     target.parent.mkdir(parents=True, exist_ok=True)
     part = target.with_name(target.name + ".part-" + str(uuid4()))
     total, sha = 0, hashlib.sha256()
+    tls_receipt = None
+    verify = True
+    if parsed.hostname == "download.inep.gov.br":
+        from .education_tls import inep_download_context, policy_receipt
+        verify = inep_download_context(parsed.hostname)
+        tls_receipt = policy_receipt()
     try:
-        with httpx.Client(timeout=httpx.Timeout(60, connect=15), follow_redirects=False, trust_env=False) as client:
+        with httpx.Client(timeout=httpx.Timeout(60, connect=15), follow_redirects=False,
+                          trust_env=False, verify=verify) as client:
             with client.stream("GET", url, headers={"User-Agent": "BrasilDeTodos/0.1 (+https://github.com/rafaelob/brasildetodos)"}) as response:
                 response.raise_for_status()
                 no_content = allow_no_content and response.status_code == 204
@@ -57,6 +64,8 @@ def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *,
                 if no_content and total != 0:
                     raise ValueError("HTTP 204 must not contain a body")
                 metadata = {"url": url, "sha256": sha.hexdigest(), "bytes": total, "collected_at": now(), "etag": response.headers.get("etag"), "status_code": response.status_code}
+                if tls_receipt is not None:
+                    metadata['tls'] = tls_receipt | {'handshake_verified': True}
         os.replace(part, target)
         target.with_suffix(target.suffix + ".manifest.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         return metadata

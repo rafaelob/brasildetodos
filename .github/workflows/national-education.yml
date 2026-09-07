@@ -19,6 +19,8 @@ on:
     paths:
       - backend/bdt/education_bulk.py
       - backend/bdt/education_transport.py
+      - backend/bdt/education_tls.py
+      - backend/bdt/certificates/**
       - ops/education_bulk.py
       - .github/workflows/national-education.yml
 permissions:
@@ -49,7 +51,7 @@ jobs:
           merge-multiple: true
       - run: python ops/install_locked.py --editable
       - name: Verify archive/identity/territory behavior before official intake
-        run: python -m pytest backend/tests/test_education_bulk.py backend/tests/test_education_transport.py backend/tests/test_education_acceptance_flow.py -q
+        run: python -m pytest backend/tests/test_education_bulk.py backend/tests/test_education_transport.py backend/tests/test_education_tls.py backend/tests/test_education_acceptance_flow.py -q
       - name: Import official school tables, never individual microdata
         env:
           BDT_CENSUS_YEAR: ${{ inputs.year || '2025' }}
