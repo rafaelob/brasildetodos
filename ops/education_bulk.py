@@ -7,40 +7,20 @@ microdata archives or any student/teacher tables. Failed stages exit nonzero.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import sys
 from pathlib import Path
 
-import httpx
-
 from bdt.catalog_release import export_catalog, verify_catalog
 from bdt.catalog_acceptance import exercise_catalog
 from bdt.domain import Source, now
-from bdt.education_bulk import ANCHOR, Limits, discover_distribution, import_school_archive
+from bdt.education_bulk import Limits, discover_distribution, import_school_archive
+from bdt.education_transport import official_anchor
 from bdt.ingest import IBGE_URL, file_source, import_ibge
 from bdt.storage import Database
 from bdt.sync import atomic_json, download_retry, file_hash
 from bdt.territory import import_territory_snapshot
-
-
-def official_anchor() -> tuple[str, dict]:
-    """A single constant allowlisted documentation request; no arbitrary URL input."""
-    blocks, size, sha = [], 0, hashlib.sha256()
-    with httpx.Client(timeout=httpx.Timeout(60, connect=20), trust_env=False, follow_redirects=False) as client:
-        with client.stream('GET', ANCHOR, headers={'User-Agent':'BrasilDeTodos/0.3 (+https://github.com/rafaelob/brasildetodos)'}) as response:
-            response.raise_for_status()
-            if response.status_code != 200 or 'text/html' not in response.headers.get('content-type',''):
-                raise ValueError('official_anchor_response_requires_review')
-            for block in response.iter_bytes():
-                size += len(block)
-                if size > 8 * 1024 ** 2:
-                    raise ValueError('official_anchor_byte_budget')
-                blocks.append(block)
-                sha.update(block)
-    return b''.join(blocks).decode('utf-8'), {'url':ANCHOR, 'bytes':size,
-        'sha256':sha.hexdigest(), 'collected_at':now()}
 
 
 def main(argv=None) -> int:
@@ -99,9 +79,6 @@ def main(argv=None) -> int:
         report['public_catalog']={'manifest_sha256':file_hash(root/'public-catalog'/'manifest.json'),
                                   'verification':verified}
         stage('public_catalog',status='verified',tables=manifest.get('tables',{}))
-        # Read the exported package through the production API in a fresh DB.
-        # This checks current API routes, geography accounting and the separate
-        # saved-place query module; no new HTTP route is claimed.
         accepted = exercise_catalog(root/'public-catalog')
         report['api_acceptance'] = accepted
         stage('api_acceptance', status=accepted['status'],
@@ -109,8 +86,6 @@ def main(argv=None) -> int:
         report['status']='imported'
         status=0
     except Exception as error:
-        # Exceptions may include row values or personal paths. Public evidence
-        # receives a type and our controlled error codes, never arbitrary traces.
         code=str(error) if isinstance(error,ValueError) and str(error).startswith((
             'school_', 'reviewed_school_', 'official_', 'national_', 'invalid_school_', 'empty_school_')) else 'transport_or_profile_failure'
         report.update(status='failed',error_type=type(error).__name__,error_code=code[:200])
@@ -122,7 +97,6 @@ def main(argv=None) -> int:
         archive.unlink(missing_ok=True)
         report['finished_at']=now()
         atomic_json(root/'report.json',report)
-        # The internal staging database is deliberately absent from public artifacts.
     return status
 
 
