@@ -16,7 +16,7 @@ from bdt.catalog_release import export_catalog, verify_catalog
 from bdt.catalog_acceptance import exercise_catalog
 from bdt.domain import Source, now
 from bdt.education_bulk import Limits, discover_distribution, import_school_archive
-from bdt.education_transport import official_anchor
+from bdt.education_transport import official_anchor, transport_diagnostics
 from bdt.ingest import IBGE_URL, file_source, import_ibge
 from bdt.storage import Database
 from bdt.sync import atomic_json, download_retry, file_hash
@@ -88,7 +88,8 @@ def main(argv=None) -> int:
     except Exception as error:
         code=str(error) if isinstance(error,ValueError) and str(error).startswith((
             'school_', 'reviewed_school_', 'official_', 'national_', 'invalid_school_', 'empty_school_')) else 'transport_or_profile_failure'
-        report.update(status='failed',error_type=type(error).__name__,error_code=code[:200])
+        report.update(status='failed',error_type=type(error).__name__,error_code=code[:200],
+                      transport_diagnostics=transport_diagnostics(error))
         stage('failure',status='failed',error_type=type(error).__name__,error_code=code[:200])
     finally:
         with database.engine.connect() as connection:

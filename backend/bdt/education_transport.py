@@ -49,3 +49,26 @@ def official_anchor(*,attempts: int=3,sleep=time.sleep) -> tuple[str,dict]:
                 if attempt+1==attempts:raise
                 sleep(delay)
     raise RuntimeError('official_anchor_unreachable_state')
+
+
+def transport_diagnostics(error: BaseException) -> dict:
+    """Controlled exception metadata only: never messages, URLs, bodies or paths."""
+    import re
+    import ssl
+    classes=[];errnos=[];certificate_codes=[];tls_reasons=[];seen=set();current=error
+    while current is not None and id(current) not in seen and len(classes)<8:
+        seen.add(id(current))
+        name=type(current).__name__
+        classes.append(name if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,79}',name) else 'Exception')
+        if isinstance(current,OSError) and type(current.errno) is int:errnos.append(current.errno)
+        if isinstance(current,ssl.SSLCertVerificationError) and type(getattr(current,'verify_code',None)) is int:
+            certificate_codes.append(current.verify_code)
+        reason=getattr(current,'reason',None) if isinstance(current,ssl.SSLError) else None
+        if isinstance(reason,str) and re.fullmatch(r'[A-Z0-9_]{1,80}',reason):tls_reasons.append(reason)
+        current=current.__cause__ or current.__context__
+    return {'exception_types':classes,'os_error_codes':sorted(set(errnos)),
+            'certificate_verify_codes':sorted(set(certificate_codes)),
+            'tls_reasons':sorted(set(tls_reasons)),
+            'dns_error':any(name in ('gaierror','herror') for name in classes),
+            'certificate_verification_error':'SSLCertVerificationError' in classes,
+            'message_or_payload_included':False}

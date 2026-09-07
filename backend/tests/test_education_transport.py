@@ -76,3 +76,30 @@ def test_body_budget_and_retry_parameters(client_factory,monkeypatch):
     assert transport.retry_delay('99999999999',0)==10
     assert transport.retry_delay('-5',0)==1
     assert transport.retry_delay('not a delay',2)==4
+
+
+def test_diagnostics_expose_codes_not_messages_or_urls():
+    import json,socket,ssl
+    cert=ssl.SSLCertVerificationError(1,'secret certificate message')
+    cert.verify_code=20;cert.reason='CERTIFICATE_VERIFY_FAILED'
+    network=httpx.ConnectError('private url https://example.org/?secret=x');network.__cause__=cert
+    report=transport.transport_diagnostics(network)
+    assert report['exception_types']==['ConnectError','SSLCertVerificationError']
+    assert report['certificate_verify_codes']==[20]
+    assert report['tls_reasons']==['CERTIFICATE_VERIFY_FAILED']
+    assert report['certificate_verification_error'] and not report['message_or_payload_included']
+    assert 'secret' not in json.dumps(report) and 'example.org' not in json.dumps(report)
+    network.__cause__=socket.gaierror(-2,'secret host')
+    assert transport.transport_diagnostics(network)['dns_error']
+    assert transport.transport_diagnostics(network)['os_error_codes']==[-2]
+
+
+def test_diagnostics_bound_cycles_and_reject_arbitrary_tls_reason():
+    import ssl
+    a=ValueError('private');b=RuntimeError('private');a.__cause__=b;b.__cause__=a
+    assert transport.transport_diagnostics(a)['exception_types']==['ValueError','RuntimeError']
+    start=ValueError();node=start
+    for _ in range(20):node.__cause__=ValueError();node=node.__cause__
+    assert len(transport.transport_diagnostics(start)['exception_types'])==8
+    error=ssl.SSLError(1,'private');error.reason='PRIVATE /data/secret.pdf'
+    assert transport.transport_diagnostics(error)['tls_reasons']==[]
