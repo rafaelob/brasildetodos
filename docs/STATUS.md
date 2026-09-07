@@ -1,72 +1,86 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# Estado verificado — Brasil de Todos
+# Estado verificado — fechamento de grupos, OCR e distribuição
 
-Atualizado em 2026-09-06. Somente `main`; sem force push ou PR de implementação novo.
-Este documento separa implementação, testes, dados carregados e operação pública.
+Atualizado em 06/09/2026 (America/Sao_Paulo). Somente main; sem force push.
+Código verificado: `8324b7620021e1c5bb3a32e7439026a3a0067af2`.
+Plano inicial deste fechamento: `ec753635779d473c16105832ee36302c92352451`.
 
-## Revisão de código e testes
+## Resultado
 
-Implementação integrada: `2d610889210bd1e1085a0783310f99fdf2b3869a`.
-Revisão posterior dos testes: `89584b82de13ab80633cb63ae96591ed94930e44`.
+O lote de grupos integrados, preservação do material de OCR e distribuição
+verificável está fechado. Grupos, corpus e release já tinham sido publicados
+antes desta retomada; a última resposta da conversa estava desatualizada.
+O fechamento preservou esse trabalho e acrescentou instalação atômica do pacote
+completo, seleção externa dos bytes, verificação contínua e regressões.
+Não existe declaração de conclusão integral nem de deploy público.
 
-Quality **34037586194**: aprovada. Backend, testes Node, build TypeScript/Vite e
-cinco jornadas de navegador aprovados. A última jornada inclui Voltar/Avançar
-nativos, recuperação do painel de importações e downloads de seleção.
+## Evidência da revisão
 
-Suíte local integrada: **537 testes Python**, **95,12% cobertura de linhas**, piso
-de 85% preservado; **42 testes JavaScript**. Não é certificação universal.
+| Verificação | Resultado |
+|---|---|
+| Quality `34076805060` | Aprovada: backend, testes web, build TypeScript/Vite e doze percursos de navegador |
+| Backend | 929 testes aprovados, zero falhas, erros ou skips; 3.996/4.178 linhas cobertas (95,64%); piso 85% preservado |
+| Web | Suíte Node aprovada e build completo em Node 24.20.0; 187 testes também conferidos na execução auxiliar |
+| Runtime `34076805106` | Aprovado: PostgreSQL temporário, container real não-root/read-only e frontend servido |
+| Release/corpus `34076805501` | Aprovado em Python 3.14.7: download dos bytes publicados, instalação integral e consulta da API |
+| Acervo OCR versionado | Seis arquivos, quatro originais; hashes preservados e extração nativa conferida; nenhuma nova execução de OCR |
 
-Quality anterior **34037366152** e Runtime **34037366161** também aprovados para
-`2d610889`; runtime verificou PostgreSQL temporário e container real read-only.
-O código continua funcionando sem LLM obrigatório.
+Os relatórios JUnit/cobertura e do aceite foram baixados e seus SHA-256 conferidos.
+Identificadores, contagens, hashes e escopos estão em
+`reports/20260906-verified-closeout.json`. Cobertura de linhas não mede branches.
+A suíte completa local foi interrompida por limite de execução; a aprovação acima
+é da revisão publicada no runner, não uma extrapolação dos testes auxiliares.
 
-## Entregas desta continuidade
+## Grupos e frontend
 
-- Painel público de importações de recursos, separando registros carregados,
-  tentativa mais recente e resultado concluído. Falha não apaga dados anteriores.
-- Exportação de seleções de até 100 recursos em texto, CSV e JSON; filtros,
-  total correspondente, quantidade exportada e truncamento explícitos.
-- Preservação da exportação por recurso e revisão histórica, dos links públicos
-  e das funcionalidades concorrentes já publicadas.
-- Valores exatos, origens, referência temporal e integridade de versões;
-  nenhuma soma entre fases ou publicação de conteúdo documental privado.
-- Interface responsiva pt-BR/en/es, estados independentes de erro/recuperação
-  e controles exercitados em 320, 390 e 1440 pixels.
+A interface usa a API `/groups` publicada, não o rascunho antigo `/community`.
+O percurso nativo cria grupo, gera convite de uso único, ingressa com outra conta,
+seleciona lugar no catálogo, cria/assume tarefa, registra observação privada,
+compartilha explicitamente e revisa por outra pessoa. Recarregar conserva estado;
+retirar a observação revoga sua disponibilidade no grupo; sair revoga o acesso.
+Aceitar no grupo não publica a observação. Tokens não entram em URLs nem no export.
 
-Os testes de navegador usam UI compilada e API real com fixtures sintéticas em
-banco temporário. Não são exemplos de dados oficiais publicados. Não avaliam
-Safari em aparelho físico, leitor de tela, tiles/3D externos ou carga de produção.
-Artefato final browser: **9990681235**.
-Detalhes e hashes: `RESOURCE_STATUS_EXPORT_20260906.md`.
+Os doze percursos preservados abrangem também consulta, favoritos, documentos,
+privacidade, recursos, comparação, exportação, respostas atrasadas, mapa opcional,
+visita guiada, cobertura e descoberta municipal. As combinações específicas estão
+nos scripts `ops/browser_*.py`; o fluxo de grupos cobre pt-BR/en/es em 320/390/1440.
+API e persistência dos percursos são reais, mas as contas/dados desses testes são
+sintéticos, isolados e descartados. Não são cidadãos reais ou dados de produção.
 
-## Fontes oficiais — resultado separado
+## Dados e OCR no GitHub
 
-O catálogo CNES anteriormente verificado contém 96.123 estabelecimentos elegíveis
-pelo perfil ambulatorial SUS, incluindo sete sem coordenadas, com presença em
-27 UFs. Não significa completude de todos os serviços de saúde, natureza apenas
-pública, vagas disponíveis ou confirmação de funcionamento atual. É um pacote
-instalável verificado, não uma implantação nacional pública.
+`tests/corpus/ocr-reviewed/` contém `SYNTHETIC-native.pdf`, `SYNTHETIC-scanned.pdf`,
+`SYNTHETIC-page.png`, `result.json`, `native-extraction.json`, `recognized-text.txt`
+e o manifesto. São os materiais sintéticos anteriormente usados na validação
+portuguesa. Não existem convênios oficiais disfarçados de fixtures nesse acervo.
 
-O replay de recursos **34034998849**, após a correção de precisão monetária PNCP,
-recebeu 6.677 registros em 14 páginas e encontrou **invalid_resource_text**;
-a importação foi revertida. Não foram publicados novos contratos PNCP por esse
-ensaio. O campo/registro e sua causa exata ainda exigem diagnóstico. A alteração
-textual cuja publicação foi bloqueada não integra esta entrega nem foi contornada.
-Dois registros delimitados de Transferegov/Obrasgov foram aceitos em banco temporário.
+A release `public-data-20260906-v1` contém 96.123 estabelecimentos CNES elegíveis
+no perfil de atendimento ambulatorial SUS declarado, sete sem coordenadas, e
+6.679 recursos (6.677 contratos PNCP da janela de 04/09/2026, um plano especial,
+um projeto Obrasgov). O arquivo tem 28.096.042 bytes e hash externo fixado em
+`data/releases/public-data-20260906-v1.json`. O novo instalador reproduziu as
+contagens em banco novo e protegeu as rotas privadas da API.
 
-A carga nacional escolar 2025 continua não concluída: tentativas anteriores de
-download terminaram em ConnectTimeout. Nenhuma substituição silenciosa por
-edição antiga ou dados sintéticos foi usada.
+O pacote não contém contas, sessões, grupos ou observações. Tem zero eventos
+financeiros na tabela finance: valores cadastrais de contratos/planos não viram
+pagamentos. A release é uma prévia de dados com seleção por hash; imutabilidade
+administrativa do GitHub está desabilitada. Ver `BUNDLE_INSTALLATION.md`.
 
-## Pendências principais
+## Coleta escolar: falha real mantida
 
-Diagnóstico e importação reconciliada PNCP; educação nacional e denominadores de
-cobertura; demais módulos Transferegov, execução física/geometrias Obrasgov,
-PDDE/FNS e reconciliação financeira; corpus oficial para avaliação de OCR;
-mapas/3D/panoramas externos; lockfiles revisados; dispositivos e acessibilidade
-assistiva; operação contínua, publicação durável, backups e rollback.
+A execução anterior `34069973954` encontrou o link oficial da edição 2025, mas
+a conexão de download falhou com `SSLCertVerificationError`, código 20; não foi
+falha DNS nesse diagnóstico. A inspeção `34070468415` não alterou confiança nem
+desabilitou TLS e não baixou o dataset. Os recibos estruturados dessa observação
+foram preservados em reports. Nenhuma nova escola foi incluída neste fechamento.
+Esta retomada revalidou a release existente; não efetuou nova coleta governamental.
 
-**Não há implantação pública comprovada nem declaração de conclusão integral.**
-Checks e plano: `../TODO.md` e `ROADMAP.md`. A página ampla de cobertura e histórico
-paginado de todas as importações segue o plano `SPRINT_20260906_COVERAGE.md`;
-o painel de recursos, sozinho, não encerra aquele escopo.
+## Pendências reais
+
+Educação nacional e denominadores; nova competência CNES e atualização periódica;
+demais módulos Transferegov/Obrasgov/PDDE/FNS e reconciliação financeira; corpus
+oficial de OCR, fila e retenção; fotos/panoramas; mapas externos; recuperação de
+conta/moderação; acessibilidade assistiva/dispositivos; segurança e desempenho;
+implantação pública com HTTPS, armazenamento durável, monitoramento e recuperação.
+Detalhamento executável: `../TODO.md`; visão: `ROADMAP.md`; matriz: `FEATURE_MATRIX.md`.
+O texto anterior permanece intacto em `history/STATUS_89584b82.md`.

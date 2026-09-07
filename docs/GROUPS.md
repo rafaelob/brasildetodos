@@ -4,7 +4,7 @@
 Uma pessoa autenticada cria um grupo, convida membros, escolhe um lugar do
 catálogo, abre uma tarefa e organiza a revisão independente de uma observação.
 A API usa o banco real. Não existe backend simulado nem geração de dados cidadãos.
-A interface e a aceitação nativa serão registradas separadamente da API.
+A interface está integrada; o aceite nativo e a API têm evidências distintas em `STATUS.md`.
 
 ## Permissões e fluxo
 
@@ -69,3 +69,11 @@ Grupo privado não é canal de denúncia, verificação oficial ou fila de atend
 O operador precisa definir retenção, suporte e tratamento de abuso antes de abrir
 registro indiscriminado. Não registrar corpos de requisição. Usar HTTPS e cookies
 seguros em produção. Esta implementação não declara hospedagem pública concluída.
+
+## Aceite integrado posterior
+
+Quality `34076805060` no código `8324b762` aprovou os doze percursos, incluindo
+criação, convite, tarefa por busca de catálogo, observação própria, revisão
+independente, recarga, retirada e saída, em pt-BR/en/es e 320/390/1440 pixels.
+Contas e observações do ensaio são sintéticas e isoladas. O resultado não implica
+deploy, moderação operacional ou um sistema de fotos já concluído.

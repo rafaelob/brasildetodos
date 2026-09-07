@@ -1,0 +1,57 @@
+{
+  "started_at": "2026-09-07T00:30:05.029675+00:00",
+  "year": 2025,
+  "revision": "e0943f9d684c1fd99ba98d804681dc306930205f",
+  "stages": [
+    {
+      "stage": "territory",
+      "status": "imported",
+      "records": 5571,
+      "mode": "reused_verified_snapshot",
+      "snapshot_sha256": "1a48607eaff0d16c37c783ff8e429624624ed3d1de6840f4001552dc9bcdef2a",
+      "original_collection_dates": ["2026-09-06T02:21:22.402753+00:00"],
+      "original_source_hashes": ["86ecdccdf97d72e7e5e46f0854cfcea8bacc28154cc1bc4ed0e6110e3a6c9c02"],
+      "fresh_upstream_request": false,
+      "tables_copied": ["municipalities"]
+    },
+    {
+      "stage": "discovery",
+      "status": "one_verified_year_link",
+      "url": "https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2025_.zip",
+      "anchor": {
+        "url": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+        "bytes": 218508,
+        "sha256": "19b2b5b8d388d16cd89b824467953e440f7a9806c6d12deecdf5ae25d493401a",
+        "collected_at": "2026-09-07T00:30:07.768680+00:00",
+        "attempts": 1,
+        "status_code": 200
+      }
+    },
+    {"stage": "failure", "status": "failed", "error_type": "ConnectError", "error_code": "transport_or_profile_failure"}
+  ],
+  "national_catalog_certified": false,
+  "application_deployed": false,
+  "scope": "public schools declared active in reviewed INEP school tables",
+  "status": "failed",
+  "anchor": {
+    "url": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar",
+    "bytes": 218508,
+    "sha256": "19b2b5b8d388d16cd89b824467953e440f7a9806c6d12deecdf5ae25d493401a",
+    "collected_at": "2026-09-07T00:30:07.768680+00:00",
+    "attempts": 1,
+    "status_code": 200
+  },
+  "distribution_url": "https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2025_.zip",
+  "error_type": "ConnectError",
+  "error_code": "transport_or_profile_failure",
+  "transport_diagnostics": {
+    "exception_types": ["ConnectError", "ConnectError", "SSLCertVerificationError"],
+    "os_error_codes": [1],
+    "certificate_verify_codes": [20],
+    "tls_reasons": ["CERTIFICATE_VERIFY_FAILED"],
+    "dns_error": false,
+    "certificate_verification_error": true,
+    "message_or_payload_included": false
+  },
+  "finished_at": "2026-09-07T00:30:13.193303+00:00"
+}

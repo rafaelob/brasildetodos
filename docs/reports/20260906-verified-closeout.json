@@ -1,0 +1,26 @@
+{
+  "schema": "bdt.verified-closeout.v1",
+  "code_revision": "8324b7620021e1c5bb3a32e7439026a3a0067af2",
+  "plan_commit": "ec753635779d473c16105832ee36302c92352451",
+  "repository": "rafaelob/brasildetodos",
+  "branch": "main",
+  "force_push": false,
+  "batch_status": "closed",
+  "target_runtime": {"python": "3.14.7", "node": "24.20.0"},
+  "quality": {"run_id": 34076805060, "conclusion": "success", "tests": 929, "failures": 0, "errors": 0, "skipped": 0, "lines_covered": 3996, "lines_valid": 4178, "line_rate": 0.9564, "line_floor": 0.85, "web_build": "passed", "node_tests": "passed", "browser_journeys": 12, "branch_coverage_measured": false},
+  "runtime": {"run_id": 34076805106, "conclusion": "success", "postgres": "passed", "read_only_container": "passed", "public_deployment": false},
+  "published_data": {"run_id": 34076805501, "conclusion": "success", "receipt": "20260906-published-acceptance.json", "fresh_collection": false, "public_deployment": false},
+  "corpus": {"path": "tests/corpus/ocr-reviewed", "files": 6, "original_files": 4, "derived_files": 2, "manifest_separate": true, "classification": "synthetic-test-only", "ocr_reexecuted": false, "production_import_allowed": false, "receipt": "20260906-published-corpus.json"},
+  "artifacts": [
+    {"id": 10002364039, "name": "backend-evidence", "sha256": "c556fc3113cf9f2f1f3159b3154443afdd53fe396512f4d819f7b9a4948b0b93", "bytes": 23472, "downloaded_and_hash_checked": true},
+    {"id": 10002354905, "name": "published-data-and-corpus-acceptance", "sha256": "ff69d0fe2905b153631f7cda3755aa35706e1eb7c54488f3b9ffe5760d3c6e8b", "bytes": 905, "downloaded_and_hash_checked": true},
+    {"id": 10002419265, "name": "browser-evidence", "sha256": "19dcaffb469fc2bc4420b0994a656ad2ff741ffc4af12c1799f29d44fb13d3b9", "bytes": 21766649, "downloaded_and_hash_checked": false}
+  ],
+  "changes": {"new_behavioral_tests": 35, "targeted_tests_passed": 64, "atomic_complete_installation": true, "independent_release_selection": true, "corpus_verified_in_quality": true, "previous_group_work_preserved": true},
+  "auxiliary_environment": {"python": "3.13.5", "node": "22.16.0", "targeted_tests": 64, "node_tests": 187, "full_suite": "interrupted_by_execution_limit_not_claimed_passed"},
+  "education": {"run_id": 34069973954, "code_revision": "e0943f9d684c1fd99ba98d804681dc306930205f", "status": "failed", "year": 2025, "certificate_verify_codes": [20], "dns_error": false, "fresh_request_this_closeout": false, "new_schools_published": 0, "receipt": "20260906-education-transport-e0943f9.json", "tls_inspection_run_id": 34070468415, "tls_inspection_receipt": "20260906-inep-tls-cb873ed.json", "collector_verification_disabled": false},
+  "global_project_complete": false,
+  "public_application_deployed": false,
+  "mandatory_llm": false,
+  "remaining_scope": ["national_school_ingestion", "official_coverage_denominators", "recurring_catalog_updates", "remaining_transfer_modules", "physical_work_geometry", "PDDE_FNS", "financial_reconciliation", "official_ocr_corpus", "document_queue_operations", "photo_panorama_workflows", "external_map_device_acceptance", "account_recovery_and_moderation_operations", "assistive_and_physical_device_validation", "dependency_security_and_load", "public_deployment_backup_rollback"]
+}

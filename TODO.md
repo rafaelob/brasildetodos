@@ -1,87 +1,87 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# TODO de implementação — Brasil de Todos
+# TODO executável — Brasil de Todos
 
-Atualizado em 2026-09-06. Código verificado: `89584b82de13ab80633cb63ae96591ed94930e44`.
-Trabalho somente no `main`, sem force push. `docs/ROADMAP.md` mantém a visão completa.
-Só marcar `[x]` com implementação e evidência. Código, testes, coleta oficial e
-implantação pública são resultados distintos. Os checks abaixo não certificam
-cobertura nacional nem conclusão integral do projeto.
+Atualizado em 06/09/2026 (America/Sao_Paulo). Código de fechamento: `8324b762`.
+Trabalho somente no main; Python 3.14.7 / Node 24.20.0; sem force push.
+O estado anterior foi preservado em `docs/history/TODO_89584b82.md`. Suas falhas
+são registros históricos, não a situação atual. O projeto inteiro não está
+concluído: este documento fecha o lote de grupos/acervo/publicação e explicita
+os requisitos restantes, sem apagá-los ou escondê-los em mocks.
 
-## Continuidade — backend, frontend, design, publicação e testes
+## Lote atual — fechado com evidências
 
-Plano R registrado em `68a979062603bcd8d0604b9738cf961e2c1d3742`.
-Implementação: `2d610889210bd1e1085a0783310f99fdf2b3869a`; regressão final:
-`89584b82de13ab80633cb63ae96591ed94930e44`. Alterações concorrentes preservadas.
+Plano: `docs/SPRINT_20260906_VERIFIED_CLOSEOUT.md`. Relatório e identificadores:
+`docs/reports/20260906-verified-closeout.json`.
 
-- [x] R01 — Ler main e AGENTS; comparar o incremento anterior com alterações remotas antes de integrar.
-- [x] R02 — Registrar plano de backend, frontend, design e testes antes de alterar o produto.
-- [x] R03 — Integrar painel público de importações de recursos e tratamento de estados sem expor consultas, arquivos, erros brutos ou dados privados.
-- [x] R04 — Exportar recursos por versão e seleções limitadas a 100 registros, com precisão, filtros, fontes, contagens e indicação de truncamento. Sem totais entre fases.
-- [x] R05 — Preservar consultas compartilháveis e testar navegação nativa Voltar/Avançar, sem copiar parâmetros privados, favoritos ou credenciais.
-- [x] R06 — Aprimorar ações mobile, leitura dos valores e estados independentes de carregamento/erro/recuperação nos três idiomas; fluxos verificados em 320/390/1440 pixels.
-- [x] R07 — Testar API, precisão, limites, privacidade, integridade de versões, filtros e tradução, mantendo os gates anteriores.
-- [x] R08 — Publicar no main e aprovar build TypeScript/Vite e cinco jornadas reais de navegador; corrigir sem remover gates.
-- [x] R09 — Consultar o replay oficial PNCP: 6.677 registros/14 páginas, rollback por `invalid_resource_text`; resultado separado dos testes de software.
-- [x] R10 — Consolidar checks, SHA testado, evidências e pendências neste TODO e no registro `docs/RESOURCE_STATUS_EXPORT_20260906.md`.
+- [x] V01 Conferir main/AGENTS; validar hash e árvore do snapshot, preservando alterações concorrentes.
+- [x] V02 Confirmar grupos persistentes e navegação integrada no contrato `/api/groups`; não reaplicar o rascunho incompatível `/community`.
+- [x] V03 Verificar criação/convite/ingresso/tarefa/observação própria/revisão independente/recarga/retirada/saída com dois usuários no navegador, em pt-BR/en/es e 320/390/1440 pixels.
+- [x] V04 Confirmar os quatro originais sintéticos usados no OCR e dois derivados, com manifesto e hashes, já versionados em `tests/corpus/ocr-reviewed/`.
+- [x] V05 Exigir verificação offline do acervo real versionado em toda CI Quality; a verificação não faz rede nem nova execução de OCR.
+- [x] V06 Fixar identidade, tamanho, hash externo, entradas e contagens da release pública em `data/releases/public-data-20260906-v1.json`.
+- [x] V07 Implementar instalação integral catálogo + recursos em banco SQLite novo, com snapshot privado, integridade, checkpoint e publicação atômica sem sobrescrita.
+- [x] V08 Testar rollback de instalação, corrupção, seleção divergente, corrida de destino, troca de origem, sidecars e ausência de dados privados; 35 regressões novas e 64 testes específicos aprovados.
+- [x] V09 Baixar a release efetivamente publicada, instalar todos os registros e consultar a API em Python 3.14.7; aceite `34076805501` aprovado.
+- [x] V10 Aprovar suíte completa de 929 testes Python, 95,64% de cobertura de linhas, build e doze percursos de navegador; Quality `34076805060`.
+- [x] V11 Aprovar integração PostgreSQL/container `34076805106`; não apresentar ambiente temporário como deploy público.
+- [x] V12 Publicar implementação no main, reconciliar TODO/ROADMAP/STATUS/matriz e preservar separadamente os resultados reais de coleta.
 
-R03 cobre o painel de recursos. Não encerra a página cadastral mais ampla nem o
-histórico paginado previstos em `docs/SPRINT_20260906_COVERAGE.md`.
-R09 registra a inspeção do resultado real; não significa que a importação PNCP passou.
+## Entregas anteriores agora confirmadas, não reimplementadas
 
-## Rodada anterior — precisão, recursos e compartilhamento
+- [x] Catálogo territorial e CNES instalável, com perfil, fonte, referência temporal e ausência de coordenadas explícita.
+- [x] Pesquisa, favoritos, acompanhamento de versões e comparação limitada de lugares; respostas atrasadas e falhas independentes tratadas nos percursos existentes.
+- [x] Minha região: descoberta municipal, resumo dos dados carregados e passagem de filtros à pesquisa.
+- [x] Cobertura cadastral e histórico paginado de importações integrados; não são certificação de cobertura nacional.
+- [x] Recursos: busca/filtros, objetos completos, versões, comparação, compartilhamento e exportação individual/histórica/de seleção.
+- [x] Precisão de até quatro casas decimais no perfil PNCP, sem converter valores de contratos em pagamentos.
+- [x] Janela PNCP de 04/09/2026 corrigida e importada: 6.677 contratos, mais um plano especial e um projeto Obrasgov na distribuição. O antigo `invalid_resource_text` não é mais bloqueio dessa janela.
+- [x] Documentos privados: extração nativa, candidatos, OCR seletivo e vínculos por trecho literal com revisão independente; sem publicação automática.
+- [x] Grupos privados: convites de uso único, membros, tarefas, revisão, saída, transferência/arquivamento e controles de privacidade.
+- [x] Release de dados públicos `public-data-20260906-v1` publicada com 96.123 lugares e 6.679 recursos; validação novamente executada no fechamento.
+- [x] Locks Python/Linux e npm publicados e usados nos jobs-alvo; auditoria completa de todas as dependências e plataformas é requisito distinto abaixo.
 
-- [x] T01 — Consultar main, contrato AGENTS e pendências do roadmap.
-- [x] T02 — Registrar o plano antes da implementação.
-- [ ] T03 — Identificar o campo/registro que ainda bloqueia o replay oficial e concluir a importação reconciliada. A falha atual é textual; não inferir a causa nem contornar a alteração bloqueada.
-- [x] T04 — Preservar a precisão monetária publicada e sua limitação, com regressões; eventos financeiros continuam no contrato próprio em centavos.
-- [x] T05 — Tratar HTTP 204 somente no cenário PNCP explicitamente aceito, sem fabricar completude ou apagar registros anteriores.
-- [x] T06 — Melhorar frontend de Obras e recursos: hierarquia, valores, estados e histórico; preservar lista e idiomas e verificar a interface compilada.
-- [x] T07 — Implementar consultas compartilháveis e exportações públicas por recurso/versão e por seleção, sem conteúdo privado.
-- [x] T08 — Testar API, integração, rollback, imutabilidade, formatação e tradução; manter o piso de cobertura.
-- [x] T09 — Aprovar build e percursos de navegador em 320/390/1440 pixels, nos três idiomas.
-- [x] T10 — Inspecionar consulta oficial delimitada executada e registrar sua falha separadamente da suíte sintética.
-- [x] T11 — Registrar resultados, limitações e próximos passos na documentação desta entrega.
-- [x] T12 — Confirmar publicação dos commits de código no main e execuções de CI correspondentes.
+## Próximo lote — dados reais e operação
 
-## Evidência da revisão integrada
+### P0. Educação nacional e atualização dos catálogos
 
-- Suíte local: **537 testes Python aprovados**, **95,12% de cobertura de linhas**, piso de 85% mantido; **42 testes JavaScript aprovados**.
-- Quality `34037366152` aprovada no commit `2d610889`.
-- Quality `34037586194` aprovada no commit `89584b82`, incluindo regressão nativa de Voltar/Avançar.
-- Cinco jornadas mantidas: consulta/favoritos/colaboração; revisão documental/privacidade; recursos/histórico; compartilhamento/exportação de versões; estado de importação/exportação de seleções.
-- Artefato final browser `9990681235`, SHA-256 `a1b1d5592b5d1db0e081a3a10803e8b8fb5c31184a206782b1bb2421169b4245`.
-- Runtime `34037366161`: PostgreSQL temporário e container read-only aprovados. Isso não é operação cloud.
-- Fixtures de navegador são sintéticas, isoladas e não carregadas em produção. Não houve novo probe oficial nessas execuções Quality.
+- [ ] D01 Resolver a falha de validação TLS observada no download oficial do Inep, mantendo hostname/CA/HTTPS verificados. Diagnóstico `34069973954`: `SSLCertVerificationError`, código 20. Inspeção `34070468415` não baixou o dataset nem alterou confiança.
+- [ ] D02 Baixar e importar as tabelas escolares da edição 2025, sem registros individuais de alunos/docentes, preservando ZIP, hashes, dicionário e referência da edição.
+- [ ] D03 Reconciliar contagens elegíveis/excluídas/quarentena por UF/município contra denominadores da fonte. Não concluir completude apenas pela presença nas 27 UFs.
+- [ ] D04 Validar nova competência CNES e política de atualização; distinguir cadastro ativo, atendimento SUS declarado e atendimento disponível agora.
+- [ ] D05 Programar coleta incremental com revisitas, janelas sobrepostas, alteração de esquema, retomada e indicadores de atraso; preservar a versão válida anterior.
+- [ ] D06 Publicar nova edição de dados somente após aceite independente; nova tag e seleção de bytes, sem substituir silenciosamente a v1.
 
-Histórico: T04/T05 passaram inicialmente com 478 Python/30 Node; compartilhamento
-por versão entrou com 506 Python/36 Node. Os números acima são os do conjunto integrado.
+### P0. Recursos e reconciliação financeira
 
-## Dados oficiais — falha preservada
+- [ ] F01 Ampliar Transferegov para instrumentos assinados, metas, etapas, aditivos, desembolsos e pagamentos, com identidade e significado por tabela.
+- [ ] F02 Integrar execução física e geometrias Obrasgov por identidade do projeto; endereço do comprador não é localização da obra.
+- [ ] F03 Integrar PDDE e FNS com identificadores e granularidade efetivamente publicados.
+- [ ] F04 Reconciliar destinatários, estornos, correções e eventos entre fontes; provar ausência de dupla contagem sem somar fases financeiras.
+- [ ] F05 Processar anexos referenciados em fila, com limites, hashes, revisão e retenção. Vínculos a unidades exigem evidência, não semelhança de nome.
 
-O replay `34034998849` recebeu 6.677 registros PNCP em 14 páginas e terminou com
-`invalid_resource_text`; a transação foi revertida e não publicou novos contratos.
-A causa exata do campo/registro ainda não foi comprovada. A alteração textual cuja
-publicação foi bloqueada não integra a entrega e não foi contornada.
-Dois registros de outras fontes foram aceitos em banco de verificação temporário.
-Detalhes: `docs/reports/20260906-precision-reintake.json` e
-`docs/RESOURCE_STATUS_EXPORT_20260906.md`.
+### P0/P1. Documentos, colaboração e experiência
 
-## Próximo ciclo — dados e operação nacional
+- [ ] O01 Obter e revisar corpus oficial de documentos, com condições de reutilização, minimização e anotação independente.
+- [ ] O02 Medir extração e OCR por campo/família, incluindo tabelas multipágina, assinaturas, imagens ruins e abstenção; testes sintéticos não estimam acurácia real.
+- [ ] O03 Completar quotas, cancelamento, expurgo, retenção e observabilidade da fila documental em ambiente operacional.
+- [ ] U01 Fotos: envio, remoção de metadados, minimização/redação, revisão, exclusão e política operacional antes de publicação.
+- [ ] U02 Panoramax/Mapillary opcionais, licença, data de captura e ausência de cobertura; imagem histórica nunca é apresentada como visita atual.
+- [ ] U03 Validar tiles e 3D com fonte externa e hardware limitado; lista, busca e contribuição devem continuar independentes.
+- [ ] U04 Completar recuperação de conta, recurso de moderação, tratamento de abuso e retenção dos dados de grupos/backups.
+- [ ] U05 Validar acessibilidade assistiva, Safari/iOS e Android físicos, zoom/reflow e consumo de memória; percursos Chromium não substituem essas avaliações.
 
-- [ ] N01 — Obter e importar a edição nacional 2025 do Censo Escolar; reconciliar registros e partições.
-- [ ] N02 — Certificar cobertura cadastral de educação/saúde com denominadores e relatórios; presença nas UFs não é certificado.
-- [ ] N03 — Ampliar instrumentos, metas, etapas, aditivos e pagamentos Transferegov; execução física/geometrias Obrasgov.
-- [ ] N04 — Reconciliar fontes, estornos e destinatários; integrar PDDE/FNS respeitando granularidade e vínculos demonstrados.
-- [ ] N05 — Avaliar extração/OCR em corpus oficial legitimamente obtido, com métricas por campo e revisão; completar quotas, cancelamento e retenção.
-- [ ] N06 — Validar mapas/3D externos e panoramas opcionais em dispositivos limitados, sem bloquear o núcleo.
-- [ ] N07 — Incorporar lockfiles revisados; validar acessibilidade assistiva, Safari/dispositivos físicos e desempenho.
-- [ ] N08 — Validar hospedagem, HTTPS, publicação durável dos dados, atualização periódica, backups/restauração e rollback em ambiente público.
-- [ ] N09 — Expandir grupos/tarefas/fotos e moderação apenas com privacidade, retenção e responsabilidade operacional.
+### P0. Implantação e qualidade operacional
 
-## Critérios de aceite
+- [ ] P01 Implantar backend/frontend com banco e documentos duráveis, HTTPS, domínio e configuração de menor privilégio; publicar URL e revisão real.
+- [ ] P02 Exercitar backup/restauração, reconciliação de exclusões, rollback, monitoramento e alertas no ambiente implantado.
+- [ ] P03 Medir consultas e concorrência sobre base nacional real; avaliar índices, limites de memória e filas, sem inferir capacidade a partir de um smoke test.
+- [ ] P04 Auditar vulnerabilidades/licenças Python e npm, imagens por digest, navegadores e pacotes de sistema; documentar exceções e renovação.
+- [ ] P05 Validar perfis Windows/macOS e arquiteturas adicionais; não rotular o lock Linux como universal.
+- [ ] P06 Integrar camadas IBGE detalhadas/conectividade/Giga e outras fontes abertas somente após caso de uso, licença e joins revisados.
 
-Sem dados sintéticos em produção, sem vínculo de unidade por nome/proximidade,
-sem soma de fases financeiras, sem LLM obrigatório e sem confundir testes com deploy.
-Três idiomas e origem/referência temporal visíveis. Diferenciar ausência de dado,
-indisponibilidade da fonte, falha de coleta e resultado de importação.
-O projeto não está declarado integralmente concluído.
+## Regras de aceite
+
+Cada tarefa fecha com código + teste + evidência da revisão. Coleta, distribuição
+de dados, execução de testes e aplicação em produção são quatro coisas distintas.
+Não há LLM obrigatório, coordenadas inventadas, resultados sintéticos em produção,
+publicação automática de observações nem vínculo de contrato por proximidade.

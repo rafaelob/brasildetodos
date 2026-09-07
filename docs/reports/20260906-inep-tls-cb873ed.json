@@ -1,0 +1,36 @@
+{
+  "schema": "bdt.fixed-inep-tls-inspection.v1",
+  "host": "download.inep.gov.br",
+  "observed_at": "2026-09-07T00:39:11.155267+00:00",
+  "certifi_version": "2026.07.22",
+  "certifi": {
+    "status": "verification_failed",
+    "tls_verified": false,
+    "openssl_returncode": 1,
+    "verification_codes": [0],
+    "presented_chain": [],
+    "http_request_sent": false,
+    "raw_diagnostic_sha256": "49dccfe9eaed08ddfe0d8683f1418ed06f1aef9d0ecf64f3999dc63e26758f86"
+  },
+  "system": {
+    "status": "verification_failed",
+    "tls_verified": false,
+    "openssl_returncode": 1,
+    "verification_codes": [0, 20],
+    "presented_chain": [{
+      "subject": "CN=*.inep.gov.br,O=INSTITUTO NAC DE ESTUDOS E PESQ EDUCACIONAIS ANISIO TEIXEIRA,L=BRASILIA,ST=DISTRITO FEDERAL,C=BR",
+      "issuer": "CN=RNP ICPEdu GR46 OV TLS CA 2025,O=REDE NACIONAL DE ENSINO E PESQUISA - RNP,C=BR",
+      "not_before": "2026-04-01T19:06:11+00:00",
+      "not_after": "2026-10-17T19:06:11+00:00",
+      "sha256": "9e46ac7fa9b3dd546a69112ac54e4f12d7bf8b70da41269be6b93b62d95c20a6",
+      "issuer_locations_untrusted": ["http://secure.globalsign.com/cacert/rnpicpedugr46ovtlsca2025.crt"],
+      "trusted_by_observation_alone": false
+    }],
+    "http_request_sent": false,
+    "raw_diagnostic_sha256": "0b703fd38950ff05cd9e13d431ec97a4d73cbdd5307db812acab6fc5f3c96ec1"
+  },
+  "trust_store_changed": false,
+  "collector_verification_disabled": false,
+  "downloaded_dataset": false,
+  "issuer_locations_fetched": false
+}

@@ -10,27 +10,27 @@ Não substituir o backend publicado pelo rascunho anterior: aquele rascunho usa
 
 - [x] C01 — Conferir main, AGENTS e CI; recuperar snapshot com hash verificado.
 - [x] C02 — Identificar a divergência entre o rascunho da interface e a API atual.
-- [ ] C03 — Implementar navegação e interface de grupos privados no contrato atual:
+- [x] C03 — Implementar navegação e interface de grupos privados no contrato atual:
   criar/editar, convites, membros, transferência, arquivamento, saída e tarefas.
-- [ ] C04 — Fechar tarefa ponta a ponta: localizar lugar, assumir, criar e
+- [x] C04 — Fechar tarefa ponta a ponta: localizar lugar, assumir, criar e
   compartilhar observação própria, revisar independentemente, reabrir/cancelar.
-- [ ] C05 — Cobrir conflitos, respostas atrasadas, sessão, consentimento, revisão,
+- [x] C05 — Cobrir conflitos, respostas atrasadas, sessão, consentimento, revisão,
   persistência e privacidade; manter gates e percursos existentes.
-- [ ] C06 — Executar build e browser multiusuário PT/EN/ES em 320/390/1440 pixels
+- [x] C06 — Executar build e browser multiusuário PT/EN/ES em 320/390/1440 pixels
   nos runtimes fixados, corrigindo o produto e não removendo verificações.
-- [ ] C07 — Inventariar os artefatos locais baixados e os documentos usados no OCR;
+- [x] C07 — Inventariar os artefatos locais baixados e os documentos usados no OCR;
   separar originais oficiais, excertos manuais e fixtures sintéticas.
-- [ ] C08 — Publicar no GitHub somente arquivos inspecionados e autorizados,
+- [x] C08 — Publicar no GitHub somente arquivos inspecionados e autorizados,
   incluindo manifesto, hashes, proveniência e resultados; não expor dados privados.
-- [ ] C09 — Exigir verificação reproduzível do corpus: bytes originais preservados,
+- [x] C09 — Exigir verificação reproduzível do corpus: bytes originais preservados,
   saída de extração diferenciada e nenhum resultado sintético no catálogo público.
-- [ ] C10 — Conferir coleta educacional e intake oficial atual; executar tentativas
+- [x] C10 — Conferir coleta educacional e intake oficial atual; executar tentativas
   delimitadas e registrar resultado sem confundir reuso com nova coleta.
-- [ ] C11 — Reconciliar TODO, ROADMAP, STATUS e matriz de funcionalidades com
+- [x] C11 — Reconciliar TODO, ROADMAP, STATUS e matriz de funcionalidades com
   referências de commits, CI, artefatos e pendências concretas.
-- [ ] C12 — Confirmar publicação no main e resultado das verificações da revisão.
+- [x] C12 — Confirmar publicação no main e resultado das verificações da revisão.
 
-## Inventário inicial, ainda sem publicação documental
+## Inventário inicial histórico, agora arquivado conforme evidências abaixo
 
 O arquivo recuperado `brasildetodos-ocr-portuguese-evidence.zip` contém
 SYNTHETIC-native.pdf, SYNTHETIC-scanned.pdf, SYNTHETIC-page.png e result.json.
@@ -50,3 +50,16 @@ monitoramento, backups/restauração, rollback e operação pública.
 Código, teste automatizado, coleta real, material disponibilizado no GitHub e
 aplicação implantada são resultados separados. Fixtures isoladas são necessárias
 para regressões e jamais substituem dados reais em produção. Sem LLM obrigatório.
+
+## Fechamento confirmado
+
+Implementação integrada e doze percursos: `8324b762`, Quality `34076805060`
+aprovada. Grupos já publicados em `0d5648fb` e corrigidos em `fc027ce7`/`28d147a9`
+foram preservados. O acervo entrou em `43a258a3`; release de dados
+`public-data-20260906-v1` publicada e revalidada no aceite `34076805501`.
+
+C10 fecha a verificação e o registro de tentativas reais, não o sucesso da carga
+escolar: a edição 2025 continua bloqueada em verificação TLS. C07 refere-se aos
+artefatos de dados/OCR selecionados, não a uma promessa de publicar todos os ZIPs
+de ambientes temporários. Não há PDF oficial obtido por esse ensaio sintético.
+A matriz e as frentes restantes estão em `FEATURE_MATRIX.md` e `../TODO.md`.
