@@ -1,0 +1,69 @@
+name: Unified national catalog acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/national-catalog-acceptance.yml
+      - ops/install_national_catalog.py
+      - ops/national_catalog_acceptance.py
+      - ops/browser_national_catalog.py
+      - backend/tests/test_national_installation.py
+      - backend/tests/test_national_acceptance.py
+      - backend/tests/test_national_integrity.py
+      - data/releases/*.json
+permissions:
+  contents: read
+concurrency:
+  group: national-catalog-acceptance-main
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.ref == 'refs/heads/main' && github.repository == 'rafaelob/brasildetodos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - name: Verify Python and exercise all-or-nothing installation
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+          python -m pytest backend/tests/test_national_installation.py backend/tests/test_national_acceptance.py backend/tests/test_national_integrity.py -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Build actual frontend from the selected runtime and lock
+        working-directory: web
+        run: |
+          node ../ops/check-node.mjs
+          npm ci
+          npm test
+          npm run build
+      - name: Download existing reviewed releases without changing either
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p selected-public-data
+          gh release download public-data-20260906-v1 --repo rafaelob/brasildetodos --dir selected-public-data --pattern public-data.zip
+          gh release download education-2025-20260907-v1 --repo rafaelob/brasildetodos --dir selected-public-data --pattern education-catalog.zip
+      - name: Verify the complete mixed database and compiled citizen journeys
+        run: |
+          python -m pip install playwright==1.56.0
+          python ops/national_catalog_acceptance.py --health selected-public-data/public-data.zip \
+            --education selected-public-data/education-catalog.zip --static web/dist
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unified-national-catalog-evidence
+          retention-days: 90
+          path: |
+            test-results/national-acceptance/acceptance.json
+            test-results/national-acceptance/browser/report.json
+            test-results/national-acceptance/browser/*.png
+# No databases, accounts, server logs, source ZIPs or private working directories.
+# This job is acceptance only: no release writes, deployments or main changes.
