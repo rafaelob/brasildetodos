@@ -1,0 +1,2 @@
+.detail-request-status{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;padding:1rem;margin:1rem 0;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff)}
+.detail-request-status button{min-height:44px;white-space:normal}

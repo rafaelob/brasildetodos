@@ -1,3 +1,4 @@
+import {createLatestTask} from './latest-task.mjs';
 import {StrictMode,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {api,downloadJSON} from './api';
@@ -15,6 +16,7 @@ import {parseResourceRoute} from './resource-route.mjs';
 import Workbench,{PlaceEvidence,PrivacyControls} from './Workbench';
 import type {Detail,Locale,Money,Observation,Place,Source,User} from './types';
 import './style.css';
+import './detail-status.css';
 import './workbench.css';
 
 type Town={id:string;name:string;state:string};
@@ -36,10 +38,13 @@ function App(){
   const [mine,setMine]=useState<Observation[]>([]),[queue,setQueue]=useState<Observation[]>([]);
   const [regionId,setRegionId]=useState('');
   const [tab,setTab]=useState('service');
-  const searchVersion=useRef(0),detailVersion=useRef(0);
+  const searchVersion=useRef(0),detailTask=useRef(createLatestTask());
+  const [detailBusy,setDetailBusy]=useState(false);
+  function cancelDetails(){detailTask.current.cancel();setDetailBusy(false);}
+  useEffect(()=>()=>detailTask.current.cancel(),[]);
   function failure(){setNotice('failure');}
   useEffect(()=>{const changed=()=>{const hash=window.location.hash,route=parseResourceRoute(hash);
-    if(route){setResourceRoute(hash);setView('resources');setDetail(null);setLocale(route.locale as Locale);detailVersion.current++;}
+    if(route){setResourceRoute(hash);setView('resources');setDetail(null);setLocale(route.locale as Locale);cancelDetails();}
   };window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed);},[]);
   useEffect(()=>{document.documentElement.lang=locale;try{localStorage.setItem('bdt:locale',JSON.stringify(locale));}catch{}},[locale]);
   useEffect(()=>{api<Config>('/config').then(setConfig).catch(failure);api<User>('/auth/me').then(setUser).catch(()=>{});},[]);
@@ -48,11 +53,18 @@ function App(){
     setBusy(true);const params=new URLSearchParams({q:query,kind,state,municipality_id:town,page:String(page),limit:'30'});for(const[key,value]of [...params])if(!value)params.delete(key);if(bbox)params.set('bbox',bbox);
     api<{items:Place[];total:number}>('/places?'+params).then(result=>{if(id===searchVersion.current){setPlaces(result.items);setTotal(result.total);}}).catch(()=>{if(id===searchVersion.current)failure();}).finally(()=>{if(id===searchVersion.current)setBusy(false);});
   },220);return()=>{clearTimeout(timer);searchVersion.current++;};},[query,kind,state,town,bbox,page,view]);
-  async function navigate(next:string){if(parseResourceRoute(window.location.hash)){window.history.replaceState(null,'',window.location.pathname+window.location.search);setResourceRoute('');}setView(next);setDetail(null);setNotice('');detailVersion.current++;
+  async function navigate(next:string){if(parseResourceRoute(window.location.hash)){window.history.replaceState(null,'',window.location.pathname+window.location.search);setResourceRoute('');}setView(next);setDetail(null);setNotice('');cancelDetails();
     if(next==='account'&&user)try{setMine(await api<Observation[]>('/observations/mine'));}catch{failure();}
     if(next==='review')try{setQueue(await api<Observation[]>('/review'));}catch{failure();}
   }
-  async function select(id:string){const version=++detailVersion.current;setBusy(true);setTab('service');setNotice('');try{const[d,h]=await Promise.all([api<Detail>('/places/'+ref(id)),api<History[]>('/places/'+ref(id)+'/history')]);if(version===detailVersion.current){setDetail(d);setHistory(h);}}catch{failure();}finally{setBusy(false);}}
+  async function select(id:string){
+    setDetailBusy(true);setDetail(null);setHistory([]);setTab('service');setNotice('');
+    await detailTask.current.run(async signal=>{
+      const result=await Promise.all([api<Detail>('/places/'+ref(id),{signal}),api<History[]>('/places/'+ref(id)+'/history',{signal})]);
+      if(result[0].place.id!==id)throw new Error('Mismatched place identity');
+      return result;
+    },{success:([d,h])=>{setDetail(d);setHistory(h);},failure:()=>failure(),settled:()=>setDetailBusy(false)});
+  }
   function favorite(id:string){const next=favorites.includes(id)?favorites.filter(value=>value!==id):[...favorites,id];try{localStorage.setItem('bdt:favorites',JSON.stringify(next));setFavorites(next);}catch{setNotice('blockedStorage');}}
   function openRegion(id:string){setRegionId(id);navigate('region');}
   function SourceView({source}:{source:Source}){const url=safeReference(source.url);return <div className="source"><span className="eyebrow">{t('source')}</span><strong>{source.dataset}</strong><dl><dt>{t('reference')}</dt><dd>{source.reference_date||t('unknown')}</dd><dt>{t('collected')}</dt><dd>{new Date(source.collected_at).toLocaleDateString(locale)}</dd></dl>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<details><summary>SHA-256</summary><code>{source.snapshot_sha256}</code></details></div>;}
@@ -65,7 +77,8 @@ function App(){
   const current=detail?.place;
   return <><a className="skip" href="#main">{t('explore')}</a><header className="header"><button className="brand" onClick={()=>navigate('explore')} aria-label="Brasil de Todos"><span className="brand-mark" aria-hidden="true">✳</span><span>Brasil<span className="brand-sub">de Todos</span></span></button><nav aria-label={t('explore')}>{['explore','saved','region','resources','groups','coverage'].map(value=><button key={value} className={view===value?'active':''} onClick={()=>navigate(value)}>{t(value)}</button>)}</nav><div className="header-right"><select aria-label="Idioma / Language / Idioma" value={locale} onChange={event=>setLocale(event.target.value as Locale)}><option value="pt-BR">PT</option><option value="en">EN</option><option value="es">ES</option></select><button onClick={()=>navigate('account')}>{user?.username||t('account')}</button>{user?.role==='reviewer'&&<><button onClick={()=>navigate('review')}>{t('review')}</button><button onClick={()=>navigate('workbench')}>{t('workbench')}</button></>}</div></header>
   <main id="main">{notice&&<div className="notice" role="status">{t(notice)}<button aria-label={t('close')} onClick={()=>setNotice('')}>×</button></div>}
-  {current&&detail?<section className="detail"><button onClick={()=>{setDetail(null);detailVersion.current++;}} className="back">← {t('back')}</button><div className="detail-title"><div><span className="eyebrow">{t(current.kind)} · {current.state}</span><h1>{current.name}</h1><p>{current.address||t('noAddress')}</p></div><button className="primary" aria-pressed={favorites.includes(current.id)} onClick={()=>favorite(current.id)}>{t(favorites.includes(current.id)?'unsave':'save')}</button></div>{!current.catalogue_eligible&&<p className="callout">{t('withdrawn')}</p>}<div className="tabs">{['service','finance','history','community','source'].map(value=><button key={value} className={tab===value?'active':''} onClick={()=>setTab(value)}>{t(value==='service'?'details':value)}</button>)}</div>
+  {detailBusy&&<div className="detail-request-status" role="status"><span>{t('loadingPlace')}</span><button onClick={cancelDetails}>{t('cancelPlace')}</button></div>}
+  {current&&detail?<section className="detail"><button onClick={()=>{setDetail(null);cancelDetails();}} className="back">← {t('back')}</button><div className="detail-title"><div><span className="eyebrow">{t(current.kind)} · {current.state}</span><h1>{current.name}</h1><p>{current.address||t('noAddress')}</p></div><button className="primary" aria-pressed={favorites.includes(current.id)} onClick={()=>favorite(current.id)}>{t(favorites.includes(current.id)?'unsave':'save')}</button></div>{!current.catalogue_eligible&&<p className="callout">{t('withdrawn')}</p>}<div className="tabs">{['service','finance','history','community','source'].map(value=><button key={value} className={tab===value?'active':''} onClick={()=>setTab(value)}>{t(value==='service'?'details':value)}</button>)}</div>
   {tab==='service'&&<div className="detail-columns"><article className="panel"><p className="callout">{t('serviceNote')}</p><h2>{t('details')}</h2>{current.phone&&<p>{current.phone}</p>}<div className="tags">{current.declared_services.map(service=><span className="pill" key={service}>{t(service)}</span>)}</div>{current.latitude===null&&<p>{t('noGeo')}</p>}<button onClick={()=>openRegion(current.municipality_id)}>{t('region')} →</button></article><SourceView source={current.source}/></div>}
   {tab==='finance'&&<><p className="callout">{t('regionNote')}</p><MoneyCards events={detail.finance}/><PlaceEvidence placeId={current.id} t={t}/><button onClick={()=>openRegion(current.municipality_id)}>{t('region')} →</button></>}
   {tab==='source'&&<><SourceView source={current.source}/><p>{t('placeIdentifier')}: <code>{current.id}</code></p><button onClick={()=>downloadJSON('brasildetodos-'+current.id.replace(':','-')+'.json',detail)}>{t('exportData')}</button></>}

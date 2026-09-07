@@ -11,6 +11,7 @@ on:
       - backend/tests/test_public_browser_sample.py
       - data/releases/public-data-20260906-v1.json
       - tests/corpus/ocr-reviewed/**
+      - web/src/**
 permissions:
   contents: read
 concurrency:

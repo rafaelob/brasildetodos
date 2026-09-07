@@ -6,9 +6,9 @@ import {resourceMessages} from './resource-i18n.mjs';
 import {translate} from './i18n.mjs';
 import {featureMessages} from './features-i18n.mjs';
 export const additionalMessages={
-  'pt-BR':{groups:'Grupos',placeIdentifier:'Identificador do lugar',observationWithdrawn:'Contribuição retirada pelo autor'},
-  en:{groups:'Groups',placeIdentifier:'Place identifier',observationWithdrawn:'Contribution withdrawn by author'},
-  es:{groups:'Grupos',placeIdentifier:'Identificador del lugar',observationWithdrawn:'Contribución retirada por el autor'}
+  'pt-BR':{loadingPlace:'Abrindo a ficha do lugar…',cancelPlace:'Cancelar abertura da ficha',groups:'Grupos',placeIdentifier:'Identificador do lugar',observationWithdrawn:'Contribuição retirada pelo autor'},
+  en:{loadingPlace:'Opening place details…',cancelPlace:'Cancel opening place',groups:'Groups',placeIdentifier:'Place identifier',observationWithdrawn:'Contribution withdrawn by author'},
+  es:{loadingPlace:'Abriendo la ficha del lugar…',cancelPlace:'Cancelar apertura de ficha',groups:'Grupos',placeIdentifier:'Identificador del lugar',observationWithdrawn:'Contribución retirada por el autor'}
 };
 export function uiText(locale,key){
   const language=['pt-BR','en','es'].includes(locale)?locale:'pt-BR';

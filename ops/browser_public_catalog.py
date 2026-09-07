@@ -142,7 +142,7 @@ def main(argv=None):
                                     query=samples[0]['name'][:200]
                                     with page.expect_response(lambda response: urlsplit(response.url).path=='/api/places'
                                             and parse_qs(urlsplit(response.url).query).get('q')==[query]) as found:
-                                        page.get_by_label(labels['search'],exact=True).fill(query)
+                                        page.get_by_role('searchbox',name=labels['search'],exact=True).fill(query)
                                     assert found.value.status==200 and found.value.json()['total']>0
                                     expect(page.locator('.place-card').first).to_be_visible()
                                     page.evaluate('(ids)=>localStorage.setItem("bdt:favorites",JSON.stringify(ids))',ids)
