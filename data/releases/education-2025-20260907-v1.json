@@ -1,0 +1,54 @@
+{
+  "schema": "bdt.education-selection.v1",
+  "repository": "rafaelob/brasildetodos",
+  "tag": "education-2025-20260907-v1",
+  "dataset": "inep-schools-2025",
+  "source_revision": "96aa4bf80cc13402f0d35d47a8deabcae6d30db3",
+  "artifact": {
+    "id": 10003233969,
+    "run_id": 34078768110,
+    "bytes": 23807757,
+    "sha256": "483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7"
+  },
+  "counts": {
+    "read": 214192,
+    "eligible": 138086,
+    "without_geometry": 138086,
+    "excluded": 76106
+  },
+  "upstream_sha256": "ad2c389160be5cf6b8e32257677e9b5657f01d10a342355ad9757bfecd2fc90a",
+  "members": {
+    "inep-distribution.zip.manifest.json": {
+      "bytes": 672,
+      "sha256": "af59ba23d65a21d7d7da8127955c8f0013a417ca61bfd96cb647f9aea380081e"
+    },
+    "public-catalog/finance.jsonl": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "public-catalog/changes.jsonl": {
+      "bytes": 117715807,
+      "sha256": "007f49a3ff61e2f4c60c9acfa12568b238e957230ffd17538e561b3b65a8bb27"
+    },
+    "public-catalog/manifest.json": {
+      "bytes": 4330,
+      "sha256": "2d063c4c7f4e3d25ade0f5138d12f1dee2e6be2416dafdbb5c9a44c54b7bd057"
+    },
+    "public-catalog/municipalities.jsonl": {
+      "bytes": 1839110,
+      "sha256": "357b4a12cfcc8c908f58d3a7c94d9003dc30b2ec836c7b0e694970860c8c3565"
+    },
+    "public-catalog/places.jsonl": {
+      "bytes": 132346499,
+      "sha256": "3ea6e27824237cd44d027429c29768e254125ae7909cbcff266939c175a9302b"
+    },
+    "public-catalog/resources.jsonl": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "report.json": {
+      "bytes": 42205,
+      "sha256": "25f50895422719e477e08e11589eaf6e859680d0d1d21fdf4a684e8c59b730c2"
+    }
+  }
+}

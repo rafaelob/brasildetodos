@@ -1,0 +1,110 @@
+name: Verified national education release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/education-release.yml
+      - ops/education_release.py
+      - ops/browser_public_catalog.py
+      - data/releases/education-2025-20260907-v1.json
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: reviewed-school-release-main
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && github.repository == 'rafaelob/brasildetodos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DATA_TAG: education-2025-20260907-v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Install and test in the required Python runtime
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+          python -m pytest backend/tests/test_education_release.py backend/tests/test_browser_wait.py -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Build the real frontend from the verified lock
+        working-directory: web
+        run: |
+          node ../ops/check-node.mjs
+          npm ci
+          npm test
+          npm run build
+      - name: Determine whether the selected release exists
+        id: existing
+        run: |
+          mkdir -p release-data
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          request=urllib.request.Request('https://api.github.com/repos/rafaelob/brasildetodos/releases/tags/'+os.environ['DATA_TAG'],
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  value=json.load(response)
+                  if value['tag_name'] != os.environ['DATA_TAG']: raise ValueError('unexpected_release')
+                  present=True
+          except urllib.error.HTTPError as error:
+              if error.code != 404: raise
+              present=False
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out: out.write('present='+str(present).lower()+'\n')
+          PY
+      - name: Recover only the pinned public school artifact
+        if: steps.existing.outputs.present != 'true'
+        run: |
+          gh api repos/rafaelob/brasildetodos/actions/artifacts/10003233969/zip > release-data/education-catalog.zip
+      - name: Reuse the existing release without overwriting it
+        if: steps.existing.outputs.present == 'true'
+        run: |
+          gh release download "$DATA_TAG" --repo rafaelob/brasildetodos --dir release-data --pattern education-catalog.zip
+      - name: Accept all records and the native browser before release
+        run: |
+          python -m pip install playwright==1.56.0
+          python ops/education_release.py release-data/education-catalog.zip \
+            --selection data/releases/education-2025-20260907-v1.json --browser \
+            --output test-results/education-release/acceptance.json
+      - name: Publish a new reviewed release, never overwrite an asset
+        if: steps.existing.outputs.present != 'true'
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          selected=json.loads(Path('data/releases/education-2025-20260907-v1.json').read_text())
+          raw=Path('release-data/education-catalog.zip').read_bytes()
+          assert len(raw)==selected['artifact']['bytes'] and hashlib.sha256(raw).hexdigest()==selected['artifact']['sha256']
+          Path('release-data/education-catalog.sha256').write_text(selected['artifact']['sha256']+'  education-catalog.zip\n')
+          PY
+          gh release create "$DATA_TAG" release-data/education-catalog.zip release-data/education-catalog.sha256 \
+            test-results/education-release/acceptance.json --target "$GITHUB_SHA" \
+            --title 'Censo Escolar 2025 — catálogo público verificado' \
+            --notes-file docs/EDUCATION_RELEASE.md --prerelease --latest=false
+      - name: Download and independently verify the published bytes
+        run: |
+          mkdir -p published-education
+          gh release download "$DATA_TAG" --repo rafaelob/brasildetodos --dir published-education --pattern education-catalog.zip
+          python ops/education_release.py published-education/education-catalog.zip \
+            --selection data/releases/education-2025-20260907-v1.json \
+            --output test-results/education-release/published.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: education-release-acceptance
+          retention-days: 90
+          path: |
+            test-results/education-release/*.json
+            test-results/browser-education/
+# Original public artifact only; never uploads active databases, students,
+# community data, session material or arbitrary folders. No changes to main.
