@@ -29,8 +29,10 @@ def exercise(health, education, *, health_selection, education_selection, output
             stage = 'api'
             result['api'] = accept_api(destination, result['installation'])
             if static is not None:
-                from browser_national_catalog import exercise_new_installation
                 stage = 'browser'
+                if not (Path(static) / 'index.html').is_file():
+                    raise ValueError('national_browser_build_missing')
+                from browser_national_catalog import exercise_new_installation
                 browser = exercise_new_installation(destination, result['installation'], static, output / 'browser')
                 if browser['status'] != 'passed':
                     raise ValueError('national_browser_failed')

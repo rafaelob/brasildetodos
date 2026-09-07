@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version-file: .python-version
+          python-version-file: '.python-version'
       - name: Verify Python and exercise all-or-nothing installation
         run: |
           python ops/check_toolchain.py --runtime python
@@ -36,7 +36,7 @@ jobs:
           python -m pytest backend/tests/test_national_installation.py backend/tests/test_national_acceptance.py backend/tests/test_national_integrity.py -q
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: '.nvmrc'
       - name: Build actual frontend from the selected runtime and lock
         working-directory: web
         run: |
