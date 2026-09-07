@@ -1,0 +1,37 @@
+name: Inspect official discretionary CSV tables
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/transferegov_csv_probe.py
+      - .github/workflows/transferegov-csv-discovery.yml
+permissions:
+  contents: read
+concurrency:
+  group: transferegov-csv-inspection-main
+  cancel-in-progress: false
+jobs:
+  inspect-csv-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify exact runtime and parser boundaries
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+          python -m pytest backend/tests/test_transferegov_csv_probe.py -q
+      - name: Inspect only publisher-listed tables; do not publish raw archives
+        run: python ops/transferegov_csv_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transferegov-csv-contracts
+          retention-days: 30
+          path: test-results/transferegov-csv-schema/report.json
