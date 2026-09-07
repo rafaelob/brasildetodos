@@ -1,0 +1,34 @@
+name: Inspect official INEP TLS chain
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/inspect_inep_tls.py
+      - .github/workflows/inep-tls-inspection.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - run: python ops/check_toolchain.py --runtime python
+      - run: python ops/install_locked.py --editable
+      - run: python -m pytest backend/tests/test_inep_tls_inspection.py -q
+      - name: Inspect only the fixed official host without requesting dataset bytes
+        run: python ops/inspect_inep_tls.py --output test-results/inep-tls.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-inep-tls-chain
+          retention-days: 90
+          path: test-results/inep-tls.json
+# Metadata inspection success is not successful TLS validation or dataset import.
+# No root is installed, no AIA location is fetched, no TLS policy is relaxed.
