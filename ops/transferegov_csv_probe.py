@@ -20,7 +20,7 @@ from bdt.sync import atomic_json, download_retry
 
 BASE='https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/'
 INDEX=BASE+'?restype=container&comp=list'
-FILES=('siconv_convenio.csv.zip','siconv_termo_aditivo.csv.zip','siconv_desembolso.csv.zip')
+FILES=('siconv_convenio.zip','siconv_termo_aditivo.zip','siconv_desembolso.zip')
 SAFE_FIELDS=frozenset(('NR_CONVENIO','ID_PROPOSTA','ID_DESEMBOLSO','ID_TERMO_ADITIVO',
  'DIA_ASSIN_CONV','DIA_PUBL_CONV','DIA_INIC_VIGENC_CONV','DIA_FIM_VIGENC_CONV','SIT_CONVENIO',
  'IND_ASSINADO','INSTRUMENTO_ATIVO','VL_GLOBAL_CONV','VL_REPASSE_CONV','VL_CONTRAPARTIDA_CONV',
@@ -48,6 +48,7 @@ def parse_index(raw):
 
 def inspect_zip(path,name):
     expected=name.removesuffix('.zip')
+    if not expected.endswith('.csv'): expected += '.csv'
     with zipfile.ZipFile(path) as archive:
         entries=archive.infolist()
         if len(entries)!=1 or entries[0].filename!=expected or entries[0].file_size>1024*1024*1024:
