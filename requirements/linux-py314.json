@@ -3,11 +3,12 @@
   "python": "3.14.7",
   "system": "Linux",
   "architecture": "x86_64",
-  "pyproject_sha256": "801526e4154b894f10a01b6441da0317f2b0037c6bd2f9689618ee5589c949aa",
+  "pyproject_sha256": "2f34fe2235cb24b097ca9ca66f95316ceb1450bea7352a23f16a4a7b47c71c5b",
   "lock_sha256": "7a2b0871796b3b71bda0483afae8be8c32ff650afe315095e8417d11a144609a",
   "packages": 37,
   "scope": "runtime_test_postgres_and_build_dependencies",
-  "installed_versions_verified": true,
+  "installed_versions_verified": false,
   "hash_checked_installation_required": true,
-  "not_a_vulnerability_audit": true
+  "not_a_vulnerability_audit": true,
+  "dependency_change": "Pillow 12.3.0 promoted from existing locked dependency; exact-runtime installation must be rerun."
 }
