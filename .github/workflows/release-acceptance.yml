@@ -1,0 +1,65 @@
+name: Published data and OCR acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-acceptance.yml
+      - ops/public_data_bundle.py
+      - ops/verify_published_data.py
+      - data/releases/public-data-20260906-v1.json
+      - tests/corpus/ocr-reviewed/**
+permissions:
+  contents: read
+concurrency:
+  group: published-data-acceptance-main
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.ref == 'refs/heads/main' && github.repository == 'rafaelob/brasildetodos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify target runtime and dependencies
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+      - name: Exercise installation failures and checked-in originals
+        run: |
+          python -m pytest backend/tests/test_bundle_installation.py backend/tests/test_published_selection.py backend/tests/test_public_data_bundle.py backend/tests/test_archive_ocr_evidence.py -q
+          mkdir -p test-results/published-data
+          python ops/archive_ocr_evidence.py verify tests/corpus/ocr-reviewed > test-results/published-data/corpus.json
+      - name: Download only the reviewed published data release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p downloaded-public-data
+          gh release download public-data-20260906-v1 --repo rafaelob/brasildetodos \
+            --dir downloaded-public-data --pattern 'public-data.zip'
+      - name: Verify selected bytes and install the actual public records
+        run: |
+          python ops/verify_published_data.py downloaded-public-data/public-data.zip \
+            --selection data/releases/public-data-20260906-v1.json > test-results/published-data/acceptance.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path('test-results/published-data/acceptance.json')
+          result=json.loads(path.read_text())
+          result['tested_revision']=os.environ['GITHUB_SHA']
+          result['run_id']=int(os.environ['GITHUB_RUN_ID'])
+          path.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          print(path.read_text())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-data-and-corpus-acceptance
+          retention-days: 90
+          path: test-results/published-data/*.json
+# No release creation, source recollection, arbitrary uploads or production writes.

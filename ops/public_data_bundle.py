@@ -6,6 +6,7 @@ The original public records keep their provenance. This is not fresh collection.
 """
 from __future__ import annotations
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -87,7 +88,9 @@ def validate_folder(folder,manifest):
             'fresh_collection':False,'public_deployment':False,'includes_private_data':False}
 
 
-def verify(path,expected_sha256):
+@contextmanager
+def verified_bundle(path,expected_sha256):
+    """Yield only a private, complete snapshot; keep it alive for installation."""
     path=Path(path)
     with tempfile.TemporaryDirectory(prefix='bdt-bundle-verify-') as tmp:
         root=Path(tmp);pinned=root/'selected.zip'
@@ -110,7 +113,77 @@ def verify(path,expected_sha256):
                         writer.write(block)
                 if written!=entry.file_size:raise ValueError('bundle_member_truncated')
         result=validate_folder(root,json.loads((root/'bundle.json').read_text()))
-        return result|{'archive_sha256':expected_sha256,'archive_bytes':pinned.stat().st_size}
+        yield root, result|{'archive_sha256':expected_sha256,'archive_bytes':pinned.stat().st_size}
+
+
+def verify(path, expected_sha256):
+    with verified_bundle(path, expected_sha256) as (_, result):
+        return result
+
+
+def require_new_database(destination: Path):
+    # Stale SQLite sidecars must never be attached to a new database.
+    for path in (destination, *(Path(str(destination) + suffix)
+                 for suffix in ('-wal', '-shm', '-journal'))):
+        if path.exists() or path.is_symlink():
+            raise FileExistsError('bundle_database_destination_exists')
+
+
+def install(archive: Path, expected_sha256: str, destination: Path) -> dict:
+    """Install both datasets off-line, then publish one new SQLite file atomically.
+
+    The existing installation is never opened. A failure in resource import
+    discards the staged catalog too. No server, network or automatic OCR runs.
+    """
+    from sqlalchemy import func, select
+    from bdt.catalog_release import install_catalog
+    from bdt.resource_release import install_resource_release
+    from bdt.resource_sync import ResourceRevision
+    from bdt.storage import Database, Finance, Observation, Place, User
+    from bdt.evidence import Resource
+
+    destination = Path(destination)
+    require_new_database(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with verified_bundle(archive, expected_sha256) as (inputs, checked):
+        with tempfile.TemporaryDirectory(prefix='.bdt-install-', dir=destination.parent) as temporary:
+            staged = Path(temporary) / 'application.db'
+            install_catalog(inputs / 'catalog', staged)
+            database = Database('sqlite:///' + str(staged.resolve()))
+            try:
+                database.initialize()
+                selected = checked['selected_inputs']
+                install_resource_release(database, inputs / 'resources',
+                    report_sha256=selected['report_sha256'],
+                    resources_sha256=selected['resources_sha256'])
+                with database.session() as session:
+                    counts = {model.__tablename__: session.scalar(select(func.count()).select_from(model))
+                              for model in (Place, Resource, ResourceRevision, Finance, User, Observation)}
+                if counts != checked['counts'] or counts['users'] or counts['observations']:
+                    raise ValueError('bundle_installed_count_mismatch')
+                with database.engine.connect() as connection:
+                    if connection.exec_driver_sql('PRAGMA integrity_check').scalar() != 'ok':
+                        raise ValueError('bundle_database_integrity_failure')
+                    if connection.exec_driver_sql('PRAGMA foreign_key_check').first():
+                        raise ValueError('bundle_database_foreign_key_failure')
+                    checkpoint = connection.exec_driver_sql('PRAGMA wal_checkpoint(TRUNCATE)').one()
+                    if checkpoint[0] != 0 or checkpoint[1] != checkpoint[2]:
+                        raise ValueError('bundle_database_checkpoint_busy')
+            finally:
+                database.engine.dispose()
+            staged.chmod(0o600)
+            with staged.open('rb') as stream:
+                os.fsync(stream.fileno())
+            database_hash = sha(staged)
+            database_bytes = staged.stat().st_size
+            require_new_database(destination)
+            # Staging uses the destination filesystem. link() refuses collisions.
+            os.link(staged, destination)
+            return {'status': 'installed_new_database', 'schema': 'bdt.bundle-install.v1',
+                    'archive_sha256': checked['archive_sha256'], 'selected_inputs': selected,
+                    'counts': counts, 'database_sha256': database_hash,
+                    'database_bytes': database_bytes, 'fresh_collection': False,
+                    'public_deployment': False, 'existing_database_modified': False}
 
 
 def build(catalog,resources,output,*,catalog_sha256,report_sha256,resources_sha256,revision):
@@ -144,8 +217,10 @@ def main(argv=None):
     create.add_argument('--output',required=True,type=Path);create.add_argument('--revision',required=True)
     for arg in ('catalog-sha256','report-sha256','resources-sha256'):create.add_argument('--'+arg,required=True)
     check=sub.add_parser('verify');check.add_argument('archive',type=Path);check.add_argument('--sha256',required=True)
+    setup=sub.add_parser('install');setup.add_argument('archive',type=Path);setup.add_argument('--sha256',required=True);setup.add_argument('--output',type=Path,required=True)
     args=parser.parse_args(argv)
     if args.operation=='build':result=build(args.catalog,args.resources,args.output,catalog_sha256=args.catalog_sha256,report_sha256=args.report_sha256,resources_sha256=args.resources_sha256,revision=args.revision)
+    elif args.operation=='install':result=install(args.archive,args.sha256,args.output)
     else:result=verify(args.archive,args.sha256)
     print(json.dumps(result,ensure_ascii=False,indent=2))
 

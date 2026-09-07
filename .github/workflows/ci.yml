@@ -36,6 +36,10 @@ jobs:
       - name: Verify exact Python runtime and configuration
         run: python ops/check_toolchain.py --runtime python
       - run: python ops/install_locked.py --editable
+      - name: Verify the committed OCR corpus without rerunning recognition
+        run: |
+          mkdir -p test-results/corpus
+          python ops/archive_ocr_evidence.py verify tests/corpus/ocr-reviewed > test-results/corpus/verification.json
       - run: python -m pytest --cov=bdt --cov-report=xml --cov-report=term --cov-fail-under=85 --junitxml=test-results/backend.xml
       - uses: actions/upload-artifact@v4
         if: always()

@@ -1,0 +1,31 @@
+{
+  "schema": "bdt.published-data-selection.v1",
+  "repository": "rafaelob/brasildetodos",
+  "tag": "public-data-20260906-v1",
+  "release_id": 383763925,
+  "code_revision": "ad9942cc12030653b59a760380bd275537faebf8",
+  "prerelease": true,
+  "github_immutable": false,
+  "archive": {
+    "name": "public-data.zip",
+    "asset_id": 547868908,
+    "bytes": 28096042,
+    "sha256": "6d62f9ca107f3672e8dcfb0a7d0b591010931d9daa05eaf6212c91c3cecc1639"
+  },
+  "selected_inputs": {
+    "catalog_manifest_sha256": "beacb31c3c12713fd818db5abbf61e9d10d7088fdc4852af4bb7fdc434595af9",
+    "report_sha256": "34554d95fe0fa4d0a0211d1c804b9d9c187232ba0f7602b508c7cff8a7b3d3d0",
+    "resources_sha256": "d18d05e8a7d98847dad8be3cd774591c35649193be0490f9a0c5ccaa9da76245"
+  },
+  "counts": {
+    "places": 96123,
+    "resources": 6679,
+    "resource_revisions": 6679,
+    "finance": 0,
+    "users": 0,
+    "observations": 0
+  },
+  "fresh_collection": false,
+  "public_deployment": false,
+  "national_coverage_certified": false
+}
