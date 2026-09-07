@@ -14,6 +14,7 @@ import tempfile
 import time
 import httpx
 from playwright.sync_api import expect,sync_playwright
+from browser_wait import wait_for_counter
 from bdt.domain import Source,PlaceInput,now
 from bdt.storage import Database,Municipality,upsert_place
 
@@ -78,11 +79,11 @@ def main():
          def start_slow(fail):
           page.evaluate('(fail)=>{window.__delayDetails=true;window.__failDetails=fail;window.__received=0;window.__released=0;}',fail)
           page.get_by_role('button',name='Synthetic delayed place',exact=True).click()
-          page.wait_for_function('window.__received===2')
+          wait_for_counter(page,'__received',2)
           expect(page.locator('.detail-request-status')).to_be_visible()
          def release():
           page.evaluate('window.__held.splice(0).forEach(done=>done())')
-          page.wait_for_function('window.__released===2')
+          wait_for_counter(page,'__released',2)
           page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
          # A late failure cannot pollute a newer successful selection.
          start_slow(True)
