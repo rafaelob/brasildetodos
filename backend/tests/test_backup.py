@@ -24,13 +24,15 @@ def test_online_backup_restores_private_state_but_revokes_sessions(dbfile,tmp_pa
     folder=tmp_path/'backup';manifest=create_backup(dbfile,folder)
     assert manifest['contains_private_data'] is True and manifest['encrypted'] is False
     assert verify_backup(folder)==manifest
-    assert folder.stat().st_mode & 0o777 == 0o700
-    assert (folder/'database.sqlite').stat().st_mode & 0o777 == 0o600
+    if os.name != 'nt':
+        assert folder.stat().st_mode & 0o777 == 0o700
+        assert (folder/'database.sqlite').stat().st_mode & 0o777 == 0o600
     source_hash=sha256(folder/'database.sqlite')
     target=tmp_path/'restored.db';result=restore_backup(folder,target)
     assert result['sessions_revoked'] is True
     assert sha256(folder/'database.sqlite')==source_hash
-    assert target.stat().st_mode & 0o777 == 0o600
+    if os.name != 'nt':
+        assert target.stat().st_mode & 0o777 == 0o600
     with closing(sqlite3.connect(target)) as connection:
         assert connection.execute('SELECT count(*) FROM users').fetchone()==(1,)
         assert connection.execute('SELECT count(*) FROM places').fetchone()==(1,)

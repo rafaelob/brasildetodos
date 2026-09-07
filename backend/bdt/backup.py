@@ -62,7 +62,7 @@ def copy_online(source, target: Path, timeout_seconds: float):
         destination.execute('PRAGMA journal_mode=DELETE')
         check_database(destination)
     target.chmod(0o600)
-    with target.open('rb') as stream:
+    with target.open('r+b') as stream:
         os.fsync(stream.fileno())
 
 
@@ -87,7 +87,7 @@ def create_backup(source: Path, destination: Path, timeout_seconds: float = 120)
             'restore_requires_new_destination': True}
         path = staging/'manifest.json'
         path.write_text(json.dumps(manifest, indent=2), encoding='utf-8'); path.chmod(0o600)
-        with path.open('rb') as stream:
+        with path.open('r+b') as stream:
             os.fsync(stream.fileno())
         if destination.exists() or destination.is_symlink():
             raise FileExistsError('backup_destination_exists')
@@ -140,7 +140,7 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
                 if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='group_invites'").fetchone():
                     connection.execute("UPDATE group_invites SET token_hash=NULL,status='revoked'")
             check_database(connection)
-        with target.open('rb') as stream:
+        with target.open('r+b') as stream:
             os.fsync(stream.fileno())
         # Atomic exclusive publication. No overwrite even with competing restores.
         os.link(target, destination)

@@ -172,7 +172,7 @@ def install(archive: Path, expected_sha256: str, destination: Path) -> dict:
             finally:
                 database.engine.dispose()
             staged.chmod(0o600)
-            with staged.open('rb') as stream:
+            with staged.open('r+b') as stream:
                 os.fsync(stream.fileno())
             database_hash = sha(staged)
             database_bytes = staged.stat().st_size

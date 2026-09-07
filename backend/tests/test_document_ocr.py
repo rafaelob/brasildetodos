@@ -90,7 +90,7 @@ def test_second_ocr_requires_explicit_review(database,document):
     with pytest.raises(ValueError,match='already_has_ocr'): call(database,document)
 
 
-@pytest.mark.parametrize('value',[None,'', 'x'*200001])
+@pytest.mark.parametrize('value', [None, '', 'x'*200001], ids=['none', 'empty', 'oversized'])
 def test_unusable_text_rolls_back_and_releases_lease(database,document,value):
     with pytest.raises(ValueError,match='text_missing_or_budget'):
         call(database,document,engine=lambda *a,**k:value)

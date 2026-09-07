@@ -91,8 +91,9 @@ def test_input_directory_symlink_is_not_followed(archiver,corpus,tmp_path):
 def test_file_budget_and_fifo_fail_without_blocking(archiver,tmp_path,monkeypatch):
     p=tmp_path/'large';p.write_bytes(b'1234');monkeypatch.setattr(archiver,'MAX_FILE_BYTES',2)
     with pytest.raises(ValueError,match='budget'):archiver.read_regular(p)
-    fifo=tmp_path/'pipe';os.mkfifo(fifo)
-    with pytest.raises(ValueError,match='type'):archiver.read_regular(fifo)
+    if hasattr(os, 'mkfifo'):
+        fifo=tmp_path/'pipe';os.mkfifo(fifo)
+        with pytest.raises(ValueError,match='type'):archiver.read_regular(fifo)
 
 
 def test_cli_requires_destination_and_emits_only_manifest_result(archiver,corpus,tmp_path,capsys):

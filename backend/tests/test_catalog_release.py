@@ -65,7 +65,8 @@ def test_install_roundtrip_preserves_public_state_not_accounts(full,tmp_path):
     folder=tmp_path/'release'; export_catalog(full,folder)
     target=tmp_path/'installed.db'; result=install_catalog(folder,target)
     assert result['status']=='installed_new_database'
-    assert os.stat(target).st_mode & 0o777 == 0o600
+    if os.name != 'nt':
+        assert os.stat(target).st_mode & 0o777 == 0o600
     installed=Database('sqlite:///'+str(target))
     with installed.session() as s:
         assert s.scalar(select(func.count()).select_from(Place))==1

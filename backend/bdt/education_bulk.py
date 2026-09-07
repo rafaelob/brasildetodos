@@ -81,8 +81,9 @@ def discover_distribution(html: str, year: int) -> str:
 
 def _validate_member(info: zipfile.ZipInfo, limits: Limits) -> None:
     # Nothing is extracted to filesystem, but ambiguous and unsafe names are rejected.
+    raw = getattr(info, 'orig_filename', info.filename)
     name = PurePosixPath(info.filename)
-    if name.is_absolute() or '..' in name.parts or '\\' in info.filename or info.flag_bits & 1:
+    if name.is_absolute() or '..' in name.parts or '\\' in raw or '\\' in info.filename or info.flag_bits & 1:
         raise ValueError('unsafe_or_encrypted_archive_member')
     if info.file_size > limits.member_bytes or info.file_size / max(info.compress_size, 1) > limits.compression_ratio:
         raise ValueError('school_archive_member_budget')

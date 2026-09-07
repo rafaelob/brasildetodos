@@ -32,9 +32,15 @@ def archive(tmp_path, rows=None, *, encoding='utf-8-sig', filename='dados/Tabela
     writer.writerows(rows if rows is not None else [row()])
     path = tmp_path/'schools.zip'
     with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
-        z.writestr(filename, out.getvalue().encode(encoding))
+        info = zipfile.ZipInfo(filename)
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.filename = filename
+        z.writestr(info, out.getvalue().encode(encoding))
         for name, data in (extra or {}).items():
-            z.writestr(name, data)
+            extra_info = zipfile.ZipInfo(name)
+            extra_info.compress_type = zipfile.ZIP_DEFLATED
+            extra_info.filename = name
+            z.writestr(extra_info, data)
     return path
 
 

@@ -311,6 +311,6 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
     from .regions import install as install_regions
     install_regions(app, database)
     static = Path(os.getenv('BDT_STATIC_DIR', 'web/dist'))
-    if static.is_dir():
+    if static.is_dir() and not testing:
         app.mount('/', StaticFiles(directory=static, html=True), name='web')
     return app
