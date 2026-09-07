@@ -1,0 +1,37 @@
+name: Review current Transferegov publication contracts
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ops/transferegov_catalog_probe.py
+      - .github/workflows/transferegov-discovery.yml
+permissions:
+  contents: read
+concurrency:
+  group: transferegov-discovery-main
+  cancel-in-progress: false
+jobs:
+  inspect-official-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify runtime and test bounded discovery
+        run: |
+          python ops/check_toolchain.py --runtime python
+          python ops/install_locked.py --editable
+          python -m pytest backend/tests/test_transferegov_catalog_probe.py -q
+      - name: Read official index and schemas without executing remote scripts
+        run: python ops/transferegov_catalog_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transferegov-publication-contracts
+          retention-days: 30
+          path: test-results/transferegov-discovery/*.json
