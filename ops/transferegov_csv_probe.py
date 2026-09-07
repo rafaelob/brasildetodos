@@ -35,15 +35,15 @@ def parse_index(raw):
     doc=ET.fromstring(raw)
     if doc.tag.split('}')[-1]!='EnumerationResults':raise ValueError('unexpected_csv_index')
     result={}
-    for blob in doc.findall('./Blobs/Blob'):
-        name=blob.findtext('Name')
+    for blob in doc.findall('.//{*}Blob'):
+        name=blob.findtext('{*}Name')
         if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,160}',name):continue
         if name in result:raise ValueError('duplicate_csv_index_entry')
-        size=blob.findtext('Properties/Content-Length')
+        size=blob.findtext('{*}Properties/{*}Content-Length')
         if size is None or not size.isdigit():raise ValueError('invalid_csv_index_size')
-        result[name]={'name':name,'bytes':int(size),'last_modified':blob.findtext('Properties/Last-Modified'),
+        result[name]={'name':name,'bytes':int(size),'last_modified':blob.findtext('{*}Properties/{*}Last-Modified'),
                       'url':BASE+quote(name,safe='')}
-    return result, bool(doc.findtext('NextMarker'))
+    return result, bool(doc.findtext('{*}NextMarker'))
 
 
 def inspect_zip(path,name):
@@ -84,6 +84,9 @@ def run(output, *, loader=download_retry):
         target=folder/'index.xml';report['index_receipt']=loader(INDEX,target,4*1024*1024)
         index,more=parse_index(target.read_bytes())
         report['index_has_more_pages']=more
+        report['index_names']=sorted(index)
+        doc=ET.fromstring(target.read_bytes())
+        report['publisher_blob_names']=[b.findtext('{*}Name') for b in doc.findall('.//{*}Blob')][:200]
         report['selected_entries']={key:index[key] for key in FILES if key in index}
         for name in FILES:
             try:

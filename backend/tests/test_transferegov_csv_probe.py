@@ -31,3 +31,9 @@ def test_unexpected_zip_members_refused(tmp_path,member):
     path=tmp_path/'sample.zip'
     with zipfile.ZipFile(path,'w') as z:z.writestr(member,'x')
     with pytest.raises(ValueError):probe.inspect_zip(path,'siconv_convenio.csv.zip')
+
+
+def test_namespaced_inventory_keeps_exact_names_and_sizes():
+    xml=b'<EnumerationResults xmlns="http://schemas.microsoft.com/windowsazure"><Blobs><Blob><Name>siconv_convenio.csv.zip</Name><Properties><Content-Length>100</Content-Length><Last-Modified>date</Last-Modified></Properties></Blob></Blobs></EnumerationResults>'
+    result,more=probe.parse_index(xml)
+    assert not more and result['siconv_convenio.csv.zip']['bytes']==100
