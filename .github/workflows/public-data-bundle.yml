@@ -30,7 +30,7 @@ jobs:
         run: |
           python ops/check_toolchain.py --runtime python
           python ops/install_locked.py --editable
-          python -m pytest backend/tests/test_public_data_bundle.py -q
+          python -m pytest backend/tests/test_public_data_bundle.py backend/tests/test_reviewed_resource_unpack.py -q
       - name: Detect an existing immutable release
         id: existing
         run: |
@@ -48,14 +48,13 @@ jobs:
           github-token: ${{ github.token }}
           merge-multiple: true
           path: input-health
-      - uses: actions/download-artifact@v4
+      - name: Download the exact retained resource artifact, including older attempts
         if: steps.existing.outputs.present != 'true'
-        with:
-          artifact-ids: '9993985086'
-          run-id: '34048819034'
-          github-token: ${{ github.token }}
-          merge-multiple: true
-          path: input-resources
+        run: |
+          gh api repos/rafaelob/brasildetodos/actions/artifacts/9993985086/zip > "$RUNNER_TEMP/selected-resources.zip"
+          python ops/unpack_reviewed_resources.py "$RUNNER_TEMP/selected-resources.zip" \
+            --sha256 f37be95dad644bd784abf75895e872122cd26815192e10552a6e9c6577a94cd8 \
+            --destination input-resources
       - name: Reconcile real records and publish only a bounded public package
         if: steps.existing.outputs.present != 'true'
         run: |
