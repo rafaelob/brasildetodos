@@ -85,7 +85,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
           </>}
           <dl>{resourceAmounts(version.resource.attributes).map(item=><div className="resource-fact" key={item.key}><dt>{t(item.label)}</dt><dd>{resourceAmountText(item,locale)}</dd></div>)}</dl>
           {history.versions[index+1]&&<ResourceComparison key={version.revision+'-'+locale} older={history.versions[index+1]} newer={version} locale={locale}/>}
-          <Provenance source={version.resource.source} t={t}/><ResourceDownloads id={row.id} locale={locale} t={t} revision={version.revision}/>
+          <Provenance source={version.resource.source} t={t} locale={locale}/><ResourceDownloads id={row.id} locale={locale} t={t} revision={version.revision}/>
         </article>)}<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button>
           <span>{page}</span><button disabled={page*5>=history.total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div></>}
     </section>}

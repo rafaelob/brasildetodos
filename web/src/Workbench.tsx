@@ -2,29 +2,29 @@ import {useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {api,downloadJSON} from './api';
 import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
-import type {Observation,Source} from './types';
+import type {Locale,Observation,Source} from './types';
 
 type Translator=(key:string)=>string;
 type Resource={id:string;kind:string;title:string;municipality_id:string|null;source:Source;attributes:Record<string,unknown>};
 type DocumentMeta={id:string;title:string;state:string;source:Source;pages:number};
 type Relationship={id:string;place_id:string;resource_id:string;document_id:string;page:number;excerpt:string;justification?:string;status:string;revision:number;can_review?:boolean;resource?:Resource;document?:{title:string;source:Source}};
 
-function SourceLink({source,t}:{source:Source;t:Translator}){
+function SourceLink({source,t,locale='pt-BR'}:{source:Source;t:Translator;locale?:Locale}){
   const url=safeReference(source.url);
-  return <div className="source"><strong>{formatDataset(source.dataset)}</strong><p>{t('reference')}: {formatReferenceDate(source.reference_date)}</p>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<details><summary>SHA-256</summary><code>{source.snapshot_sha256}</code></details></div>;
+  return <div className="source"><strong>{formatDataset(source.dataset,locale)}</strong><p>{t('reference')}: {formatReferenceDate(source.reference_date,locale)}</p>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<details><summary>SHA-256</summary><code>{source.snapshot_sha256}</code></details></div>;
 }
 
-export function PlaceEvidence({placeId,t}:{placeId:string;t:Translator}){
+export function PlaceEvidence({placeId,t,locale='pt-BR'}:{placeId:string;t:Translator;locale?:Locale}){
   const [rows,setRows]=useState<Relationship[]|null>(null),[error,setError]=useState(false);
   useEffect(()=>{const controller=new AbortController();setRows(null);setError(false);api<Relationship[]>('/place-links/'+encodeURIComponent(placeId),{signal:controller.signal}).then(setRows).catch(()=>{if(!controller.signal.aborted)setError(true);});return()=>controller.abort();},[placeId]);
-  return <section aria-label={t('links')}><h2>{t('links')}</h2><p className="callout">{t('linkNotice')}</p>{error?<p role="status">{t('failure')}</p>:rows===null?<p>{t('loading')}</p>:rows.length===0?<p>{t('linksEmpty')}</p>:rows.map(row=><article className="panel" key={row.id}><span className="pill">{t('reviewed')}</span><h3>{row.resource?.title}</h3><p>{row.document?.title} · {t('pageNumber')} {row.page}</p><blockquote>{row.excerpt}</blockquote>{row.document&&<SourceLink source={row.document.source} t={t}/>}</article>)}</section>;
+  return <section aria-label={t('links')}><h2>{t('links')}</h2><p className="callout">{t('linkNotice')}</p>{error?<p role="status">{t('failure')}</p>:rows===null?<p>{t('loading')}</p>:rows.length===0?<p>{t('linksEmpty')}</p>:rows.map(row=><article className="panel" key={row.id}><span className="pill">{t('reviewed')}</span><h3>{row.resource?.title}</h3><p>{row.document?.title} · {t('pageNumber')} {row.page}</p><blockquote>{row.excerpt}</blockquote>{row.document&&<SourceLink source={row.document.source} t={t} locale={locale}/>}</article>)}</section>;
 }
 
-export function RegionResources({municipalityId,t}:{municipalityId:string;t:Translator}){
+export function RegionResources({municipalityId,t,locale='pt-BR'}:{municipalityId:string;t:Translator;locale?:Locale}){
   const [rows,setRows]=useState<Resource[]>([]),[total,setTotal]=useState(0),[page,setPage]=useState(1),[error,setError]=useState(false);
   useEffect(()=>{setPage(1);},[municipalityId]);
   useEffect(()=>{const controller=new AbortController();setError(false);api<{items:Resource[];total:number}>('/resources?municipality_id='+encodeURIComponent(municipalityId)+'&page='+page,{signal:controller.signal}).then(result=>{setRows(result.items);setTotal(result.total);}).catch(()=>{if(!controller.signal.aborted)setError(true);});return()=>controller.abort();},[municipalityId,page]);
-  return <section><h2>{t('resourcesTitle')}</h2><p>{t('resourceScope')}</p>{error&&<p role="status">{t('failure')}</p>}{rows.map(row=><article className="panel" key={row.id}><h3>{row.title}</h3><code>{row.id}</code><SourceLink source={row.source} t={t}/></article>)}{!rows.length&&!error&&<p>{t('empty')}</p>}{total>30&&<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span><button disabled={page*30>=total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div>}</section>;
+  return <section><h2>{t('resourcesTitle')}</h2><p>{t('resourceScope')}</p>{error&&<p role="status">{t('failure')}</p>}{rows.map(row=><article className="panel" key={row.id}><h3>{row.title}</h3><code>{row.id}</code><SourceLink source={row.source} t={t} locale={locale}/></article>)}{!rows.length&&!error&&<p>{t('empty')}</p>}{total>30&&<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span><button disabled={page*30>=total} onClick={()=>setPage(value=>value+1)}>{t('next')}</button></div>}</section>;
 }
 
 function SourceFields({t}:{t:Translator}){
@@ -32,7 +32,7 @@ function SourceFields({t}:{t:Translator}){
 }
 function sourceFrom(form:FormData){return {dataset:String(form.get('dataset')||''),record_id:String(form.get('record_id')||''),url:String(form.get('url')||''),snapshot_sha256:String(form.get('snapshot_sha256')||''),reference_date:form.get('reference_date')||null,collected_at:new Date(String(form.get('collected_at'))).toISOString()};}
 
-export default function Workbench({t}:{t:Translator}){
+export default function Workbench({t,locale='pt-BR'}:{t:Translator;locale?:Locale}){
   const [documents,setDocuments]=useState<DocumentMeta[]>([]),[queue,setQueue]=useState<Relationship[]>([]),[resources,setResources]=useState<Resource[]>([]);
   const [docId,setDocId]=useState(''),[page,setPage]=useState(1),[pageText,setPageText]=useState<string|null>(null),[status,setStatus]=useState('candidate');
   const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);

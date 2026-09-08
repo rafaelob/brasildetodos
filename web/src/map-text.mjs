@@ -13,7 +13,7 @@ export const MAP_TEXT={
     bearing:'Orientação',camera3D:'Câmera 3D',mode2D:'Modo 2D',mode3D:'Modo 3D',pitch:'Inclinação',
     resetCompass:'Apontar para o Norte (0°)',rotateLeft:'Girar 45° para a esquerda',rotateRight:'Girar 45° para a direita',
     tiltDown:'Inclinar câmera para baixo (-15°)',tiltUp:'Inclinar câmera para cima (+15°)',zoom:'Zoom',zoomIn3D:'Aproximar para ver volumes 3D',
-    landmarks3D:'Explorar cidades em 3D',brasilia3D:'Brasília · Esplanada',saopaulo3D:'São Paulo · Paulista',rio3D:'Rio · Centro',curitiba3D:'Curitiba · Centro Cívico',clickToInspect:'Clique para ver ficha',
+    landmarks3D:'Explorar cidades em 3D',brasilia3D:'Brasília · Esplanada',saopaulo3D:'São Paulo · Paulista',rio3D:'Rio · Centro',curitiba3D:'Curitiba · Centro Cívico',belohorizonte3D:'Belo Horizonte · Praça da Liberdade',salvador3D:'Salvador · Pelourinho',recife3D:'Recife · Marco Zero',portoalegre3D:'Porto Alegre · Centro Histórico',clickToInspect:'Clique para ver ficha',
   },
   en:{
     loading:'Loading the map. The list remains available.',updating:'Updating places in this area…',
@@ -27,7 +27,7 @@ export const MAP_TEXT={
     bearing:'Bearing',camera3D:'3D Camera',mode2D:'2D Mode',mode3D:'3D Mode',pitch:'Tilt',
     resetCompass:'Point North (0°)',rotateLeft:'Rotate 45° left',rotateRight:'Rotate 45° right',
     tiltDown:'Tilt camera down (-15°)',tiltUp:'Tilt camera up (+15°)',zoom:'Zoom',zoomIn3D:'Zoom in for 3D volumes',
-    landmarks3D:'Explore 3D cities',brasilia3D:'Brasília · Esplanade',saopaulo3D:'São Paulo · Paulista',rio3D:'Rio · Downtown',curitiba3D:'Curitiba · Civic Center',clickToInspect:'Click to view details',
+    landmarks3D:'Explore 3D cities',brasilia3D:'Brasília · Esplanade',saopaulo3D:'São Paulo · Paulista',rio3D:'Rio · Downtown',curitiba3D:'Curitiba · Civic Center',belohorizonte3D:'Belo Horizonte · Liberty Square',salvador3D:'Salvador · Pelourinho',recife3D:'Recife · Ground Zero',portoalegre3D:'Porto Alegre · Historic Center',clickToInspect:'Click to view details',
   },
   es:{
     loading:'Cargando el mapa. La lista sigue disponible.',updating:'Actualizando los puntos de esta zona…',
@@ -41,7 +41,7 @@ export const MAP_TEXT={
     bearing:'Orientación',camera3D:'Cámara 3D',mode2D:'Modo 2D',mode3D:'Modo 3D',pitch:'Inclinación',
     resetCompass:'Apuntar hacia el Norte (0°)',rotateLeft:'Girar 45° hacia la izquierda',rotateRight:'Girar 45° hacia la derecha',
     tiltDown:'Inclinar cámara hacia abajo (-15°)',tiltUp:'Inclinar cámara hacia arriba (+15°)',zoom:'Zoom',zoomIn3D:'Acercar para ver volúmenes 3D',
-    landmarks3D:'Explorar ciudades en 3D',brasilia3D:'Brasília · Explanada',saopaulo3D:'São Paulo · Paulista',rio3D:'Río · Centro',curitiba3D:'Curitiba · Centro Cívico',clickToInspect:'Clic para ver ficha',
+    landmarks3D:'Explorar ciudades en 3D',brasilia3D:'Brasília · Explanada',saopaulo3D:'São Paulo · Paulista',rio3D:'Río · Centro',curitiba3D:'Curitiba · Centro Cívico',belohorizonte3D:'Belo Horizonte · Plaza de la Libertad',salvador3D:'Salvador · Pelourinho',recife3D:'Recife · Marco Cero',portoalegre3D:'Porto Alegre · Centro Histórico',clickToInspect:'Clic para ver ficha',
   },
 };
 /** @param {string} locale @param {string} key */

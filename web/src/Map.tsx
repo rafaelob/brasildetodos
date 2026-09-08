@@ -17,6 +17,10 @@ const CITY_PRESETS:CityPreset[]=[
   {id:'saopaulo',nameKey:'saopaulo3D',center:[-46.6565,-23.5614],zoom:16.5,pitch:60,bearing:45},
   {id:'riodejaneiro',nameKey:'rio3D',center:[-43.1764,-22.9068],zoom:16.2,pitch:60,bearing:25},
   {id:'curitiba',nameKey:'curitiba3D',center:[-49.2667,-25.4167],zoom:16.2,pitch:60,bearing:-20},
+  {id:'belohorizonte',nameKey:'belohorizonte3D',center:[-43.9378,-19.9328],zoom:16.2,pitch:60,bearing:15},
+  {id:'salvador',nameKey:'salvador3D',center:[-38.5108,-12.9714],zoom:16.2,pitch:60,bearing:-35},
+  {id:'recife',nameKey:'recife3D',center:[-34.8711,-8.0631],zoom:16.2,pitch:60,bearing:40},
+  {id:'portoalegre',nameKey:'portoalegre3D',center:[-51.2300,-30.0330],zoom:16.2,pitch:60,bearing:-15},
 ];
 
 export default function MapView({select,t,onBounds,filters={},locale='pt-BR',focusCoordinates=null}:Props){
@@ -110,7 +114,7 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
             instance.addLayer({id:'bdt-counts',type:'symbol',source:'bdt-places',filter:['==',['get','cluster'],true],
               layout:{'text-field':['to-string',['get','count']],'text-size':12},paint:{'text-color':'#ffffff'}});
             instance.addLayer({id:'bdt-single',type:'circle',source:'bdt-places',filter:['==',['get','cluster'],false],
-              paint:{'circle-color':['match',['get','kind'],'school','#b66d26','health','#267790','#176b55'],
+              paint:{'circle-color':['match',['get','kind'],'school','#b66d26','health','#267790','work','#9c412b','#176b55'],
                 'circle-radius':7,'circle-stroke-color':'#ffffff','circle-stroke-width':2}});
             instance.on('click','bdt-single',event=>{
               const identity=event.features?.[0]?.properties?.id;
@@ -270,6 +274,8 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
           <div className="map-tilt-pill" role="group" aria-label={text('camera3D')}>
             <button disabled={!ready} onClick={()=>tiltCamera(15)} title={text('tiltUp')} aria-label={text('tiltUp')}>▲</button>
             <button disabled={!ready} onClick={()=>tiltCamera(-15)} title={text('tiltDown')} aria-label={text('tiltDown')}>▼</button>
+            <button disabled={!ready} onClick={()=>rotateCamera(-45)} title={text('rotateLeft')} aria-label={text('rotateLeft')}>↺</button>
+            <button disabled={!ready} onClick={()=>rotateCamera(45)} title={text('rotateRight')} aria-label={text('rotateRight')}>↻</button>
             <button disabled={!ready} onClick={resetCompass} title={text('resetCompass')} aria-label={text('resetCompass')}>🧭</button>
           </div>
           <button className="map-pill-btn map-btn-close" onClick={()=>setEnabled(false)} title={text('hide')} aria-label={text('hide')}>✕</button>
@@ -292,6 +298,7 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
       <div className="map-float-bottom">
         <div className="map-telemetry-pill" aria-label={text('camera3D')}>
           <span><strong>{text('pitch')}:</strong> {cameraPitch}°</span>
+          <span><strong>{text('bearing')}:</strong> {cameraBearing}°</span>
           <span><strong>{text('zoom')}:</strong> {cameraZoom}</span>
           {threeD&&cameraZoom<14&&<button className="telemetry-action" onClick={zoomFor3D}>{text('zoomIn3D')} ↗</button>}
         </div>
