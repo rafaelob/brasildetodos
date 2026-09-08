@@ -21,6 +21,8 @@ export const resourceMessages = {
     resourceRevenue:'Registro marcado como receita pelo PNCP; não é despesa governamental.',
     resourceUnknownDirection:'A fonte não permitiu confirmar a natureza de receita ou despesa.',
     pncp_contracts:'PNCP · Contratos',transferegov_special_plans:'Transferegov · Planos especiais',obrasgov_projects:'Obrasgov · Projetos',
+    resourceContract:'Contrato',resourceInstrument:'Instrumento de transferência',resourceProposal:'Proposta',
+    resourceWork:'Obra',resourceProject:'Projeto',resourceSpecial_plan:'Plano especial',resourceSpecialPlan:'Plano especial',
     resourceRetry:'Tentar carregar novamente',resourceDetails:'Metadados desta versão',
   },
   en: {
@@ -44,6 +46,8 @@ export const resourceMessages = {
     resourceRevenue:'Marked as revenue by PNCP; this is not government expenditure.',
     resourceUnknownDirection:'The source did not establish whether this is revenue or expenditure.',
     pncp_contracts:'PNCP · Contracts',transferegov_special_plans:'Transferegov · Special plans',obrasgov_projects:'Obrasgov · Projects',
+    resourceContract:'Contract',resourceInstrument:'Transfer agreement',resourceProposal:'Proposal',
+    resourceWork:'Public work',resourceProject:'Project',resourceSpecial_plan:'Special plan',resourceSpecialPlan:'Special plan',
     resourceRetry:'Try loading again',resourceDetails:'Metadata for this version',
   },
   es: {
@@ -67,6 +71,8 @@ export const resourceMessages = {
     resourceRevenue:'PNCP lo identifica como ingreso; no es gasto gubernamental.',
     resourceUnknownDirection:'La fuente no permitió confirmar si es ingreso o gasto.',
     pncp_contracts:'PNCP · Contratos',transferegov_special_plans:'Transferegov · Planes especiales',obrasgov_projects:'Obrasgov · Proyectos',
+    resourceContract:'Contrato',resourceInstrument:'Convenio de transferencia',resourceProposal:'Propuesta',
+    resourceWork:'Obra pública',resourceProject:'Proyecto',resourceSpecial_plan:'Plan especial',resourceSpecialPlan:'Plan especial',
     resourceRetry:'Intentar cargar de nuevo',resourceDetails:'Metadatos de esta versión',
   },
 };
