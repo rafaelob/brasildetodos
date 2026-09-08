@@ -258,41 +258,43 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
     <div className="map-stage">
       <div ref={host} className="map-canvas" aria-label={text('canvas')}/>
 
-      {/* Floating Top Controls */}
-      <div className="map-float-top">
-        <div className="map-float-left">
-          {matched!==null&&<span className="map-pill map-count-pill">📍 {matched.toLocaleString(locale)} {text('count').split(';')[0]}</span>}
-          {loadingData&&<span className="map-pill map-loading-pill">⏳ {text('updating')}</span>}
-          <button disabled={!ready} className="map-pill-btn map-btn-area" onClick={useArea} title={t('mapHere')}>
-            🔍 {t('mapHere')}
-          </button>
-        </div>
-        <div className="map-float-right">
-          <button disabled={!ready||!hasBuildings} className={'map-pill-btn map-btn-3d '+(threeD?'active':'')} aria-pressed={threeD} onClick={()=>setThreeD(value=>!value)}>
-            {threeD?`◩ ${text('mode3D')}`:`▱ ${text('mode2D')}`}
-          </button>
-          <div className="map-tilt-pill" role="group" aria-label={text('camera3D')}>
-            <button disabled={!ready} onClick={()=>tiltCamera(15)} title={text('tiltUp')} aria-label={text('tiltUp')}>▲</button>
-            <button disabled={!ready} onClick={()=>tiltCamera(-15)} title={text('tiltDown')} aria-label={text('tiltDown')}>▼</button>
-            <button disabled={!ready} onClick={()=>rotateCamera(-45)} title={text('rotateLeft')} aria-label={text('rotateLeft')}>↺</button>
-            <button disabled={!ready} onClick={()=>rotateCamera(45)} title={text('rotateRight')} aria-label={text('rotateRight')}>↻</button>
-            <button disabled={!ready} onClick={resetCompass} title={text('resetCompass')} aria-label={text('resetCompass')}>🧭</button>
-          </div>
-          <button className="map-pill-btn map-btn-close" onClick={()=>setEnabled(false)} title={text('hide')} aria-label={text('hide')}>✕</button>
-        </div>
-      </div>
-
-      {/* Floating City Landmarks Bar (when 3D is active) */}
-      {threeD&&<div className="map-float-landmarks" role="toolbar" aria-label={text('landmarks3D')}>
-        <span className="landmarks-title">🏙️ {text('landmarks3D')}:</span>
-        <div className="landmarks-scroll">
-          {CITY_PRESETS.map(city=>(
-            <button key={city.id} className="city-pill-btn" disabled={!ready} onClick={()=>jumpToCity(city)}>
-              {text(city.nameKey)}
+      {/* Floating Header Overlay */}
+      <div className="map-header-overlay">
+        <div className="map-float-top">
+          <div className="map-float-left">
+            {matched!==null&&<span className="map-pill map-count-pill">📍 {matched.toLocaleString(locale)} {text('count').split(';')[0]}</span>}
+            {loadingData&&<span className="map-pill map-loading-pill">⏳ {text('updating')}</span>}
+            <button disabled={!ready} className="map-pill-btn map-btn-area" onClick={useArea} title={t('mapHere')}>
+              🔍 {t('mapHere')}
             </button>
-          ))}
+          </div>
+          <div className="map-float-right">
+            <button disabled={!ready||!hasBuildings} className={'map-pill-btn map-btn-3d '+(threeD?'active':'')} aria-pressed={threeD} onClick={()=>setThreeD(value=>!value)}>
+              {threeD?`◩ ${text('mode3D')}`:`▱ ${text('mode2D')}`}
+            </button>
+            <div className="map-tilt-pill" role="group" aria-label={text('camera3D')}>
+              <button disabled={!ready} onClick={()=>tiltCamera(15)} title={text('tiltUp')} aria-label={text('tiltUp')}>▲</button>
+              <button disabled={!ready} onClick={()=>tiltCamera(-15)} title={text('tiltDown')} aria-label={text('tiltDown')}>▼</button>
+              <button disabled={!ready} onClick={()=>rotateCamera(-45)} title={text('rotateLeft')} aria-label={text('rotateLeft')}>↺</button>
+              <button disabled={!ready} onClick={()=>rotateCamera(45)} title={text('rotateRight')} aria-label={text('rotateRight')}>↻</button>
+              <button disabled={!ready} onClick={resetCompass} title={text('resetCompass')} aria-label={text('resetCompass')}>🧭</button>
+            </div>
+            <button className="map-pill-btn map-btn-close" onClick={()=>setEnabled(false)} title={text('hide')} aria-label={text('hide')}>✕</button>
+          </div>
         </div>
-      </div>}
+
+        {/* Floating City Landmarks Bar (when 3D is active) */}
+        {threeD&&<div className="map-float-landmarks" role="toolbar" aria-label={text('landmarks3D')}>
+          <span className="landmarks-title">🏙️ {text('landmarks3D')}:</span>
+          <div className="landmarks-scroll">
+            {CITY_PRESETS.map(city=>(
+              <button key={city.id} className="city-pill-btn" disabled={!ready} onClick={()=>jumpToCity(city)}>
+                {text(city.nameKey)}
+              </button>
+            ))}
+          </div>
+        </div>}
+      </div>
 
       {/* Floating Bottom Telemetry & Status */}
       <div className="map-float-bottom">
