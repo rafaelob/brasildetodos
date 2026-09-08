@@ -204,6 +204,29 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         attributes.update(territorial_basis='state_only_municipality_unresolved', state=state,
             declared_status=text(row['situacao'], field='situacao'), planned_starts_on=date_value(row.get('dt_inicial_prevista')),
             planned_ends_on=date_value(row.get('dt_final_prevista')), planned_investments=entries)
+        exec_perc = row.get('perc_execucao_fisica') or row.get('percentual_execucao') or row.get('execucao_fisica')
+        if exec_perc is not None:
+            try:
+                attributes['physical_execution_percentage'] = float(exec_perc)
+            except (ValueError, TypeError):
+                pass
+        exec_date = date_value(row.get('dt_medicao') or row.get('dt_ultima_medicao'))
+        if exec_date:
+            attributes['last_measurement_on'] = exec_date
+        pins = row.get('pins') or row.get('geometrias') or row.get('pontos')
+        if isinstance(pins, list) and len(pins) <= 100:
+            parsed_pins = []
+            for pin in pins:
+                if isinstance(pin, dict) and 'latitude' in pin and 'longitude' in pin:
+                    try:
+                        lat = float(pin['latitude'])
+                        lon = float(pin['longitude'])
+                        if -90 <= lat <= 90 and -180 <= lon <= 180:
+                            parsed_pins.append({'latitude': lat, 'longitude': lon, 'kind': str(pin.get('tipo_geometria') or 'point')})
+                    except (ValueError, TypeError):
+                        pass
+            if parsed_pins:
+                attributes['project_geometries'] = parsed_pins
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': None}))
         kind = 'work'
     attributes['version_basis'] = 'publisher_update' if profile == 'pncp_contracts' else 'collection_snapshot'

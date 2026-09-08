@@ -14,3 +14,15 @@ def test_cli_local_import_lifecycle(tmp_path,monkeypatch,capsys):
     assert 'inserted' in run('import-places',p,'--url','https://example.org/test','--reference-date','2025')
     monkeypatch.setattr('bdt.cli.getpass.getpass',lambda *a:'synthetic-test-password')
     assert 'reviewer' in run('create-user','reviewer','--role','reviewer')
+
+
+def test_cli_subparsers_registered(monkeypatch, capsys):
+    import pytest
+    monkeypatch.setattr(sys, 'argv', ['bdt', '--help'])
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert 'import-transferegov-finance' in out
+    assert 'sync-resources' in out
+

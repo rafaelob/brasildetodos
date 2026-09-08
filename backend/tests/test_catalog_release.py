@@ -38,11 +38,11 @@ def full(database, place, source):
 
 def rewrite_release(folder, filename, change):
     path=folder/filename
-    rows=[json.loads(line) for line in path.read_text().splitlines()]
+    rows=[json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
     change(rows)
     data=b''.join(canonical(row)+b'\n' for row in rows)
     path.write_bytes(data)
-    manifest=json.loads((folder/'manifest.json').read_text())
+    manifest=json.loads((folder/'manifest.json').read_text(encoding='utf-8'))
     manifest['files'][filename]={'bytes':len(data),'records':len(rows),'sha256':hashlib.sha256(data).hexdigest()}
     (folder/'manifest.json').write_bytes(canonical(manifest))
 
@@ -50,7 +50,7 @@ def rewrite_release(folder, filename, change):
 def test_public_export_never_contains_private_tables(full,tmp_path):
     folder=tmp_path/'release'; manifest=export_catalog(full,folder,'a'*40)
     assert set(p.name for p in folder.iterdir())==set(FILES)|{'manifest.json'}
-    combined=''.join(p.read_text() for p in folder.iterdir())
+    combined=''.join(p.read_text(encoding='utf-8') for p in folder.iterdir())
     assert 'DO_NOT_EXPORT' not in combined
     assert 'private-user' not in combined
     assert manifest['excluded']==EXCLUDED
@@ -154,13 +154,13 @@ def test_municipal_state_consistency(full,tmp_path):
 ])
 def test_manifest_is_untrusted(full,tmp_path,mutation):
     folder=tmp_path/'release'; export_catalog(full,folder)
-    path=folder/'manifest.json'; manifest=json.loads(path.read_text()); mutation(manifest); path.write_bytes(canonical(manifest))
+    path=folder/'manifest.json'; manifest=json.loads(path.read_text(encoding='utf-8')); mutation(manifest); path.write_bytes(canonical(manifest))
     with pytest.raises(ValueError):verify_catalog(folder)
 
 
 def test_record_counts_are_checked(full,tmp_path):
     folder=tmp_path/'release'; export_catalog(full,folder)
-    path=folder/'manifest.json'; manifest=json.loads(path.read_text()); manifest['files']['places.jsonl']['records']=0; path.write_bytes(canonical(manifest))
+    path=folder/'manifest.json'; manifest=json.loads(path.read_text(encoding='utf-8')); manifest['files']['places.jsonl']['records']=0; path.write_bytes(canonical(manifest))
     with pytest.raises(ValueError,match='count_mismatch'):verify_catalog(folder)
 
 
@@ -177,7 +177,7 @@ def test_financial_phase_is_not_merged(full,tmp_path,source):
         'recipient':'Public test recipient','period':'2025','cents':120000,'phase':'transferred',
         'perspective':'federal','nature':'event'}],source)
     folder=tmp_path/'release'; export_catalog(full,folder)
-    entries=[json.loads(line) for line in (folder/'finance.jsonl').read_text().splitlines()]
+    entries=[json.loads(line) for line in (folder/'finance.jsonl').read_text(encoding='utf-8').splitlines()]
     assert {r['payload']['phase'] for r in entries}=={'paid','transferred'}
     assert len(entries)==2
 
@@ -231,13 +231,13 @@ def test_refuses_uninitialized_database(tmp_path):
 @pytest.mark.parametrize('value',[[], None, 1, 'bad'])
 def test_manifest_shape_validation(full,tmp_path,value):
     folder=tmp_path/'release';export_catalog(full,folder)
-    (folder/'manifest.json').write_text(json.dumps(value))
+    (folder/'manifest.json').write_text(json.dumps(value),encoding='utf-8')
     with pytest.raises(ValueError):verify_catalog(folder)
 
 
 def test_counts_cannot_be_inflated_in_manifest(full,tmp_path):
     folder=tmp_path/'release';export_catalog(full,folder)
-    path=folder/'manifest.json';manifest=json.loads(path.read_text())
+    path=folder/'manifest.json';manifest=json.loads(path.read_text(encoding='utf-8'))
     manifest['partitions'][0]['records']=999999
     path.write_bytes(canonical(manifest))
     with pytest.raises(ValueError,match='partition_mismatch'):verify_catalog(folder)

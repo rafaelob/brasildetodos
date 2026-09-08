@@ -32,6 +32,22 @@ def main():
         item.add_argument("--root")
         if command == "import-transferegov":
             item.add_argument("--profile", type=Path, required=True)
+    tgov = sub.add_parser("import-transferegov-finance")
+    tgov.add_argument("--downloads", type=Path, default=Path("data/downloads/transferegov"))
+    tgov.add_argument("--limit-agreements", type=int, default=None)
+    tgov.add_argument("--limit-amendments", type=int, default=None)
+    tgov.add_argument("--limit-disbursements", type=int, default=None)
+    sync_res = sub.add_parser("sync-resources")
+    sync_res.add_argument("profile", choices=["pncp_contracts", "transferegov_special_plans", "obrasgov_projects"])
+    sync_res.add_argument("--folder", type=Path, required=True)
+    sync_res.add_argument("--start")
+    sync_res.add_argument("--end")
+    sync_res.add_argument("--year", type=int)
+    sync_res.add_argument("--identity")
+    sync_res.add_argument("--updates", action="store_true")
+    sync_res.add_argument("--page-size", type=int, default=100)
+    sync_res.add_argument("--max-pages", type=int, default=100)
+    sync_res.add_argument("--collect", action="store_true")
     docs = sub.add_parser("extract-pdf")
     docs.add_argument("path", type=Path)
     docs.add_argument("--output", type=Path, required=True)
@@ -68,6 +84,25 @@ def main():
             with database.session() as session:
                 session.add(User(username=credentials.username.lower(), password_hash=password_hash(password), role=args.role))
             result = {"created": credentials.username.lower(), "role": args.role}
+        elif args.command == "import-transferegov-finance":
+            from ops.transferegov_financial_download_and_ingest import run_ingest
+            db_path = Path(args.database.removeprefix("sqlite:///"))
+            result = run_ingest(db_path, args.downloads, limit_agreements=args.limit_agreements,
+                                limit_amendments=args.limit_amendments, limit_disbursements=args.limit_disbursements)
+        elif args.command == "sync-resources":
+            from .resource_profiles import collection_plan
+            from .resource_sync import import_resources
+            from .sync import atomic_json, collect, digest
+            plan = collection_plan(args.profile, start=args.start, end=args.end, year=args.year,
+                                   identity=args.identity, updates=args.updates,
+                                   page_size=args.page_size, max_pages=args.max_pages)
+            if args.collect:
+                collect(plan, args.folder)
+            stored = json.loads((args.folder / 'collection.json').read_text(encoding='utf-8'))
+            if stored.get('plan_sha256') != digest(plan.model_dump()):
+                raise ValueError('cli_plan_differs_from_collection')
+            result = import_resources(database, args.folder)
+            atomic_json(args.folder / 'import-result.json', result)
         else:
             dataset = args.command.removeprefix("import-")
             source = file_source(args.path, dataset, args.url, args.reference_date)
@@ -79,7 +114,7 @@ def main():
             elif dataset == "finance":
                 result = {"inserted": import_finance(database, json_records(args.path), source)}
             else:
-                profile = json.loads(args.profile.read_text())
+                profile = json.loads(args.profile.read_text(encoding="utf-8"))
                 rows = transferegov_rows(csv_records(args.path, args.member, args.encoding), **profile)
                 result = {"inserted": import_finance(database, rows, source)}
     if "database" in locals():

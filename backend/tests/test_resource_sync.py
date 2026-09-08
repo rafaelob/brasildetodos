@@ -303,3 +303,19 @@ def test_public_resource_api_history_and_literal_search(database,tmp_path):
         assert not {'author_id','reviewer_id','extraction','password'}.intersection(result)
         assert client.get('/api/resource-history/missing:1').status_code==404
         assert client.get('/api/workbench/documents').status_code==401
+
+
+def test_obrasgov_physical_execution_and_geometries():
+    source_obj = source(WORK)
+    proj_row = project(
+        perc_execucao_fisica=78.5,
+        dt_medicao='2026-08-15',
+        pins=[{'latitude': -12.9714, 'longitude': -38.5014, 'tipo_geometria': 'point'}],
+    )
+    res = normalize_resource(WORK, proj_row, source_obj, {})
+    assert res.attributes['physical_execution_percentage'] == 78.5
+    assert res.attributes['last_measurement_on'] == '2026-08-15'
+    assert res.attributes['project_geometries'] == [{'latitude': -12.9714, 'longitude': -38.5014, 'kind': 'point'}]
+    assert res.attributes['territorial_basis'] == 'state_only_municipality_unresolved'
+
+
