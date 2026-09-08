@@ -36,3 +36,38 @@ test('public export excludes extra private attributes and cannot copy unpublishe
  assert.throws(()=>publicObservationReport(row,'fr'),/not_public/);
  assert.throws(()=>publicObservationReport({...row,observation:{body:'x'.repeat(1201)}},'en'),/invalid_public/);
 });
+test('composeVisit humanizes technical dataset slugs and sanitizes Não informado', () => {
+  const cnesPlace = {
+    id: 'cnes:2490001',
+    kind: 'health',
+    source: { dataset: 'cnes-national-bulk', reference_date: null }
+  };
+  const answers = { identification: 'yes', posted_hours: 'yes', entrance_barrier: 'no', health_sign: 'yes' };
+  const body = composeVisit(cnesPlace, 'pt-BR', answers, 'Contexto de observacao do estabelecimento de saude.');
+  assert.ok(body.includes('CNES · Estabelecimentos de Saúde'));
+  assert.ok(!body.includes('cnes-national-bulk'));
+  assert.ok(!body.includes('Não informado'));
+  assert.ok(body.includes('Sem referência temporal informada'));
+
+  const dirtyPlace = {
+    id: 'cnes:2490001',
+    kind: 'health',
+    source: { dataset: 'cnes-national-bulk', reference_date: 'Não informado' }
+  };
+  const bodyCleaned = composeVisit(dirtyPlace, 'pt-BR', answers, 'Contexto de observacao do estabelecimento de saude.');
+  assert.ok(!bodyCleaned.includes('Não informado'));
+  assert.ok(bodyCleaned.includes('Sem referência temporal informada'));
+
+  for (const sentinel of ['  Não informado  ', 'não informado', 'NAO INFORMADO', '  nao informado  ', 'null', 'undefined', 'none']) {
+    const paddedPlace = {
+      id: 'cnes:2490001',
+      kind: 'health',
+      source: { dataset: 'cnes-national-bulk', reference_date: sentinel }
+    };
+    const bodyPadded = composeVisit(paddedPlace, 'pt-BR', answers, 'Contexto de observacao do estabelecimento de saude.');
+    assert.ok(!bodyPadded.toLowerCase().includes('não informado'), `Failed for ${sentinel}`);
+    assert.ok(!bodyPadded.toLowerCase().includes('nao informado'), `Failed for ${sentinel}`);
+    assert.ok(bodyPadded.includes('Sem referência temporal informada'), `Missing fallback for ${sentinel}`);
+  }
+});
+

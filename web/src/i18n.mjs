@@ -5,7 +5,7 @@ export const messages = {
     search:'Busque por nome ou endereço', searchAction:'Buscar', all:'Todos os serviços', school:'Educação', health:'Saúde', work:'Obras',
     states:'Todas as UFs', towns:'Todos os municípios', clear:'Limpar filtros', loading:'Carregando dados…', failure:'Não foi possível concluir. Tente novamente.',
     empty:'Nenhum registro neste recorte', emptyHelp:'Isso não comprova ausência de serviço. Consulte a cobertura e amplie os filtros.',
-    loadMap:'Explorar no mapa', mapConsent:'O mapa utiliza OpenFreeMap/OSM. Ao abrir, seu navegador se conecta ao provedor de mapas.',
+    map:'Mapa', loadMap:'Explorar no mapa', mapConsent:'O mapa utiliza OpenFreeMap/OSM. Ao abrir, seu navegador se conecta ao provedor de mapas.',
     mapFail:'Mapa indisponível. A lista e as fichas continuam funcionando.', mapNote:'Mapa mostra a página de resultados. Aproxime ou filtre para explorar outros lugares.',
     mapHere:'Buscar nesta área', buildings:'Vista 3D', buildingsNote:'Volumes aproximados do provedor, quando disponíveis. Não são medição nem imagem atual do lugar.',
     noGeo:'Localização no mapa não confirmada', noAddress:'Endereço não informado', source:'Fonte do cadastro', reference:'Referência', collected:'Coleta',
@@ -46,7 +46,7 @@ export const messages = {
     search:'Search by name or address', searchAction:'Search', all:'All services', school:'Education', health:'Health', work:'Public works',
     states:'All states', towns:'All municipalities', clear:'Clear filters', loading:'Loading data…', failure:'The request could not be completed. Please try again.',
     empty:'No records in this selection', emptyHelp:'This does not prove a service is absent. Check coverage and broaden your filters.',
-    loadMap:'Explore on the map', mapConsent:'The map uses OpenFreeMap/OSM. Opening it connects your browser to the map provider.',
+    map:'Map', loadMap:'Explore on the map', mapConsent:'The map uses OpenFreeMap/OSM. Opening it connects your browser to the map provider.',
     mapFail:'Map unavailable. The list and place details still work.', mapNote:'The map shows the current results page. Zoom in or filter to explore other places.',
     mapHere:'Search this area', buildings:'3D view', buildingsNote:'Approximate provider building volumes where available. Not a survey or a current image.',
     noGeo:'Map location not confirmed', noAddress:'Address not provided', source:'Registry source', reference:'Reference date', collected:'Retrieved',
@@ -87,7 +87,7 @@ export const messages = {
     search:'Buscar por nombre o dirección', searchAction:'Buscar', all:'Todos los servicios', school:'Educación', health:'Salud', work:'Obras',
     states:'Todos los estados', towns:'Todos los municipios', clear:'Limpiar filtros', loading:'Cargando datos…', failure:'No se pudo completar la solicitud. Inténtalo de nuevo.',
     empty:'No hay registros en esta selección', emptyHelp:'Esto no demuestra ausencia del servicio. Consulta la cobertura y amplía los filtros.',
-    loadMap:'Explorar en el mapa', mapConsent:'El mapa utiliza OpenFreeMap/OSM. Al abrirlo, tu navegador se conecta al proveedor de mapas.',
+    map:'Mapa', loadMap:'Explorar en el mapa', mapConsent:'El mapa utiliza OpenFreeMap/OSM. Al abrirlo, tu navegador se conecta al proveedor de mapas.',
     mapFail:'Mapa no disponible. La lista y las fichas siguen funcionando.', mapNote:'El mapa muestra la página actual de resultados. Acerca o filtra para explorar otros lugares.',
     mapHere:'Buscar en esta área', buildings:'Vista 3D', buildingsNote:'Volúmenes aproximados del proveedor, cuando existen. No son una medición ni una imagen actual.',
     noGeo:'Ubicación en el mapa no confirmada', noAddress:'Dirección no informada', source:'Fuente del registro', reference:'Referencia', collected:'Recopilación',
@@ -137,8 +137,15 @@ export function formatDataset(ds, locale = 'pt-BR') {
   return String(ds).replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 export function formatReferenceDate(ref, locale = 'pt-BR') {
-  if (!ref) return translate(locale, 'officialRecord');
-  return `${translate(locale, 'refPrefix')} ${ref}`;
+  if (!ref || typeof ref !== 'string') return translate(locale, 'officialRecord');
+  const trimmed = ref.trim();
+  const lower = trimmed.toLowerCase();
+  const sentinels = [
+    'não informado', 'nao informado', 'no informado', 'not provided',
+    'unknown', 'null', 'undefined', 'none', ''
+  ];
+  if (!trimmed || sentinels.includes(lower)) return translate(locale, 'officialRecord');
+  return `${translate(locale, 'refPrefix')} ${trimmed}`;
 }
 export function formatSourceSummary(source, locale = 'pt-BR') {
   if (!source) return '';

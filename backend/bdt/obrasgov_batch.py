@@ -185,7 +185,7 @@ def batch_ingest_obrasgov(database: Database, *, states: list[str] | None = None
                         dataset='obrasgov_projects',
                         record_id=pid,
                         url=src_url,
-                        reference_date=str(proj.get('ano_cadastro') or ''),
+                        reference_date=str(proj.get('ano_cadastro')) if proj.get('ano_cadastro') else None,
                         collected_at=now(),
                         snapshot_sha256=hashlib.sha256(raw_bytes).hexdigest(),
                     )
@@ -264,9 +264,22 @@ def batch_ingest_obrasgov(database: Database, *, states: list[str] | None = None
                 break
 
     stats['finished_at'] = now()
+    status = 'failed' if stats['errors'] > 0 and (stats['created'] + stats['updated'] + stats['unchanged'] == 0) else (
+        'partial_quality' if stats['errors'] > 0 else 'completed_file'
+    )
     with database.session() as session:
         load = Ingestion(
             dataset='obrasgov_projects',
+            started_at=stats['started_at'],
+            finished_at=stats['finished_at'],
+            status=status,
+            counts={
+                'read': stats['read'],
+                'created': stats['created'],
+                'updated': stats['updated'],
+                'unchanged': stats['unchanged'],
+                'without_geometry': stats['read'] - stats['with_pins'],
+            },
             source={
                 'url': f'{OBRASGOV_BASE}/projeto-investimento',
                 'states': target_states,

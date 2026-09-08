@@ -9,6 +9,7 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -68,10 +69,27 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
                   openapi_url='/api/openapi.json', lifespan=lifespan)
     app.state.database = database
     secure = os.getenv('BDT_ENV') == 'production'
-    allowed_origin = os.getenv('BDT_PUBLIC_ORIGIN', 'http://localhost:8000').rstrip('/')
-    if secure and not allowed_origin.startswith('https://'):
-        database.engine.dispose()
-        raise RuntimeError('Production requires BDT_PUBLIC_ORIGIN=https://...')
+    raw_origins = os.getenv('BDT_PUBLIC_ORIGIN', 'http://localhost:8000')
+    allowed_origins = {orig.strip().rstrip('/') for orig in raw_origins.split(',') if orig.strip()}
+    if secure:
+        if not allowed_origins or not all(orig.startswith('https://') for orig in allowed_origins):
+            database.engine.dispose()
+            raise RuntimeError('Production requires BDT_PUBLIC_ORIGIN=https://...')
+    else:
+        ports = set()
+        for orig in list(allowed_origins):
+            try:
+                parsed = urlsplit(orig)
+                if parsed.port:
+                    ports.add(parsed.port)
+            except Exception:
+                pass
+        bdt_port = os.getenv('BDT_PORT')
+        if bdt_port and bdt_port.isdigit():
+            ports.add(int(bdt_port))
+        for port in ports:
+            allowed_origins.add(f'http://localhost:{port}')
+            allowed_origins.add(f'http://127.0.0.1:{port}')
     if not testing:
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=os.getenv('BDT_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','))
     dummy_hash = password_hash(secrets.token_urlsafe(24))
@@ -86,11 +104,12 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
         length = request.headers.get('content-length')
         if length and (not length.isdigit() or int(length) > 32768):
             return JSONResponse({'detail': 'request_too_large'}, status_code=413)
+        origin = request.headers.get('origin')
+        if origin is not None and origin.rstrip('/') not in allowed_origins:
+            return JSONResponse({'detail': 'origin_not_allowed'}, status_code=403)
         if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
             if request.headers.get('x-bdt-client') != 'web':
                 return JSONResponse({'detail': 'csrf_header_required'}, status_code=403)
-            if request.headers.get('origin') not in {None, allowed_origin}:
-                return JSONResponse({'detail': 'origin_not_allowed'}, status_code=403)
             chunks, size = [], 0
             async for chunk in request.stream():
                 size += len(chunk)
@@ -142,7 +161,7 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
             raise HTTPException(403, 'reviewer_required')
         return user
 
-    @app.get('/api/health')
+    @app.api_route('/api/health', methods=['GET', 'HEAD'])
     def health():
         with database.session() as session:
             session.execute(select(1))

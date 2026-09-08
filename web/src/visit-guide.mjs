@@ -2,6 +2,7 @@
 // Client-authored drafting aid. The unmodified observation API stores this as
 // citizen text, not as an official checklist or a server-verified source snapshot.
 import {visitText} from './visit-text.mjs';
+import {formatDataset} from './i18n.mjs';
 const questions={
  identification:['Há nome ou identificação legível na fachada?','Is a name or identification readable on the facade?','¿Hay un nombre o identificación legible en la fachada?'],
  posted_hours:['Há um aviso de horário legível na entrada?','Is a notice of opening hours readable at the entrance?','¿Hay un aviso de horario legible en la entrada?'],
@@ -23,8 +24,11 @@ export function composeVisit(place,locale,answers,note) {
  const guide=visitGuide(place.kind,locale),words=visitText[locale];
  if(typeof note!=='string'||Array.from(note.trim()).length<20)throw new Error('context_required');
  if(Object.keys(answers).length!==guide.items.length||guide.items.some(i=>!i.allowed_answers.includes(answers[i.id])))throw new Error('answers_incomplete');
- const ref=place.source?.reference_date||words.missing;
- const body=[`${words.open} · ${guide.id} · ${locale}`,`${words.context}: ${place.id}`,`${words.source}: ${place.source?.dataset||'—'} · ${ref}`,
+ const rawStr = typeof place.source?.reference_date === 'string' ? place.source.reference_date.trim() : '';
+ const lower = rawStr.toLowerCase();
+ const isMissing = !rawStr || ['não informado', 'nao informado', 'no informado', 'not provided', 'unknown', 'null', 'undefined', 'none'].includes(lower);
+ const ref = isMissing ? words.missing : rawStr;
+ const body=[`${words.open} · ${guide.id} · ${locale}`,`${words.context}: ${place.id}`,`${words.source}: ${formatDataset(place.source?.dataset,locale)||'—'} · ${ref}`,
   '',...guide.items.map(i=>`${i.label} ${words[answers[i.id]]}`),'',`${words.note}: ${note.trim()}`].join('\n');
  if(Array.from(body).length>MAX_BODY)throw new Error('observation_budget');
  return body;

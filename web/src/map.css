@@ -3,7 +3,6 @@
 
 .map-panel {
   min-width: 0;
-  position: relative;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid #c9d8cb;
@@ -188,7 +187,11 @@
   cursor: pointer;
   color: #184a39;
   transition: background 0.15s ease;
-  min-height: auto;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .map-tilt-pill button:last-child {
@@ -269,7 +272,11 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
-  min-height: auto;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .city-pill-btn:hover:not(:disabled) {

@@ -38,3 +38,10 @@ test('HTTP errors map to public translated messages, not raw response data',()=>
  assert.equal(groupFailure(new Error('private backend secret')),'failure');
 });
 test('task pagination clamps only the public task page',()=>{assert.equal(taskPage(3,21),2);assert.equal(taskPage(0,0),1);assert.equal(taskPage(2,40),2);for(const x of [-1,1.1,Infinity,'20'])assert.throws(()=>taskPage(1,x));});
+
+test('groupMessages has officialRecord in all locales', () => {
+  assert.equal(groupText('pt-BR', 'officialRecord'), 'Cadastro oficial');
+  assert.equal(groupText('en', 'officialRecord'), 'Official record');
+  assert.equal(groupText('es', 'officialRecord'), 'Registro oficial');
+});
+

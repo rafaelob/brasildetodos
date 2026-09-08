@@ -233,3 +233,42 @@ def test_reads_leave_import_ledger_unchanged(database, client):
     with database.session() as session:
         after = [(row.id, row.counts, row.error, row.source) for row in session.scalars(select(Ingestion))]
     assert after == before
+
+
+def test_transferegov_and_obrasgov_aliases_map_correctly(database, client):
+    """Verify that transferegov and obrasgov dataset aliases map to their families, not 'other'."""
+    save_run(database, dataset='transferegov', status='success',
+             counts={'read': 50, 'inserted': 45, 'updated': 5, 'unchanged': 0})
+    save_run(database, dataset='transferegov-national-financial', status='completed_file',
+             counts={'read': 30, 'inserted': 30, 'updated': 0, 'unchanged': 0})
+    save_run(database, dataset='obrasgov', status='completed_file',
+             counts={'read': 20, 'inserted': 18, 'updated': 2, 'unchanged': 0})
+    save_run(database, dataset='obrasgov_projects', status='completed_file',
+             counts={'read': 10, 'inserted': 10, 'updated': 0, 'unchanged': 0})
+
+    # Verify /api/imports filtering for transferegov
+    tgov_res = client.get('/api/imports', params={'source': 'transferegov'}).json()
+    assert tgov_res['total'] == 2
+    for item in tgov_res['items']:
+        assert item['source_id'] == 'transferegov'
+        assert item['dataset'] == 'transferegov'
+
+    # Verify /api/imports filtering for obrasgov
+    ogov_res = client.get('/api/imports', params={'source': 'obrasgov'}).json()
+    assert ogov_res['total'] == 2
+    for item in ogov_res['items']:
+        assert item['source_id'] == 'obrasgov'
+        assert item['dataset'] == 'obrasgov'
+
+    # Verify /api/coverage attribution and last_attempt
+    cov = client.get('/api/coverage').json()
+    tgov_source = next(s for s in cov['sources'] if s['id'] == 'transferegov')
+    ogov_source = next(s for s in cov['sources'] if s['id'] == 'obrasgov')
+    other_source = next(s for s in cov['sources'] if s['id'] == 'other')
+
+    assert tgov_source['last_attempt'] is not None
+    assert tgov_source['last_attempt']['source_id'] == 'transferegov'
+    assert ogov_source['last_attempt'] is not None
+    assert ogov_source['last_attempt']['source_id'] == 'obrasgov'
+    assert other_source['last_attempt'] is None
+

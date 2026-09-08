@@ -1,12 +1,15 @@
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #162a23;
-  background: #f7f9f6;
+  color: var(--text, #19241e);
+  background: var(--bg, #f5f4ef);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.55;
+
+  --bg: #f5f4ef;
+  --text: #19241e;
 
   --green: #0d5d47;
   --green-hover: #084736;
@@ -44,6 +47,9 @@
 body { margin: 0; background: var(--bg); color: var(--text); }
 button, input, textarea, select { font: inherit; }
 button, a, select { touch-action: manipulation; }
+main, #main, .card, .place-card, .map-panel {
+  scroll-margin-top: 5.5rem;
+}
 
 button {
   cursor: pointer;
@@ -141,7 +147,7 @@ small { font-size: 0.8rem; }
   display: flex;
   align-items: center;
   gap: 2rem;
-  padding: 0.85rem 4vw;
+  padding: 0.85rem max(4vw, calc((100% - 1440px) / 2 + 2rem));
   border-bottom: 1px solid #dbe6df;
   background: #ffffff;
   position: sticky;
@@ -426,7 +432,7 @@ nav button.active, .tabs button.active {
 }
 
 .quiet-text {
-  color: #7b9487;
+  color: #486357;
   font-size: 0.82rem;
   font-style: italic;
 }
@@ -517,16 +523,17 @@ nav button.active, .tabs button.active {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent !important;
-  color: #a4b8ad;
+  color: #5a7366;
   font-size: 1.35rem;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
@@ -534,13 +541,13 @@ nav button.active, .tabs button.active {
 }
 
 .save-icon:hover {
-  color: #d18a14;
-  background: rgba(209, 138, 20, 0.1) !important;
+  color: #9c6000;
+  background: rgba(156, 96, 0, 0.1) !important;
   transform: scale(1.15);
 }
 
 .save-icon[aria-pressed=true] {
-  color: #d18a14;
+  color: #9c6000;
 }
 
 .kind-icon {
@@ -565,7 +572,7 @@ nav button.active, .tabs button.active {
 .kind-icon.work { color: #8e5812; background: #fef6ea; border: 1px solid #f7dfbe; }
 
 .geo-pill { background: #e3f2ea; color: #0d5d47; font-weight: 600; border: 1px solid #b8ded0; }
-.quiet-pill { background: #f7f2ea; color: #765b3d; font-weight: 600; border: 1px solid #e5d8c8; }
+.quiet-pill { background: #f7f2ea; color: #5a452d; font-weight: 600; border: 1px solid #e5d8c8; }
 
 .btn-map-3d {
   background: linear-gradient(135deg, #eaf5ed, #dcf2e4);
@@ -578,7 +585,7 @@ nav button.active, .tabs button.active {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  min-height: 30px;
+  min-height: 44px;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(18, 100, 78, 0.08);
   transition: var(--transition);
@@ -600,7 +607,7 @@ nav button.active, .tabs button.active {
   color: #3d5849;
   font-weight: 600;
   cursor: pointer;
-  min-height: 30px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -827,7 +834,7 @@ pre {
 
 .notice button {
   padding: 0 0.7rem;
-  min-height: 34px;
+  min-height: 44px;
   background: #fff;
 }
 
@@ -868,6 +875,10 @@ footer p { max-width: 600px; margin: 0.5rem 0; }
   }
   .header-right {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: nowrap;
   }
   .header nav {
     order: 3;
@@ -915,7 +926,9 @@ footer p { max-width: 600px; margin: 0.5rem 0; }
 
 @media (max-width: 640px) {
   .header {
-    padding: 0.65rem 4vw 0.45rem;
+    padding: 0.45rem 4vw 0.35rem;
+    gap: 0.4rem;
+    max-height: 90px;
   }
   .brand {
     font-size: 1.12rem;
@@ -926,11 +939,12 @@ footer p { max-width: 600px; margin: 0.5rem 0; }
   .header-right select {
     font-size: 0.82rem;
     padding: 0.35rem 0.5rem;
-    min-height: 34px;
+    min-height: 44px;
   }
   .header-right button {
     padding: 0.4rem 0.65rem;
     font-size: 0.82rem;
+    min-height: 44px;
   }
   .header nav button {
     font-size: 0.84rem;

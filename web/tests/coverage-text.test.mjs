@@ -23,3 +23,29 @@ test('territorial filters do not change global data or remove unknown geometry',
  assert.equal(partitionSelection(rows).length,3);assert.equal(partitionSelection(rows,'cnes').length,2);
  assert.deepEqual(partitionSelection(rows,'inep','BA'),[rows[0]]);assert.deepEqual(partitionSelection(rows,'inep','SP'),[]);assert.equal(rows.length,3);
 });
+
+test('statusLabel and coverageCount never emit Não informado for missing official data', () => {
+  for (const locale of ['pt-BR', 'en', 'es']) {
+    const t = (k) => uiText(locale, k);
+    const unknownStatus = statusLabel('unknown', t);
+    const unassignedStatus = statusLabel('unassigned', t);
+    assert.notEqual(unknownStatus, 'Não informado');
+    assert.notEqual(unassignedStatus, 'Não informado');
+
+    const nullCount = coverageCount(null, locale, t);
+    const undefinedCount = coverageCount(undefined, locale, t);
+    assert.notEqual(nullCount, 'Não informado');
+    assert.notEqual(undefinedCount, 'Não informado');
+
+    if (locale === 'pt-BR') {
+      assert.equal(unknownStatus, 'Cadastro oficial');
+      assert.equal(nullCount, 'Cadastro oficial');
+    } else if (locale === 'en') {
+      assert.equal(unknownStatus, 'Official record');
+      assert.equal(nullCount, 'Official record');
+    } else if (locale === 'es') {
+      assert.equal(unknownStatus, 'Registro oficial');
+      assert.equal(nullCount, 'Registro oficial');
+    }
+  }
+});

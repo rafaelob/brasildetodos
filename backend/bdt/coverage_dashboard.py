@@ -28,8 +28,8 @@ SOURCES = {
     'inep': ('https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar', ('inep', 'inep-schools-2025')),
     'cnes': ('https://cnes.datasus.gov.br/', ('cnes', 'cnes-national-bulk')),
     'pncp': ('https://www.gov.br/pncp/pt-br/acesso-a-informacao/copy_of_dados-abertos', ('pncp_contracts', 'pncp')),
-    'transferegov': ('https://www.gov.br/transferegov/pt-br', ('transferegov_special_plans',)),
-    'obrasgov': ('https://www.gov.br/obrasgov/pt-br', ('obrasgov_projects',)),
+    'transferegov': ('https://www.gov.br/transferegov/pt-br', ('transferegov_special_plans', 'transferegov', 'transferegov-national-financial')),
+    'obrasgov': ('https://www.gov.br/obrasgov/pt-br', ('obrasgov_projects', 'obrasgov')),
     'other': (None, ()),
 }
 STATUS_ALIASES = {

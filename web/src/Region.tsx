@@ -2,7 +2,7 @@
 import {useEffect,useId,useState} from 'react';
 import type {ReactNode} from 'react';
 import {api} from './api';
-import {safeReference,formatDataset} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import {regionParameters} from './region-text.mjs';
 import Resources from './Resources';
 import type {Locale,Money,Source} from './types';
@@ -103,7 +103,7 @@ export default function Region({initialId='',locale,t,onExplore,renderMoney}:{in
    <div className="region-content" aria-live="polite" aria-busy={summaryLoading}>{!selected?<p className="empty">{t('regionSelect')}</p>:summaryLoading?<p>{t('loading')}</p>:summaryError?<div className="panel" role="status"><p>{t('failure')}</p><button onClick={()=>setSummaryRetry(v=>v+1)}>{t('regionSummaryRetry')}</button></div>:summary&&<><h2>{summary.municipality.name} · {summary.municipality.state}</h2><p className="quiet">{summary.municipality.id} · {t('regionCurrent')}: {new Date(summary.generated_at).toLocaleString(locale)}</p><p className="callout">{t('regionResourceNote')}</p>
     <h3>{t('regionLoaded')}</h3>{!summary.service_records&&<p>{t('regionNoServices')}</p>}<div className="region-metrics">{summary.services.map(item=><article className="panel region-metric" key={item.kind}><h4>{t(item.kind)}</h4><strong>{n(item.records)}</strong><dl><dt>{t('regionGeometry')}</dt><dd>{n(item.with_geometry)}</dd><dt>{t('regionNoGeometry')}</dt><dd>{n(item.without_geometry)}</dd></dl><button onClick={()=>onExplore(selected,item.kind)}>{t('regionExplore')} · {t(item.kind)}</button></article>)}</div>
     <PublicDensityDashboard services={summary.services} t={t} locale={locale}/>
-    {summary.municipality.source&&<details className="source"><summary>{t('regionSource')}</summary><p>{formatDataset(summary.municipality.source.dataset,locale)}</p><p>{t('reference')}: {summary.municipality.source.reference_date?(t('refPrefix')+' '+summary.municipality.source.reference_date):t('officialRecord')}</p><p>{t('collected')}: {summary.municipality.source.collected_at}</p>{safeReference(summary.municipality.source.url)&&<a href={safeReference(summary.municipality.source.url)!} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<p><code>{summary.municipality.source.snapshot_sha256}</code></p></details>}
+    {summary.municipality.source&&<details className="source"><summary>{t('regionSource')}</summary><p>{formatDataset(summary.municipality.source.dataset,locale)}</p><p>{t('reference')}: {formatReferenceDate(summary.municipality.source.reference_date,locale)}</p><p>{t('collected')}: {summary.municipality.source.collected_at}</p>{safeReference(summary.municipality.source.url)&&<a href={safeReference(summary.municipality.source.url)!} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<p><code>{summary.municipality.source.snapshot_sha256}</code></p></details>}
     <h3>{t('regionResourceCount')}: {n(summary.resource_records)}</h3>{summary.resource_groups.map(item=><p key={item.source_id+item.territorial_basis}>{formatDataset(item.source_id,locale)} · {n(item.records)} {t('regionRecords')} · {t(item.territorial_basis==='buyer_registered_municipality'?'regionBuyer':'regionTerritorial')}</p>)}{!summary.resource_records&&<p>{t('regionNoResources')}</p>}
     <ResourceDistribution groups={summary.resource_groups} total={summary.resource_records} financialGroups={summary.financial_event_groups} t={t} locale={locale}/>
     <Resources municipalityId={selected} t={t} locale={locale}/>

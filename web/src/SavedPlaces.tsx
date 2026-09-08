@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {useEffect,useState} from 'react';
 import {api} from './api';
-import {safeReference,formatDataset} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import {watchDate,watchPage,watchValue} from './watch-state.mjs';
 import type {Locale,Place,Source} from './types';
 import './watch.css';
@@ -20,8 +20,8 @@ function VersionEntry({entry,locale,t}:{entry:Version;locale:Locale;t:T}){
  return <li className="watch-version"><div className="watch-version-heading"><strong>{t(entry.type==='started'?'watchStarted':entry.type==='updated'?'watchChanged':'watchSourceRevision')}</strong><time dateTime={entry.recorded_at||undefined}>{watchDate(entry.recorded_at,locale,t)}</time></div>
   {entry.type==='started'&&<p>{t('watchStartedNote')}</p>}
   {entry.fields.length>0&&<details><summary>{t('watchCompare')}</summary><dl className="watch-diff">{entry.fields.map(field=><div key={field.key}><dt>{t('watchField.'+field.key)}</dt><dd><span>{t('watchBefore')}</span>{watchValue(field.before,locale,t)}</dd><dd><span>{t('watchAfter')}</span>{watchValue(field.after,locale,t)}</dd></div>)}</dl></details>}
-  <p className="watch-source">{formatDataset(entry.source.dataset,locale)} · {t('reference')}: {entry.source.reference_date?(t('refPrefix')+' '+entry.source.reference_date):t('officialRecord')} {source&&<a href={source} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}</p>
-  {entry.previous_source&&<p className="watch-source">{t('watchPreviousSource')}: {formatDataset(entry.previous_source.dataset,locale)} · {entry.previous_source.reference_date?(t('refPrefix')+' '+entry.previous_source.reference_date):t('officialRecord')} {previous&&<a href={previous} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}</p>}
+  <p className="watch-source">{formatDataset(entry.source.dataset,locale)} · {t('reference')}: {formatReferenceDate(entry.source.reference_date,locale)} {source&&<a href={source} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}</p>
+  {entry.previous_source&&<p className="watch-source">{t('watchPreviousSource')}: {formatDataset(entry.previous_source.dataset,locale)} · {formatReferenceDate(entry.previous_source.reference_date,locale)} {previous&&<a href={previous} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}</p>}
  </li>;
 }
 
@@ -53,7 +53,7 @@ export default function SavedPlaces({ids,locale,t,onSelect,onRemove,onExplore}:{
    {result?.items.map(item=><article className="watch-card" key={item.id}>
      <div className="watch-card-top"><div><span className="eyebrow">{item.place?`${t(item.place.kind)} · ${item.place.state}`:t('unknown')}</span><h2>{item.place?<button className="watch-title-link" onClick={()=>onSelect(item.id)}>{item.place.name}</button>:item.id}</h2></div><button className="watch-remove" onClick={()=>onRemove(item.id)} aria-label={t('watchRemove')+' '+(item.place?.name||item.id)}>★ <span>{t('watchRemove')}</span></button></div>
      {item.place?<><p>{item.place.address||t('noAddress')}</p>{item.status==='outside_current_profile'&&<p className="watch-warning">{t('withdrawn')}</p>}{item.place.latitude===null&&<p className="quiet">{t('noGeo')}</p>}
-       <p className="watch-source">{formatDataset(item.place.source.dataset,locale)} · {t('reference')}: {item.place.source.reference_date?(t('refPrefix')+' '+item.place.source.reference_date):t('officialRecord')}</p>
+       <p className="watch-source">{formatDataset(item.place.source.dataset,locale)} · {t('reference')}: {formatReferenceDate(item.place.source.reference_date,locale)}</p>
        <label className="comparison-checkbox"><input type="checkbox" aria-label={words.select+' '+item.place.name} checked={comparison.includes(item.id)} disabled={!comparison.includes(item.id)&&comparison.length>=3} onChange={()=>setChosen(old=>toggleComparison(old,item.id,ids))}/>{words.select}</label>
        <button className="primary" onClick={()=>onSelect(item.id)}>{t('watchDetails')}</button>
        <section className="watch-history" aria-label={t('watchLatest')}><h3>{t('watchLatest')} <span>{item.history?.total_versions.toLocaleString(locale)} {t('watchVersions')}</span></h3>
