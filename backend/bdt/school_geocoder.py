@@ -55,7 +55,7 @@ def normalize_school_name(name: str | None) -> str:
     text = re.sub(r'[^A-Z0-9\s]', ' ', text)
     words = text.split()
     filtered = [w for w in words if w not in STOP_WORDS and len(w) > 1]
-    return ' '.join(filtered) if filtered else ' '.join(words)
+    return ' '.join(filtered)
 
 
 
@@ -93,8 +93,10 @@ def parse_cnefe_schools(zip_bytes: bytes) -> dict[str, dict[str, tuple[float, fl
     """Parse educational establishments (COD_ESPECIE=4) from CNEFE CSV.
 
     Returns dict mapping: municipality_id -> {normalized_name: (lat, lon, original_establishment_name)}
+    Detects and discards ambiguous duplicate names with differing coordinates in the same municipality.
     """
     by_mun: dict[str, dict[str, tuple[float, float, str]]] = {}
+    ambiguous: dict[str, set[str]] = {}
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         csv_names = [n for n in zf.namelist() if n.lower().endswith('.csv')]
         if not csv_names:
@@ -127,7 +129,17 @@ def parse_cnefe_schools(zip_bytes: bytes) -> dict[str, dict[str, tuple[float, fl
                             if -90 <= lat <= 90 and -180 <= lon <= 180:
                                 norm_k = normalize_school_name(est_name)
                                 if norm_k:
-                                    by_mun.setdefault(mun, {})[norm_k] = (lat, lon, est_name)
+                                    mun_ambig = ambiguous.setdefault(mun, set())
+                                    if norm_k in mun_ambig:
+                                        continue
+                                    mun_dict = by_mun.setdefault(mun, {})
+                                    if norm_k in mun_dict:
+                                        prev_lat, prev_lon, _ = mun_dict[norm_k]
+                                        if abs(prev_lat - lat) > 0.001 or abs(prev_lon - lon) > 0.001:
+                                            del mun_dict[norm_k]
+                                            mun_ambig.add(norm_k)
+                                    else:
+                                        mun_dict[norm_k] = (lat, lon, est_name)
                         except (ValueError, TypeError):
                             pass
     return by_mun
@@ -143,12 +155,20 @@ def find_cnefe_match(school_name: str, mun_cnefe: dict[str, tuple[float, float, 
     if n_key in mun_cnefe:
         return mun_cnefe[n_key]
 
-    # 2. Substring match (conservative: key length >= 8 and word-boundary aware)
-    if len(n_key) >= 8:
+    # 2. Token-based unambiguous match
+    n_words = set(n_key.split())
+    if len(n_words) >= 2 or (len(n_words) == 1 and len(n_key) >= 8):
+        matches = []
         for c_key, val in mun_cnefe.items():
-            if len(c_key) >= 8:
-                if n_key in c_key or c_key in n_key:
-                    return val
+            c_words = set(c_key.split())
+            if not c_words:
+                continue
+            if n_words.issubset(c_words) or c_words.issubset(n_words):
+                matches.append(val)
+                if len(matches) > 1:
+                    break
+        if len(matches) == 1:
+            return matches[0]
 
     return None
 

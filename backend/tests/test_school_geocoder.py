@@ -25,12 +25,18 @@ def test_normalize_school_name():
     assert normalize_school_name('Colégio Militar Sadoc Pereira') == 'MILITAR SADOC PEREIRA'
     assert normalize_school_name('E.M.E.F. Monteiro Lobato') == 'MONTEIRO LOBATO'
     assert normalize_school_name('') == ''
+    # Pure stopwords must return empty to avoid collision between generic establishments
+    assert normalize_school_name('CRECHE') == ''
+    assert normalize_school_name('ESCOLA MUNICIPAL') == ''
+    assert normalize_school_name('CENTRO EDUCACIONAL DE ENSINO') == ''
 
 
 def test_find_cnefe_match():
     mun_cnefe = {
         'RUI BARBOSA': (-10.5, -37.2, 'ESCOLA RUI BARBOSA'),
         'MILITAR SADOC PEREIRA': (-10.6, -37.3, 'COLEGIO SADOC PEREIRA'),
+        'SAO FRANCISCO': (-10.7, -37.4, 'ESCOLA SAO FRANCISCO'),
+        'SAO FRANCISCO XAVIER': (-10.8, -37.5, 'ESCOLA SAO FRANCISCO XAVIER'),
     }
     match = find_cnefe_match('Escola Estadual Rui Barbosa', mun_cnefe)
     assert match is not None
@@ -41,6 +47,9 @@ def test_find_cnefe_match():
 
     # Unmatched
     assert find_cnefe_match('Escola Inexistente ABC', mun_cnefe) is None
+    # Ambiguous candidate must not match (e.g. SAO FRANCISCO matches both SAO FRANCISCO and SAO FRANCISCO XAVIER)
+    assert find_cnefe_match('Escola São Francisco', mun_cnefe) is not None  # exact match wins
+    assert find_cnefe_match('Escola Francisco', mun_cnefe) is None  # ambiguous, matches multiple or none
 
 
 def test_parse_cnefe_schools():
@@ -71,6 +80,17 @@ def test_parse_cnefe_schools():
             '', '', '', 'RUA B', '200', '', '', '', '', '', '', '', '', '', '', '',
             '2.830000', '-60.710000', '1', '1', '', '', '', '', ''
         ])
+        # Add two schools with identical normalized names but conflicting coordinates in same municipality
+        writer.writerow([
+            '3', '14', '1400100', '', '', '', '', '', '',
+            '', '', '', 'RUA C', '300', '', '', '', '', '', '', '', '', '', '', '',
+            '2.810000', '-60.650000', '1', '4', 'ESCOLA AMBIGUA DE TESTE', '', '', '', ''
+        ])
+        writer.writerow([
+            '4', '14', '1400100', '', '', '', '', '', '',
+            '', '', '', 'RUA D', '400', '', '', '', '', '', '', '', '', '', '', '',
+            '2.890000', '-60.750000', '1', '4', 'COLEGIO AMBIGUA DE TESTE', '', '', '', ''
+        ])
         zf.writestr('14_RR.csv', csv_buffer.getvalue())
 
     parsed = parse_cnefe_schools(output.getvalue())
@@ -80,6 +100,8 @@ def test_parse_cnefe_schools():
     assert lat == 2.828012
     assert lon == -60.702577
     assert name == 'ANTONIO FERREIRA DE SOUZA'
+    # The ambiguous establishment must have been discarded because coordinates conflicted
+    assert 'AMBIGUA TESTE' not in parsed['1400100']
 
 
 def test_geocode_schools_for_state_database():

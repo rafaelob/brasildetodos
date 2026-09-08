@@ -17,4 +17,7 @@
 .region-timeline-track{background:#e2ece6;border-radius:6px;height:14px;overflow:hidden}
 .region-timeline-fill{background:linear-gradient(90deg,#0d6efd,#0a58ca);height:100%;border-radius:6px;transition:width .4s ease}
 .region-timeline-count{text-align:right;font-variant-numeric:tabular-nums;opacity:.85}
-
+.region-audit-sub{display:flex;justify-content:space-between;margin-top:.35rem;font-size:.82rem;color:#355}
+.region-finance-phases-box{margin-top:1.2rem;padding-top:1rem;border-top:1px solid #dce8e1}
+.region-finance-phases-box h5{font-size:.95rem;margin:0 0 .3rem;color:#184436}
+.region-finance-phase-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}

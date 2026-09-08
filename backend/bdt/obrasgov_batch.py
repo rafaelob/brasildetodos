@@ -7,6 +7,7 @@ Brazilian municipalities.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import hashlib
 import json
 import logging
@@ -107,8 +108,6 @@ def batch_ingest_obrasgov(database: Database, *, states: list[str] | None = None
 
     ingestion_records = []
 
-    import concurrent.futures
-
     for state in target_states:
         geom_map: dict[str, str] = {}
         if enrich_details:
@@ -165,8 +164,11 @@ def batch_ingest_obrasgov(database: Database, *, states: list[str] | None = None
                             proj['cod_ibge'] = geom_map[pid]
                         elif not proj.get('cod_ibge'):
                             geoms = fetch_project_geometries(pid)
-                            if geoms and isinstance(geoms[0], dict) and geoms[0].get('cod_ibge'):
-                                proj['cod_ibge'] = geoms[0]['cod_ibge']
+                            if geoms and isinstance(geoms[0], dict):
+                                if geoms[0].get('cod_ibge'):
+                                    proj['cod_ibge'] = geoms[0]['cod_ibge']
+                                if not proj.get('pins'):
+                                    proj['pins'] = geoms
 
                         execs = exec_map.get(pid)
                         if execs and isinstance(execs[0], dict):
