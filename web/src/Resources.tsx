@@ -6,7 +6,7 @@ import {api} from './api';
 import {ShareResource,ResourceDownloads} from './ResourceActions';
 import {parseResourceRoute,normalizeResourceRoute} from './resource-route.mjs';
 import './resources.css';
-import {money,safeReference} from './i18n.mjs';
+import {money,safeReference,formatDataset} from './i18n.mjs';
 import {resourceAmounts,resourceAmountText} from './resource-i18n.mjs';
 import {historyFields,historyText} from './resource-history.mjs';
 import type {Locale,Source} from './types';
@@ -19,10 +19,10 @@ const states='AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO 
 const scopes:Record<string,string>={buyer_registered_municipality_not_execution:'resourceBuyerScope',
   beneficiary_municipality_not_resolved:'resourceUnresolvedScope',state_only_municipality_unresolved:'resourceStateScope'};
 
-function Provenance({source,t}:{source:Source;t:T}) {
+function Provenance({source,t,locale='pt-BR'}:{source:Source;t:T;locale?:Locale}) {
   const url=safeReference(source.url);
-  return <div className="source"><strong>{t(source.dataset)}</strong><dl>
-    <dt>{t('reference')}</dt><dd>{source.reference_date||t('unknown')}</dd>
+  return <div className="source"><strong>{formatDataset(source.dataset,locale)}</strong><dl>
+    <dt>{t('reference')}</dt><dd>{source.reference_date?(t('refPrefix')+' '+source.reference_date):t('officialRecord')}</dd>
     <dt>{t('collected')}</dt><dd>{source.collected_at}</dd>
     <dt>{t('sourceRecord')}</dt><dd>{source.record_id}</dd></dl>
     {url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}
@@ -70,7 +70,7 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
         <h3>{money(Number(entry.planned_cents),locale)}</h3><p>{typeof entry.source_name==='string'?entry.source_name:t('unknown')}</p></div>)}
     </div></>:<p>{t('resourceNoAmount')}</p>}
     {amounts.some(item=>'decimal' in item)&&<p className="callout">{t('resourcePrecision')}</p>}
-    <Provenance source={row.source} t={t}/>
+    <Provenance source={row.source} t={t} locale={locale}/>
     <div className="resource-actions"><ShareResource criteria={{id:row.id,locale}} t={t} label="resourceShareRecord"/><ResourceDownloads id={row.id} locale={locale} t={t}/></div>
     <button aria-expanded={show} onClick={()=>setShow(value=>!value)}>{t(show?'resourceHistoryClose':'resourceHistory')}</button>
     {show&&<section aria-label={t('resourceHistory')}><p>{t('resourceHistoryNotice')}</p>

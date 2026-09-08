@@ -3,6 +3,7 @@ import {useEffect,useId,useRef,useState} from 'react';
 import {api} from './api';
 import {groupText} from './group-text.mjs';
 import {groupFailure,ownObservations} from './group-tools.mjs';
+import {formatDataset} from './i18n.mjs';
 import type {Locale,Observation,Place} from './types';
 export type Submission={action:'submit';observation_id:string;share_with_group:true};
 export function ConfirmAction({label,help,disabled,run,locale}:{label:string;help:string;disabled:boolean;run:()=>Promise<boolean>;locale:Locale}) {
@@ -29,7 +30,7 @@ export function NewGroupTask({locale,disabled,create}:{locale:Locale;disabled:bo
  }}>
   <label>{t('placeSearch')}<input type="search" value={q} maxLength={200} onChange={e=>{setQ(e.target.value);setPlace(null);}}/></label>
   <div className="group-place-results" aria-label={t('placeResults')} aria-live="polite" aria-busy={loading}>
-   {loading?<p>{t('loading')}</p>:error?<><p>{t('failure')}</p><button type="button" onClick={()=>setRetry(x=>x+1)}>{t('retry')}</button></>:places.map(p=><button type="button" key={p.id} aria-pressed={place?.id===p.id} onClick={()=>setPlace(p)}>{p.name} · {p.state}<small>{p.id} · {p.source.dataset} · {p.source.reference_date||t('none')}</small></button>)}
+   {loading?<p>{t('loading')}</p>:error?<><p>{t('failure')}</p><button type="button" onClick={()=>setRetry(x=>x+1)}>{t('retry')}</button></>:places.map(p=><button type="button" key={p.id} aria-pressed={place?.id===p.id} onClick={()=>setPlace(p)}>{p.name} · {p.state}<small>{p.id} · {formatDataset(p.source.dataset,locale)} · {p.source.reference_date?('Ref. '+p.source.reference_date):t('none')}</small></button>)}
    {!loading&&!error&&q.trim()&&!places.length&&<p>{t('noPlaces')}</p>}
   </div>
   {place&&<p>{t('placeSelected')}: <strong>{place.name}</strong> <code>{place.id}</code></p>}

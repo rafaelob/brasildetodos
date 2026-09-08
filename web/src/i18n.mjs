@@ -38,6 +38,7 @@ export const messages = {
     truncated:'primeiros resultados exibidos', resourceProject:'Projeto', resourceSpecial_plan:'Plano especial', resourceSpecialPlan:'Plano especial',
     viewOnMap:'Ver no mapa 3D', view3DExplorationBadge:'3D Real', copyId:'Copiar código', idCopied:'Código copiado!',
     sourceCnes:'CNES · Estabelecimentos de Saúde', sourceInep:'INEP · Censo Escolar', sourceTransferegov:'Transferegov · Repasses Federais', sourcePncp:'PNCP · Contratos Públicos',
+    sourceObrasgov:'Obrasgov.br · Investimentos & Infraestrutura', sourceIbge:'IBGE · Base Territorial Oficial', officialRecord:'Cadastro oficial', refPrefix:'Ref.',
   },
   en: {withdrawn:'This place no longer meets this edition’s catalogue filters. Its record is retained as history.',
     tagline:'A living map of public services.', intro:'Find services. Follow improvements. Contribute to your community.',
@@ -78,6 +79,7 @@ export const messages = {
     truncated:'first results displayed', resourceProject:'Project', resourceSpecial_plan:'Special plan', resourceSpecialPlan:'Special plan',
     viewOnMap:'View in 3D map', view3DExplorationBadge:'Real 3D', copyId:'Copy ID', idCopied:'ID copied!',
     sourceCnes:'CNES · Health Facilities', sourceInep:'INEP · School Census', sourceTransferegov:'Transferegov · Federal Transfers', sourcePncp:'PNCP · Public Contracts',
+    sourceObrasgov:'Obrasgov.br · Public Works & Investments', sourceIbge:'IBGE · Official Territorial Base', officialRecord:'Official record', refPrefix:'Ref.',
   },
   es: {withdrawn:'Este lugar ya no cumple los filtros del catálogo de esta edición. La ficha se conserva como historial.',
     tagline:'El mapa vivo de lo público.', intro:'Encuentra servicios. Sigue las mejoras. Contribuye con tu comunidad.',
@@ -118,9 +120,32 @@ export const messages = {
     truncated:'primeros resultados mostrados', resourceProject:'Proyecto', resourceSpecial_plan:'Plan especial', resourceSpecialPlan:'Plan especial',
     viewOnMap:'Ver en mapa 3D', view3DExplorationBadge:'3D Real', copyId:'Copiar código', idCopied:'¡Código copiado!',
     sourceCnes:'CNES · Centros de Salud', sourceInep:'INEP · Censo Escolar', sourceTransferegov:'Transferegov · Transferencias Federales', sourcePncp:'PNCP · Contratos Públicos',
+    sourceObrasgov:'Obrasgov.br · Inversiones y Obras Públicas', sourceIbge:'IBGE · Base Territorial Oficial', officialRecord:'Registro oficial', refPrefix:'Ref.',
   }
 };
 export function translate(locale, key) { return messages[locale]?.[key] ?? messages['pt-BR'][key] ?? key; }
+export function formatDataset(ds, locale = 'pt-BR') {
+  if (!ds) return '';
+  const lower = String(ds).toLowerCase();
+  const t = (k) => translate(locale, k);
+  if (lower.startsWith('cnes')) return t('sourceCnes');
+  if (lower.startsWith('inep')) return t('sourceInep');
+  if (lower.startsWith('transferegov')) return t('sourceTransferegov');
+  if (lower.startsWith('pncp')) return t('sourcePncp');
+  if (lower.startsWith('obrasgov')) return t('sourceObrasgov');
+  if (lower.startsWith('ibge')) return t('sourceIbge');
+  return String(ds).replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+export function formatReferenceDate(ref, locale = 'pt-BR') {
+  if (!ref) return translate(locale, 'officialRecord');
+  return `${translate(locale, 'refPrefix')} ${ref}`;
+}
+export function formatSourceSummary(source, locale = 'pt-BR') {
+  if (!source) return '';
+  const ds = formatDataset(source.dataset, locale);
+  const ref = formatReferenceDate(source.reference_date, locale);
+  return `${ds} · ${ref}`;
+}
 export function money(cents, locale) {
   if (!Number.isSafeInteger(cents)) return '—';
   const absolute=BigInt(cents<0?-cents:cents), whole=absolute/100n;

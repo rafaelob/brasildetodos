@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {useId,useState} from 'react';
-import {safeReference} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import {resourceAmountText} from './resource-i18n.mjs';
 import {historyFields} from './resource-history.mjs';
 import {compareResourceVersions,comparisonText} from './resource-comparison.mjs';
@@ -20,7 +20,7 @@ export default function ResourceComparison({older,newer,locale}:{older:Version;n
     <div className="comparison-origins">{[[older,'before'],[newer,'after']].map(([raw,label])=>{
      const version=raw as Version,source=version.resource.source,url=safeReference(source.url);
      return <div key={label as string}><h4>{text(label as string)} · {version.revision}</h4>
-      <p>{text('source')}: {source.dataset} · {source.reference_date||text('unknown')}</p>
+      <p>{text('source')}: {formatDataset(source.dataset,locale)} · {formatReferenceDate(source.reference_date,locale)}</p>
       {url&&<a href={url} target="_blank" rel="noopener noreferrer">{text('source')} ↗</a>}
      </div>;
     })}</div>

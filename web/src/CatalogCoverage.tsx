@@ -31,7 +31,7 @@ function ImportHistory({locale,t}:{locale:Locale;t:T}){
   {!loading&&!error&&data?.items.length===0&&<p>{t('coverageImportsEmpty')}</p>}
   <div className="coverage-run-list" aria-busy={loading}>{data?.items.map(run=><article key={run.id} className={'coverage-run coverage-run-'+run.status}>
    <header><h3>{sourceLabel(run.source_id,t)}</h3><span className="pill">{statusLabel(run.status,t)}</span></header>
-   <dl><div><dt>{t('coverageAttemptDate')}</dt><dd>{watchDate(run.started_at,locale,t)}</dd></div><div><dt>{t('coverageReference')}</dt><dd>{run.reference_date||t('unknown')}</dd></div>
+   <dl><div><dt>{t('coverageAttemptDate')}</dt><dd>{watchDate(run.started_at,locale,t)}</dd></div><div><dt>{t('coverageReference')}</dt><dd>{run.reference_date?(t('refPrefix')+' '+run.reference_date):t('officialRecord')}</dd></div>
    {[['read','coverageRead'],['created','coverageCreated'],['updated','coverageUpdated']].map(([key,label])=><div key={key}><dt>{t(label)}</dt><dd>{coverageCount(run.counts[key],locale,t)}</dd></div>)}</dl>
    {run.status==='failed'&&<p className="callout">{t('coverageFailedNote')}</p>}
   </article>)}</div>

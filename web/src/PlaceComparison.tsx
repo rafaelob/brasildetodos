@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {useEffect,useRef,useState} from 'react';
 import {api} from './api';
-import {safeReference} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import {comparisonItems,comparisonText} from './place-comparison.mjs';
 import {watchDate} from './watch-state.mjs';
 import type {Locale,Place} from './types';
@@ -40,9 +40,9 @@ export default function PlaceComparison({ids,locale,t,onClose,onSelect}:{ids:str
       <div><dt>{words.phone}</dt><dd>{place.phone||words.noPhone}</dd></div>
       <div><dt>{words.services}</dt><dd>{place.declared_services.length?<ul>{place.declared_services.map(value=><li key={value}>{t(value)}</li>)}</ul>:words.noServices}</dd></div>
       <div><dt>{words.municipality}</dt><dd>{place.municipality_id} · {place.state}</dd></div>
-      <div><dt>{words.reference}</dt><dd>{place.source.reference_date||words.unknown}</dd></div>
+      <div><dt>{words.reference}</dt><dd>{formatReferenceDate(place.source.reference_date,locale)}</dd></div>
       <div><dt>{words.collected}</dt><dd>{watchDate(place.source.collected_at,locale,t)}</dd></div></dl>
-     <p className="comparison-source"><strong>{place.source.dataset}</strong><br/><code>{place.source.record_id}</code><br/>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{words.source} ↗</a>}</p>
+     <p className="comparison-source"><strong>{formatDataset(place.source.dataset,locale)}</strong><br/><code>{place.source.record_id}</code><br/>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{words.source} ↗</a>}</p>
      <button onClick={()=>onSelect(item.id)}>{words.details}</button>
     </article>;
    })}</div>

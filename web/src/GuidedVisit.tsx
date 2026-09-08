@@ -1,6 +1,6 @@
 import {useEffect,useId,useRef,useState} from 'react';
 import {api,downloadJSON} from './api';
-import {safeReference} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import {visitText} from './visit-text.mjs';
 import {composeVisit,publicObservationReport,visitGuide} from './visit-guide.mjs';
 import type {Locale,Observation,Place} from './types';
@@ -40,7 +40,7 @@ export default function GuidedVisit({place,locale}:{place:Place;locale:Locale}) 
       <p>{words.intro}</p><p className="muted">{words.privateNotice}</p>
       {phase==='saved'?<div role="status"><p>{words.saved}</p><button onClick={()=>{setPhase('ready');setDate('');}}>{words.again}</button></div>:<form onSubmit={submit} aria-busy={phase==='sending'}>
         <p className="callout">{words.authored} {words.methodNote}</p>
-        <p>{place.name}</p><p className="muted">{words.source}: {place.source.dataset} · {place.source.reference_date||words.missing}{safeReference(place.source.url)&&<> · <a href={safeReference(place.source.url)!} target="_blank" rel="noopener noreferrer">{words.source} ↗</a></>}</p>
+        <p>{place.name}</p><p className="muted">{words.source}: {formatDataset(place.source.dataset,locale)} · {formatReferenceDate(place.source.reference_date,locale)}{safeReference(place.source.url)&&<> · <a href={safeReference(place.source.url)!} target="_blank" rel="noopener noreferrer">{words.source} ↗</a></>}</p>
         <fieldset className="visit-fields" disabled={phase==='sending'}><legend>{words.summary}</legend>
           {guide.items.map((item:{id:string;label:string;allowed_answers:string[]},index:number)=><fieldset className="visit-question" key={item.id}>
             <legend><span aria-hidden="true">{index+1}. </span>{item.label}</legend>

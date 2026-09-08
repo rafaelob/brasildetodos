@@ -20,7 +20,7 @@ const CITY_PRESETS:CityPreset[]=[
 ];
 
 export default function MapView({select,t,onBounds,filters={},locale='pt-BR',focusCoordinates=null}:Props){
-  const [enabled,setEnabled]=useState(false),[attempt,setAttempt]=useState(0);
+  const [enabled,setEnabled]=useState(true),[attempt,setAttempt]=useState(0);
   const [failed,setFailed]=useState(false),[tileWarning,setTileWarning]=useState(false),[dataFailed,setDataFailed]=useState(false);
   const [ready,setReady]=useState(false),[loadingData,setLoadingData]=useState(false),[hasBuildings,setHasBuildings]=useState(false);
   const [threeD,setThreeD]=useState(false),[matched,setMatched]=useState<number|null>(null);
@@ -78,10 +78,22 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
         instance=new lib.Map({container:host.current,style:'https://tiles.openfreemap.org/styles/liberty',
           center:[-51,-15],zoom:3.2,renderWorldCopies:false,attributionControl:false});
         map.current=instance;
-        instance.addControl(new lib.NavigationControl({visualizePitch:true}),'top-right');
+        instance.addControl(new lib.NavigationControl({visualizePitch:true}),'bottom-right');
         instance.addControl(new lib.AttributionControl({compact:true}),'bottom-right');
         refreshRef.current=requestData;
         deadline=setTimeout(fatal,20000);
+
+        const canvas=instance.getCanvas();
+        const onLost=(e:Event)=>{
+          e.preventDefault();
+          if(!cancelled)setTileWarning(true);
+        };
+        const onRestored=()=>{
+          if(!cancelled)setAttempt(a=>a+1);
+        };
+        canvas.addEventListener('webglcontextlost',onLost);
+        canvas.addEventListener('webglcontextrestored',onRestored);
+
         instance.on('error',()=>{if(!cancelled)setTileWarning(true);});
         instance.on('load',()=>{
           if(cancelled||broken||!instance)return;
@@ -139,20 +151,18 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
               const before=style.layers?.find(layer=>layer.type==='symbol')?.id;
               instance.addLayer(buildings,before);setHasBuildings(true);
             }
-            try{
-              (instance as any).setLight({anchor:'viewport',color:'#ffffff',intensity:0.35,position:[1.15,210,30]});
-            }catch{}
             const syncCamera=()=>{
               if(!instance)return;
               setCameraPitch(Math.round(instance.getPitch()));
               setCameraBearing(Math.round(instance.getBearing()));
               setCameraZoom(Number(instance.getZoom().toFixed(1)));
             };
-            instance.on('pitch',syncCamera);
-            instance.on('rotate',syncCamera);
-            instance.on('zoom',syncCamera);
             syncCamera();
-            instance.on('moveend',requestData);loaded=true;setReady(true);requestData();
+            instance.on('moveend',()=>{
+              syncCamera();
+              requestData();
+            });
+            loaded=true;setReady(true);requestData();
           }catch{fatal();}
         });
       }catch{fatal();}
@@ -167,10 +177,14 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
   useEffect(()=>{
     const instance=map.current;if(!instance||!ready||!hasBuildings)return;
     if(instance.getLayer('bdt-buildings'))instance.setLayoutProperty('bdt-buildings','visibility',threeD?'visible':'none');
-    if(threeD&&instance.getZoom()<14.5){
-      instance.easeTo({zoom:15.5,pitch:55,duration:reducedMotion()?0:400});
-    }else{
-      instance.easeTo(cameraOptions(threeD,reducedMotion()));
+    const targetPitch=threeD?55:0;
+    const currentPitch=Math.round(instance.getPitch());
+    if(currentPitch!==targetPitch){
+      if(threeD&&instance.getZoom()<14.5){
+        instance.easeTo({zoom:15.5,pitch:55,duration:reducedMotion()?0:400});
+      }else{
+        instance.easeTo(cameraOptions(threeD,reducedMotion()));
+      }
     }
   },[threeD,ready,hasBuildings]);
   useEffect(()=>{
@@ -236,49 +250,58 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
     instance.flyTo({center:city.center,zoom:city.zoom,pitch:city.pitch,bearing:city.bearing,duration:reducedMotion()?0:1200});
   }
   return <aside className="map-panel" aria-label={t('map')}>
-    {!enabled?<div className="map-start"><h2>{t('map')}</h2><p>{t('mapNote')}</p><button className="primary" onClick={()=>setEnabled(true)}>{t('loadMap')}</button></div>:<>
+    {!enabled?<div className="map-collapsed-bar"><button className="primary map-reopen-btn" onClick={()=>setEnabled(true)}>🗺️ {t('loadMap')}</button></div>:
+    <div className="map-stage">
       <div ref={host} className="map-canvas" aria-label={text('canvas')}/>
-      <div className="map-actions">
-        <button disabled={!ready} onClick={useArea} title={t('mapHere')}>{t('mapHere')}</button>
-        <button disabled={!ready||!hasBuildings} className={threeD?'map-btn-3d active':''} aria-pressed={threeD} onClick={()=>setThreeD(value=>!value)}>
-          {threeD?`◩ ${text('mode3D')}`:`▱ ${text('mode2D')}`}
-        </button>
-        <div className="map-control-group" role="group" aria-label={text('camera3D')}>
-          <button disabled={!ready} onClick={()=>tiltCamera(15)} title={text('tiltUp')} aria-label={text('tiltUp')}>▲ +15°</button>
-          <button disabled={!ready} onClick={()=>tiltCamera(-15)} title={text('tiltDown')} aria-label={text('tiltDown')}>▼ -15°</button>
-          <button disabled={!ready} onClick={()=>rotateCamera(-45)} title={text('rotateLeft')} aria-label={text('rotateLeft')}>↺ 45°</button>
-          <button disabled={!ready} onClick={()=>rotateCamera(45)} title={text('rotateRight')} aria-label={text('rotateRight')}>↻ 45°</button>
-          <button disabled={!ready} onClick={resetCompass} title={text('resetCompass')} aria-label={text('resetCompass')}>🧭 N</button>
-        </div>
-        <button onClick={()=>setEnabled(false)}>{text('hide')}</button>
-      </div>
-      {threeD&&<div className="map-city-presets" role="toolbar" aria-label={text('landmarks3D')}>
-        <span className="presets-label">🏙️ {text('landmarks3D')}:</span>
-        {CITY_PRESETS.map(city=>(
-          <button key={city.id} className="city-btn" disabled={!ready} onClick={()=>jumpToCity(city)}>
-            {text(city.nameKey)}
+
+      {/* Floating Top Controls */}
+      <div className="map-float-top">
+        <div className="map-float-left">
+          {matched!==null&&<span className="map-pill map-count-pill">📍 {matched.toLocaleString(locale)} {text('count').split(';')[0]}</span>}
+          {loadingData&&<span className="map-pill map-loading-pill">⏳ {text('updating')}</span>}
+          <button disabled={!ready} className="map-pill-btn map-btn-area" onClick={useArea} title={t('mapHere')}>
+            🔍 {t('mapHere')}
           </button>
-        ))}
-      </div>}
-      {ready&&<div className="map-telemetry" aria-label={text('camera3D')}>
-        <span className="telemetry-pill"><strong>{text('pitch')}:</strong> {cameraPitch}°</span>
-        <span className="telemetry-pill"><strong>{text('bearing')}:</strong> {cameraBearing}°</span>
-        <span className="telemetry-pill"><strong>{text('zoom')}:</strong> {cameraZoom}</span>
-        {threeD&&cameraZoom<14&&<button className="telemetry-action" onClick={zoomFor3D}>{text('zoomIn3D')} ↗</button>}
-      </div>}
-      <div className="map-feedback" aria-live="polite" aria-atomic="true">
-        {!ready&&!failed&&<p>{text('loading')}</p>}
-        {loadingData&&<p>{text('updating')}</p>}
-        {matched!==null&&!loadingData&&<p className="map-caption">{matched.toLocaleString(locale)} {text('count')}</p>}
-        {dataFailed&&<p>{t('mapDataFail')} <button onClick={()=>refreshRef.current()}>{t('refresh')}</button></p>}
-        {failed&&<p className="callout">{text('styleFailure')}</p>}
-        {tileWarning&&!failed&&<p className="callout">{text('tileWarning')}</p>}
-        {(failed||tileWarning)&&<button onClick={()=>setAttempt(value=>value+1)}>{text('retry')}</button>}
+        </div>
+        <div className="map-float-right">
+          <button disabled={!ready||!hasBuildings} className={'map-pill-btn map-btn-3d '+(threeD?'active':'')} aria-pressed={threeD} onClick={()=>setThreeD(value=>!value)}>
+            {threeD?`◩ ${text('mode3D')}`:`▱ ${text('mode2D')}`}
+          </button>
+          <div className="map-tilt-pill" role="group" aria-label={text('camera3D')}>
+            <button disabled={!ready} onClick={()=>tiltCamera(15)} title={text('tiltUp')} aria-label={text('tiltUp')}>▲</button>
+            <button disabled={!ready} onClick={()=>tiltCamera(-15)} title={text('tiltDown')} aria-label={text('tiltDown')}>▼</button>
+            <button disabled={!ready} onClick={resetCompass} title={text('resetCompass')} aria-label={text('resetCompass')}>🧭</button>
+          </div>
+          <button className="map-pill-btn map-btn-close" onClick={()=>setEnabled(false)} title={text('hide')} aria-label={text('hide')}>✕</button>
+        </div>
       </div>
-      <div className="map-notes"><small>{t('mapNote')}</small>
-        {ready&&!hasBuildings&&<small>{text('unavailable3D')}</small>}
-        {threeD&&<><small>{text('zoom3D')}</small><small>{text('geometry3D')}</small></>}
+
+      {/* Floating City Landmarks Bar (when 3D is active) */}
+      {threeD&&<div className="map-float-landmarks" role="toolbar" aria-label={text('landmarks3D')}>
+        <span className="landmarks-title">🏙️ {text('landmarks3D')}:</span>
+        <div className="landmarks-scroll">
+          {CITY_PRESETS.map(city=>(
+            <button key={city.id} className="city-pill-btn" disabled={!ready} onClick={()=>jumpToCity(city)}>
+              {text(city.nameKey)}
+            </button>
+          ))}
+        </div>
+      </div>}
+
+      {/* Floating Bottom Telemetry & Status */}
+      <div className="map-float-bottom">
+        <div className="map-telemetry-pill" aria-label={text('camera3D')}>
+          <span><strong>{text('pitch')}:</strong> {cameraPitch}°</span>
+          <span><strong>{text('zoom')}:</strong> {cameraZoom}</span>
+          {threeD&&cameraZoom<14&&<button className="telemetry-action" onClick={zoomFor3D}>{text('zoomIn3D')} ↗</button>}
+        </div>
+        {(dataFailed||failed||tileWarning)&&<div className="map-float-warning">
+          {dataFailed&&<span>{t('mapDataFail')} <button onClick={()=>refreshRef.current()}>{t('refresh')}</button></span>}
+          {failed&&<span className="callout">{text('styleFailure')}</span>}
+          {tileWarning&&!failed&&<span className="callout">{text('tileWarning')}</span>}
+          {(failed||tileWarning)&&<button onClick={()=>setAttempt(value=>value+1)}>{text('retry')}</button>}
+        </div>}
       </div>
-    </>}
+    </div>}
   </aside>;
 }

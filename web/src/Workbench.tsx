@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {api,downloadJSON} from './api';
-import {safeReference} from './i18n.mjs';
+import {safeReference,formatDataset,formatReferenceDate} from './i18n.mjs';
 import type {Observation,Source} from './types';
 
 type Translator=(key:string)=>string;
@@ -11,7 +11,7 @@ type Relationship={id:string;place_id:string;resource_id:string;document_id:stri
 
 function SourceLink({source,t}:{source:Source;t:Translator}){
   const url=safeReference(source.url);
-  return <div className="source"><strong>{source.dataset}</strong><p>{t('reference')}: {source.reference_date||t('unknown')}</p>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<details><summary>SHA-256</summary><code>{source.snapshot_sha256}</code></details></div>;
+  return <div className="source"><strong>{formatDataset(source.dataset)}</strong><p>{t('reference')}: {formatReferenceDate(source.reference_date)}</p>{url&&<a href={url} target="_blank" rel="noopener noreferrer">{t('sourceOriginal')} ↗</a>}<details><summary>SHA-256</summary><code>{source.snapshot_sha256}</code></details></div>;
 }
 
 export function PlaceEvidence({placeId,t}:{placeId:string;t:Translator}){
