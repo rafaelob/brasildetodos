@@ -27,6 +27,8 @@ export const resourceMessages = {
     resourcePhysicalExecution:'Execução física declarada',resourceLastMeasurement:'Última medição informada',
     resourcePlannedStart:'Início previsto informado',resourcePlannedEnd:'Fim previsto informado',
     resourceGeometriesConfirmed:'Geometrias confirmadas na fonte',resourcePinsCount:'pinos georreferenciados',
+    resourceAnalyticsTitle:'Painel Analítico de Obras e Recursos',resourceStatusDist:'Situação declarada',
+    resourceExecBuckets:'Faixas de execução física',resourceWorksWithExec:'obras com medição de execução física',
   },
   en: {
     resources:'Works and resources',resourceIntro:'Explore loaded contracts, plans and projects. This selection does not represent all public spending.',
@@ -55,6 +57,8 @@ export const resourceMessages = {
     resourcePhysicalExecution:'Declared physical execution',resourceLastMeasurement:'Last declared measurement',
     resourcePlannedStart:'Declared planned start',resourcePlannedEnd:'Declared planned end',
     resourceGeometriesConfirmed:'Geometries confirmed in source',resourcePinsCount:'georeferenced pins',
+    resourceAnalyticsTitle:'Works and Resources Analytical Dashboard',resourceStatusDist:'Declared status',
+    resourceExecBuckets:'Physical execution ranges',resourceWorksWithExec:'works with physical execution measurement',
   },
   es: {
     resources:'Obras y recursos',resourceIntro:'Explora contratos, planes y proyectos cargados. Esta selección no representa todo el gasto público.',
@@ -83,6 +87,8 @@ export const resourceMessages = {
     resourcePhysicalExecution:'Ejecución física declarada',resourceLastMeasurement:'Última medición declarada',
     resourcePlannedStart:'Inicio previsto declarado',resourcePlannedEnd:'Fin previsto declarado',
     resourceGeometriesConfirmed:'Geometrías confirmadas en la fuente',resourcePinsCount:'puntos georreferenciados',
+    resourceAnalyticsTitle:'Panel Analítico de Obras y Recursos',resourceStatusDist:'Situación declarada',
+    resourceExecBuckets:'Rangos de ejecución física',resourceWorksWithExec:'obras con medición de ejecución física',
   },
 };
 export const amountFields = Object.freeze({initial_cents:'resourceInitialAmount',global_cents:'resourceGlobalAmount',

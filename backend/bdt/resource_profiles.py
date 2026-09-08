@@ -80,12 +80,14 @@ def require(row, fields):
 
 
 def collection_plan(profile: Profile, *, start=None, end=None, year=None, identity=None,
-                    updates=False, page_size=100, max_pages=100) -> PagePlan:
+                    state=None, updates=False, page_size=100, max_pages=100) -> PagePlan:
     if profile not in PROFILES:
         raise ValueError('unknown_resource_profile')
     base, key = PROFILES[profile]
     params = {}
     if profile == 'pncp_contracts':
+        if state is not None:
+            raise ValueError('invalid_pncp_parameters')
         for value in (start, end):
             if not isinstance(value, str) or not re.fullmatch(r'\d{8}', value):
                 raise ValueError('pncp_dates_require_yyyymmdd')
@@ -107,6 +109,10 @@ def collection_plan(profile: Profile, *, start=None, end=None, year=None, identi
             if isinstance(year, bool) or not 2000 <= year <= 2100:
                 raise ValueError('invalid_resource_year')
             params['ano_plano_acao' if profile == 'transferegov_special_plans' else 'ano_cadastro'] = str(year)
+        if state is not None:
+            if profile != 'obrasgov_projects' or state not in STATES:
+                raise ValueError('invalid_resource_state')
+            params['uf_principal'] = state
         if identity is not None:
             params[key] = identifier(identity)
         names = ('tamanho_da_pagina', 'total_pages', 'total_items', 'page_number')
@@ -201,32 +207,83 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
             require(investment, ['vl_investimento_previsto', 'desc_nome_fonte_recurso'])
             entries.append({'planned_cents': money(investment['vl_investimento_previsto']),
                             'source_name': text(investment['desc_nome_fonte_recurso'], field='investimentos_previstos.desc_nome_fonte_recurso')})
-        attributes.update(territorial_basis='state_only_municipality_unresolved', state=state,
+        municipality = None
+        mun_id = str(row.get('cod_ibge') or row.get('codigo_ibge') or '').strip()
+        if mun_id and mun_id in municipalities:
+            municipality = mun_id
+            territorial_basis = 'reviewed_project_geometry_municipality'
+        else:
+            territorial_basis = 'state_only_municipality_unresolved'
+        attributes.update(territorial_basis=territorial_basis, state=state,
             declared_status=text(row['situacao'], field='situacao'), planned_starts_on=date_value(row.get('dt_inicial_prevista')),
             planned_ends_on=date_value(row.get('dt_final_prevista')), planned_investments=entries)
-        exec_perc = row.get('perc_execucao_fisica') or row.get('percentual_execucao') or row.get('execucao_fisica')
+        exec_perc = row.get('perc_execucao_fisica') or row.get('percentual_execucao') or row.get('execucao_fisica') or row.get('percentual_execucao_fisica')
         if exec_perc is not None:
             try:
                 attributes['physical_execution_percentage'] = float(exec_perc)
             except (ValueError, TypeError):
                 pass
-        exec_date = date_value(row.get('dt_medicao') or row.get('dt_ultima_medicao'))
+        exec_date = date_value(row.get('dt_medicao') or row.get('dt_ultima_medicao') or row.get('dt_atualizacao_execucao'))
         if exec_date:
             attributes['last_measurement_on'] = exec_date
         pins = row.get('pins') or row.get('geometrias') or row.get('pontos')
         if isinstance(pins, list) and len(pins) <= 100:
             parsed_pins = []
             for pin in pins:
-                if isinstance(pin, dict) and 'latitude' in pin and 'longitude' in pin:
-                    try:
-                        lat = float(pin['latitude'])
-                        lon = float(pin['longitude'])
-                        if -90 <= lat <= 90 and -180 <= lon <= 180:
-                            parsed_pins.append({'latitude': lat, 'longitude': lon, 'kind': str(pin.get('tipo_geometria') or 'point')})
-                    except (ValueError, TypeError):
-                        pass
+                if isinstance(pin, dict):
+                    lat, lon = None, None
+                    pin_str = str(pin.get('pin') or '')
+                    match = re.search(r'POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)', pin_str, re.I)
+                    if match:
+                        try:
+                            lon_cand, lat_cand = float(match.group(1)), float(match.group(2))
+                            if -90 <= lat_cand <= 90 and -180 <= lon_cand <= 180:
+                                lat, lon = lat_cand, lon_cand
+                        except (ValueError, TypeError):
+                            pass
+                    if lat is None or lon is None:
+                        if 'latitude' in pin and 'longitude' in pin:
+                            try:
+                                lat_cand = float(str(pin['latitude']).rstrip(')').strip())
+                                lon_cand = float(str(pin['longitude']).rstrip(')').strip())
+                                if -90 <= lat_cand <= 90 and -180 <= lon_cand <= 180:
+                                    lat, lon = lat_cand, lon_cand
+                            except (ValueError, TypeError):
+                                pass
+                    if lat is not None and lon is not None:
+                        parsed_pins.append({'latitude': lat, 'longitude': lon, 'kind': str(pin.get('tipo_geometria') or pin.get('tipo') or 'point')})
             if parsed_pins:
                 attributes['project_geometries'] = parsed_pins
+                attributes['latitude'] = parsed_pins[0]['latitude']
+                attributes['longitude'] = parsed_pins[0]['longitude']
+        elif 'latitude' in row and 'longitude' in row and row['latitude'] is not None and row['longitude'] is not None:
+            try:
+                lat = float(row['latitude'])
+                lon = float(row['longitude'])
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    attributes['latitude'] = lat
+                    attributes['longitude'] = lon
+                    attributes['project_geometries'] = [{'latitude': lat, 'longitude': lon, 'kind': 'point'}]
+            except (ValueError, TypeError):
+                pass
+        pop = row.get('populacao_beneficiada')
+        if pop is not None:
+            try:
+                attributes['benefited_population'] = int(pop)
+            except (ValueError, TypeError):
+                pass
+        jobs = row.get('qtd_empregos_gerados')
+        if jobs is not None:
+            try:
+                attributes['jobs_generated'] = int(jobs)
+            except (ValueError, TypeError):
+                pass
+        eff_start = date_value(row.get('dt_inicial_efetiva'))
+        if eff_start:
+            attributes['effective_starts_on'] = eff_start
+        eff_end = date_value(row.get('dt_final_efetiva'))
+        if eff_end:
+            attributes['effective_ends_on'] = eff_end
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': None}))
         kind = 'work'
     attributes['version_basis'] = 'publisher_update' if profile == 'pncp_contracts' else 'collection_snapshot'

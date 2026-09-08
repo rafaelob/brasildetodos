@@ -92,6 +92,60 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
   </article>;
 }
 
+function ResourceAnalyticsOverview({items,t,locale}:{items:PublicResource[];t:T;locale:Locale}){
+  if(!items||items.length===0)return null;
+  const worksWithExec=items.filter(item=>typeof item.attributes.physical_execution_percentage==='number');
+  const statusCounts:Record<string,number>={};
+  items.forEach(item=>{
+    const s=String(item.attributes.declared_status||'').trim();
+    if(s)statusCounts[s]=(statusCounts[s]||0)+1;
+  });
+  const buckets=[
+    {label:'0%',min:-1,max:0},
+    {label:'1-25%',min:0,max:25},
+    {label:'26-50%',min:25,max:50},
+    {label:'51-75%',min:50,max:75},
+    {label:'76-100%',min:75,max:100},
+  ];
+  const bucketCounts=buckets.map(b=>{
+    const count=worksWithExec.filter(item=>{
+      const p=Number(item.attributes.physical_execution_percentage);
+      return p>b.min&&p<=b.max;
+    }).length;
+    return {...b,count};
+  });
+  const hasAnalytics=worksWithExec.length>0||Object.keys(statusCounts).length>0;
+  if(!hasAnalytics)return null;
+  return <div className="resources-analytics-card panel" aria-label={t('resourceAnalyticsTitle')}>
+    <h3>{t('resourceAnalyticsTitle')}</h3>
+    <div className="resources-analytics-grid">
+      {Object.keys(statusCounts).length>0&&<div className="resources-analytics-col">
+        <h4>{t('resourceStatusDist')}</h4>
+        <div className="resources-status-pills">
+          {Object.entries(statusCounts).map(([status,count])=><span className="pill status-pill" key={status}>
+            <strong>{status}</strong>: {count.toLocaleString(locale)}
+          </span>)}
+        </div>
+      </div>}
+      {worksWithExec.length>0&&<div className="resources-analytics-col">
+        <h4>{t('resourceExecBuckets')} ({worksWithExec.length.toLocaleString(locale)} {t('resourceWorksWithExec')})</h4>
+        <div className="resources-bucket-bars">
+          {bucketCounts.map(b=>{
+            const pct=worksWithExec.length>0?Math.round((b.count/worksWithExec.length)*100):0;
+            return <div className="resources-bucket-row" key={b.label}>
+              <span className="resources-bucket-label">{b.label}</span>
+              <div className="resources-bucket-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                <div className="resources-bucket-fill" style={{width:`${pct}%`}}></div>
+              </div>
+              <span className="resources-bucket-count">{b.count} ({pct}%)</span>
+            </div>;
+          })}
+        </div>
+      </div>}
+    </div>
+  </div>;
+}
+
 export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;locale:Locale;municipalityId?:string;routeHash?:string}) {
   const incoming=normalizeResourceRoute(parseResourceRoute(routeHash)||{});
   const [q,setQ]=useState(incoming.q),[profile,setProfile]=useState(incoming.profile),[state,setState]=useState(incoming.state);
@@ -140,6 +194,7 @@ export default function Resources({t,locale,municipalityId,routeHash=''}:{t:T;lo
       {error?<div className="empty" role="status"><p>{t(focus?'resourceFocusMissing':'failure')}</p><button onClick={()=>setAttempt(value=>value+1)}>{t('resourceRetry')}</button></div>
         :data===null?<p className="resource-loading" role="status">{t('loading')}</p>:<>
           <p className="resource-count" role="status"><strong>{data.total.toLocaleString(locale)}</strong> {t('resourceResults')}</p>
+          {!focus&&<ResourceAnalyticsOverview items={data.items} t={t} locale={locale}/>}
           {data.items.length?data.items.map(row=><ResourceCard key={row.id} row={row} t={t} locale={locale}/> ):
             <div className="empty"><h2>{t('resourceNoResults')}</h2><p>{t('resourceNoResultsHelp')}</p><button onClick={clear}>{t('resourceClear')}</button></div>}
           {!focus&&<div className="pager"><button disabled={page===1} onClick={()=>setPage(value=>value-1)}>{t('prev')}</button><span>{page}</span>

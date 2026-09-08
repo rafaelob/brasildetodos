@@ -111,6 +111,8 @@ def _check_scope(plan, row, body):
         field = 'ano_plano_acao' if plan.dataset == 'transferegov_special_plans' else 'ano_cadastro'
         if field in plan.parameters and str(row.get(field)) != plan.parameters[field]:
             raise ValueError('record_outside_requested_year')
+        if 'uf_principal' in plan.parameters and str(row.get('uf_principal')) != plan.parameters['uf_principal']:
+            raise ValueError('record_outside_requested_state')
 
 
 def _reviewed_plan(report):
@@ -124,8 +126,9 @@ def _reviewed_plan(report):
     else:
         field = 'ano_plano_acao' if plan.dataset == 'transferegov_special_plans' else 'ano_cadastro'
         year = int(plan.parameters[field]) if field in plan.parameters else None
+        state = plan.parameters.get('uf_principal') if plan.dataset == 'obrasgov_projects' else None
         expected = collection_plan(plan.dataset, year=year, identity=plan.parameters.get(plan.identity),
-            page_size=plan.page_size, max_pages=plan.max_pages)
+            state=state, page_size=plan.page_size, max_pages=plan.max_pages)
     if plan.model_dump() != expected.model_dump() or digest(plan.model_dump()) != report.get('plan_sha256'):
         raise ValueError('unreviewed_resource_query_plan')
     if report.get('status') != 'complete':
