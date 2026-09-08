@@ -124,3 +124,69 @@ def install(app, database):
         if result is None:
             raise HTTPException(404, 'municipality_not_found')
         return result
+
+    @app.get('/api/territories/{municipality_id}/geometry')
+    def municipality_geometry(municipality_id: str):
+        import re
+        if not re.fullmatch(r'[0-9]{7}', municipality_id):
+            raise HTTPException(422, 'invalid_municipality_id')
+        try:
+            result = fetch_municipality_geometry(database, municipality_id)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+        except RuntimeError:
+            raise HTTPException(503, 'territory_geometry_unavailable') from None
+        if result is None:
+            raise HTTPException(404, 'municipality_not_found')
+        return result
+
+
+def fetch_municipality_geometry(database, municipality_id: str) -> dict | None:
+    import json
+    import os
+    import re
+    import urllib.error
+    import urllib.request
+    from pathlib import Path
+    if not re.fullmatch(r'[0-9]{7}', municipality_id):
+        raise ValueError('invalid_municipality_id')
+    with database.session() as session:
+        if not session.get(Municipality, municipality_id):
+            return None
+    cache_dir = Path(os.getenv('BDT_DATA_DIR', 'data')) / 'cache' / 'boundaries'
+    cache_file = cache_dir / f'{municipality_id}.geojson'
+    if cache_file.is_file() and cache_file.stat().st_size > 0:
+        try:
+            return json.loads(cache_file.read_text(encoding='utf-8'))
+        except Exception:
+            pass
+    url = f'https://servicodados.ibge.gov.br/api/v3/malhas/municipios/{municipality_id}?formato=application/vnd.geo+json'
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'BrasilDeTodos/0.1.0', 'Accept': 'application/vnd.geo+json'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status != 200:
+                raise RuntimeError('territory_geometry_unavailable')
+            raw = resp.read()
+            if raw.startswith(b'\x1f\x8b'):
+                import gzip
+                raw = gzip.decompress(raw)
+            data = json.loads(raw.decode('utf-8'))
+    except urllib.error.HTTPError as http_err:
+        if http_err.code == 404:
+            return None
+        raise RuntimeError('territory_geometry_unavailable') from http_err
+    except Exception as exc:
+        raise RuntimeError('territory_geometry_unavailable') from exc
+    if not isinstance(data, dict) or data.get('type') not in ('FeatureCollection', 'Feature'):
+        raise ValueError('invalid_upstream_geometry')
+    if data.get('type') == 'FeatureCollection' and not data.get('features'):
+        return None
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        tmp = cache_dir / f'.{municipality_id}.tmp'
+        tmp.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+        tmp.replace(cache_file)
+    except Exception:
+        pass
+    return data
+

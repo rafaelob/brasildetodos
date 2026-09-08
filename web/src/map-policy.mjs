@@ -51,3 +51,43 @@ export function validateCollection(collection){
   if(!Number.isSafeInteger(count)||count!==collection.matched_records)fail();
   return collection;
 }
+
+/** @param {any} geojson @returns {any} */
+export function validateBoundary(geojson){
+  if(!geojson||typeof geojson!=='object')return null;
+  const features=geojson.type==='FeatureCollection'&&Array.isArray(geojson.features)?geojson.features:
+    geojson.type==='Feature'?[geojson]:null;
+  if(!features||!features.length)return null;
+  for(const f of features){
+    if(f?.type!=='Feature'||!['Polygon','MultiPolygon'].includes(f?.geometry?.type))return null;
+    if(!Array.isArray(f?.geometry?.coordinates)||!f.geometry.coordinates.length)return null;
+  }
+  return geojson.type==='FeatureCollection'?geojson:{type:'FeatureCollection',features};
+}
+
+/** @param {any} geojson @returns {[number, number, number, number] | null} */
+export function boundaryBbox(geojson){
+  const valid=validateBoundary(geojson);
+  if(!valid)return null;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  /** @param {any} coords */
+  function walk(coords){
+    if(!Array.isArray(coords))return;
+    if(coords.length>=2&&typeof coords[0]==='number'&&typeof coords[1]==='number'){
+      const x=coords[0],y=coords[1];
+      if(Number.isFinite(x)&&Number.isFinite(y)&&x>=-180&&x<=180&&y>=-90&&y<=90){
+        if(x<minX)minX=x;if(x>maxX)maxX=x;
+        if(y<minY)minY=y;if(y>maxY)maxY=y;
+      }
+    }else{
+      for(const child of coords)walk(child);
+    }
+  }
+  for(const feature of valid.features){
+    walk(feature.geometry.coordinates);
+  }
+  if(!Number.isFinite(minX)||!Number.isFinite(minY)||!Number.isFinite(maxX)||!Number.isFinite(maxY))return null;
+  if(minX>maxX||minY>maxY)return null;
+  return [minX,minY,maxX,maxY];
+}
+

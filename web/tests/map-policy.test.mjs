@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {viewportParameters, buildingLayer, validateCollection, cameraOptions} from '../src/map-policy.mjs';
+import {viewportParameters, buildingLayer, validateCollection, validateBoundary, boundaryBbox, cameraOptions} from '../src/map-policy.mjs';
 import {mapText, MAP_TEXT} from '../src/map-text.mjs';
 
 const one = () => ({type:'FeatureCollection',matched_records:1,represented_records:1,features:[{
@@ -79,3 +79,22 @@ test('all map messages exist in three languages and fallback is explicit',()=>{
   }
   assert.equal(mapText('fr','retry'),mapText('pt-BR','retry'));
 });
+test('validateBoundary accepts valid FeatureCollection and Feature with Polygon or MultiPolygon',()=>{
+  const validCollection={type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'Polygon',coordinates:[[[-46,-23],[-46,-24],[-45,-24],[-46,-23]]]}}]};
+  assert.deepEqual(validateBoundary(validCollection),validCollection);
+  const singleFeature={type:'Feature',geometry:{type:'MultiPolygon',coordinates:[[[[-46,-23],[-46,-24],[-45,-24],[-46,-23]]]]}};
+  assert.equal(validateBoundary(singleFeature)?.type,'FeatureCollection');
+  assert.equal(validateBoundary(null),null);
+  assert.equal(validateBoundary({type:'FeatureCollection',features:[]}),null);
+  assert.equal(validateBoundary({type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'Point',coordinates:[0,0]}}]}),null);
+});
+test('boundaryBbox computes valid [minX, minY, maxX, maxY] bounds',()=>{
+  const validCollection={type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'Polygon',coordinates:[[[-46,-23],[-46,-24],[-45,-24],[-46,-23]]]}}]};
+  assert.deepEqual(boundaryBbox(validCollection),[-46,-24,-45,-23]);
+  const multiPolygon={type:'Feature',geometry:{type:'MultiPolygon',coordinates:[[[[-48,-25],[-47,-25],[-47,-24],[-48,-25]]],[[[-44,-22],[-43,-22],[-43,-21],[-44,-22]]]]}};
+  assert.deepEqual(boundaryBbox(multiPolygon),[-48,-25,-43,-21]);
+  assert.equal(boundaryBbox(null),null);
+  assert.equal(boundaryBbox({}),null);
+  assert.equal(boundaryBbox({type:'FeatureCollection',features:[]}),null);
+});
+

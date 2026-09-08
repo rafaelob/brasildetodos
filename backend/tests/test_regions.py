@@ -19,7 +19,7 @@ def client(database, monkeypatch, tmp_path):
 
 
 def test_real_app_registers_routes_once(client):
-    for path in ('/api/territories/search', '/api/territories/{municipality_id}/summary'):
+    for path in ('/api/territories/search', '/api/territories/{municipality_id}/summary', '/api/territories/{municipality_id}/geometry'):
         assert sum(route.path == path for route in client.app.routes) == 1
     assert client.get('/api/territories/search').json()['total'] == 1
 
@@ -123,3 +123,97 @@ def test_budget_failure_is_not_a_partial_directory(database, client, monkeypatch
 def test_internal_validation(database, kwargs):
     with pytest.raises(ValueError):
         directory(database,**kwargs)
+
+
+def test_geometry_endpoint_validation_and_cache(client, tmp_path, monkeypatch):
+    assert client.get('/api/territories/bad/geometry').status_code == 422
+    assert client.get('/api/territories/9999999/geometry').status_code == 404
+    # With cached boundary file
+    cache_dir = tmp_path / 'private' / 'cache' / 'boundaries'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    geo_data = {
+        'type': 'FeatureCollection',
+        'features': [{
+            'type': 'Feature',
+            'geometry': {'type': 'Polygon', 'coordinates': [[[-46.0, -23.0], [-46.0, -24.0], [-45.0, -24.0], [-46.0, -23.0]]]},
+            'properties': {'codarea': '1234567'}
+        }]
+    }
+    import json
+    (cache_dir / '1234567.geojson').write_text(json.dumps(geo_data), encoding='utf-8')
+    resp = client.get('/api/territories/1234567/geometry')
+    assert resp.status_code == 200
+    assert resp.json()['type'] == 'FeatureCollection'
+    assert resp.json()['features'][0]['geometry']['type'] == 'Polygon'
+
+
+def test_geometry_endpoint_mock_fetch_and_errors(client, tmp_path, monkeypatch):
+    import gzip
+    import io
+    import json
+    import urllib.error
+    import urllib.request
+
+    geo_data = {
+        'type': 'FeatureCollection',
+        'features': [{
+            'type': 'Feature',
+            'geometry': {'type': 'Polygon', 'coordinates': [[[-47.0, -15.0], [-47.0, -16.0], [-46.0, -16.0], [-47.0, -15.0]]]},
+            'properties': {'codarea': '1234567'}
+        }]
+    }
+    raw_gz = gzip.compress(json.dumps(geo_data).encode('utf-8'))
+
+    class MockGzResponse:
+        status = 200
+        def read(self):
+            return raw_gz
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+
+    # Ensure no pre-existing cache file
+    cached = tmp_path / 'private' / 'cache' / 'boundaries' / '1234567.geojson'
+    if cached.is_file():
+        cached.unlink()
+
+    monkeypatch.setattr(urllib.request, 'urlopen', lambda *args, **kwargs: MockGzResponse())
+    resp = client.get('/api/territories/1234567/geometry')
+    assert resp.status_code == 200
+    assert resp.json()['type'] == 'FeatureCollection'
+    assert cached.is_file()
+
+    # Clear cache file for error tests
+    cached.unlink()
+
+    # Upstream 404 from IBGE -> 404
+    def mock_404(*args, **kwargs):
+        raise urllib.error.HTTPError('https://servicodados.ibge.gov.br', 404, 'Not Found', {}, io.BytesIO(b''))
+
+    monkeypatch.setattr(urllib.request, 'urlopen', mock_404)
+    resp = client.get('/api/territories/1234567/geometry')
+    assert resp.status_code == 404
+
+    # Upstream network failure -> 503
+    def mock_500(*args, **kwargs):
+        raise urllib.error.URLError('Connection refused')
+
+    monkeypatch.setattr(urllib.request, 'urlopen', mock_500)
+    resp = client.get('/api/territories/1234567/geometry')
+    assert resp.status_code == 503
+
+    # Upstream invalid format -> 422
+    class MockBadResponse:
+        status = 200
+        def read(self):
+            return b'{"not": "a geojson"}'
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+
+    monkeypatch.setattr(urllib.request, 'urlopen', lambda *args, **kwargs: MockBadResponse())
+    resp = client.get('/api/territories/1234567/geometry')
+    assert resp.status_code == 422
+

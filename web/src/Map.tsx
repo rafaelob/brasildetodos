@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {Map as LibreMap,GeoJSONSource} from 'maplibre-gl';
 import {api} from './api';
-import {buildingLayer,cameraOptions,validateCollection,viewportParameters} from './map-policy.mjs';
+import {buildingLayer,cameraOptions,boundaryBbox,validateBoundary,validateCollection,viewportParameters} from './map-policy.mjs';
 import {mapText} from './map-text.mjs';
 import type {Locale,Place} from './types';
 import './map.css';
@@ -79,6 +79,11 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR'}:Pr
           if(cancelled||broken||!instance)return;
           clearTimeout(deadline);
           try{
+            instance.addSource('bdt-boundary',{type:'geojson',data:EMPTY});
+            instance.addLayer({id:'bdt-boundary-fill',type:'fill',source:'bdt-boundary',
+              paint:{'fill-color':'#176b55','fill-opacity':.08}});
+            instance.addLayer({id:'bdt-boundary-line',type:'line',source:'bdt-boundary',
+              paint:{'line-color':'#176b55','line-width':2,'line-dasharray':[2,2]}});
             instance.addSource('bdt-places',{type:'geojson',data:EMPTY});
             instance.addLayer({id:'bdt-groups',type:'circle',source:'bdt-places',filter:['==',['get','cluster'],true],
               paint:{'circle-color':'#176b55','circle-radius':['step',['get','count'],17,100,23,1000,30],'circle-stroke-color':'#ffffff','circle-stroke-width':2}});
@@ -126,6 +131,28 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR'}:Pr
     if(instance.getLayer('bdt-buildings'))instance.setLayoutProperty('bdt-buildings','visibility',threeD?'visible':'none');
     instance.easeTo(cameraOptions(threeD,reducedMotion()));
   },[threeD,ready,hasBuildings]);
+  const activeMunicipality=filters.municipality_id||'';
+  useEffect(()=>{
+    const instance=map.current;if(!instance||!ready)return;
+    const boundarySource=instance.getSource('bdt-boundary') as GeoJSONSource|undefined;
+    if(!boundarySource)return;
+    if(!activeMunicipality){boundarySource.setData(EMPTY);return;}
+    let cancelled=false;
+    api<unknown>('/territories/'+encodeURIComponent(activeMunicipality)+'/geometry')
+      .then(raw=>{
+        if(cancelled)return;
+        const valid=validateBoundary(raw);
+        if(valid){
+          boundarySource.setData(valid as any);
+          const box=boundaryBbox(valid);
+          if(box&&instance){
+            instance.fitBounds([[box[0],box[1]],[box[2],box[3]]],{padding:35,maxZoom:14,duration:reducedMotion()?0:400});
+          }
+        }else boundarySource.setData(EMPTY);
+      })
+      .catch(()=>{if(!cancelled)boundarySource.setData(EMPTY);});
+    return()=>{cancelled=true;};
+  },[activeMunicipality,ready]);
   function useArea(){
     const instance=map.current;if(!instance)return;
     const bounds=instance.getBounds();
