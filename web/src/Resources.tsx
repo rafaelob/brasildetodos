@@ -50,9 +50,20 @@ export function ResourceCard({row,t,locale}:{row:PublicResource;t:T;locale:Local
     {a.profile==='transferegov_special_plans'&&<p>{t('resourceProposalNotice')}</p>}
     {a.budget_direction==='revenue'&&<p className="callout">{t('resourceRevenue')}</p>}
     {a.budget_direction==='unknown'&&<p>{t('resourceUnknownDirection')}</p>}
+    {typeof a.physical_execution_percentage==='number'&&<div className="resource-execution-meter" aria-label={t('resourcePhysicalExecution')}>
+      <div className="resource-execution-bar" role="progressbar" aria-valuenow={Math.round(a.physical_execution_percentage)} aria-valuemin={0} aria-valuemax={100} style={{width:`${Math.min(Math.max(a.physical_execution_percentage,0),100)}%`}}></div>
+      <span className="resource-execution-text">{a.physical_execution_percentage.toFixed(1)}% {t('resourcePhysicalExecution')}</span>
+    </div>}
+    {Array.isArray(a.project_geometries)&&a.project_geometries.length>0&&<div className="resource-geometry-pin">
+      <span className="pill geo-pill">⌖ {a.project_geometries.length} {t('resourcePinsCount')} · {t('resourceGeometriesConfirmed')}</span>
+    </div>}
     <dl>{[['declared_status','resourceStatus'],['buyer_name','resourceBuyer'],['upstream_updated_at','resourceOfficialUpdate'],
-      ['starts_on','resourceStart'],['ends_on','resourceEnd']].map(([key,label])=>typeof a[key]==='string'
-        ? <div className="resource-fact" key={key}><dt>{t(label)}</dt><dd>{String(a[key])}</dd></div>:null)}</dl>
+      ['starts_on','resourceStart'],['ends_on','resourceEnd'],
+      ['planned_starts_on','resourcePlannedStart'],['planned_ends_on','resourcePlannedEnd'],
+      ['last_measurement_on','resourceLastMeasurement']].map(([key,label])=>typeof a[key]==='string'
+        ? <div className="resource-fact" key={key}><dt>{t(label)}</dt><dd>{String(a[key])}</dd></div>:null)}
+      {typeof a.physical_execution_percentage==='number'&&<div className="resource-fact" key="exec"><dt>{t('resourcePhysicalExecution')}</dt><dd><strong>{a.physical_execution_percentage.toFixed(1)}%</strong></dd></div>}
+    </dl>
     {amounts.length||planned.length?<><p>{t('resourceNotPayment')}</p><div className="money-grid">
       {amounts.map(item=><div className="money" key={item.key}><span>{t(item.label)}</span><h3>{resourceAmountText(item,locale)}</h3></div>)}
       {planned.map((entry,index)=><div className="money" key={index}><span>{t('resourceProjectAmount')}</span>

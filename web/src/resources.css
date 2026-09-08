@@ -26,3 +26,9 @@
 @media(prefers-reduced-motion:reduce){.resources-page *{scroll-behavior:auto;animation:none;transition:none}}
 
 .resource-object-full{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1rem;line-height:1.65;font-weight:400}.resource-object summary{padding:.6rem 0;cursor:pointer;line-height:1.5}.resource-object details{margin-bottom:1rem}
+
+.resource-execution-meter{margin:1rem 0;background:#e9f2ed;border-radius:10px;padding:3px;position:relative;height:24px;overflow:hidden;display:flex;align-items:center}
+.resource-execution-bar{background:linear-gradient(90deg,#198754,#0d5d47);height:100%;border-radius:8px;transition:width .4s ease}
+.resource-execution-text{position:absolute;left:12px;font-size:.76rem;font-weight:700;color:#0d4637;text-shadow:0 0 2px rgba(255,255,255,0.85)}
+.resource-geometry-pin{margin:.6rem 0}
+.resource-geometry-pin .geo-pill{background:#e8f4ec;color:#0d5d47;font-weight:600;border:1px solid #b8dfcd;padding:.3rem .75rem;border-radius:20px;display:inline-flex;align-items:center;gap:.35rem}

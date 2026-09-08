@@ -24,6 +24,9 @@ export const resourceMessages = {
     resourceContract:'Contrato',resourceInstrument:'Instrumento de transferência',resourceProposal:'Proposta',
     resourceWork:'Obra',resourceProject:'Projeto',resourceSpecial_plan:'Plano especial',resourceSpecialPlan:'Plano especial',
     resourceRetry:'Tentar carregar novamente',resourceDetails:'Metadados desta versão',
+    resourcePhysicalExecution:'Execução física declarada',resourceLastMeasurement:'Última medição informada',
+    resourcePlannedStart:'Início previsto informado',resourcePlannedEnd:'Fim previsto informado',
+    resourceGeometriesConfirmed:'Geometrias confirmadas na fonte',resourcePinsCount:'pinos georreferenciados',
   },
   en: {
     resources:'Works and resources',resourceIntro:'Explore loaded contracts, plans and projects. This selection does not represent all public spending.',
@@ -49,6 +52,9 @@ export const resourceMessages = {
     resourceContract:'Contract',resourceInstrument:'Transfer agreement',resourceProposal:'Proposal',
     resourceWork:'Public work',resourceProject:'Project',resourceSpecial_plan:'Special plan',resourceSpecialPlan:'Special plan',
     resourceRetry:'Try loading again',resourceDetails:'Metadata for this version',
+    resourcePhysicalExecution:'Declared physical execution',resourceLastMeasurement:'Last declared measurement',
+    resourcePlannedStart:'Declared planned start',resourcePlannedEnd:'Declared planned end',
+    resourceGeometriesConfirmed:'Geometries confirmed in source',resourcePinsCount:'georeferenced pins',
   },
   es: {
     resources:'Obras y recursos',resourceIntro:'Explora contratos, planes y proyectos cargados. Esta selección no representa todo el gasto público.',
@@ -73,7 +79,10 @@ export const resourceMessages = {
     pncp_contracts:'PNCP · Contratos',transferegov_special_plans:'Transferegov · Planes especiales',obrasgov_projects:'Obrasgov · Proyectos',
     resourceContract:'Contrato',resourceInstrument:'Convenio de transferencia',resourceProposal:'Propuesta',
     resourceWork:'Obra pública',resourceProject:'Proyecto',resourceSpecial_plan:'Plan especial',resourceSpecialPlan:'Plan especial',
-    resourceRetry:'Intentar cargar de nuevo',resourceDetails:'Metadatos de esta versión',
+    resourceRetry:'Intentar cargar de nuevo',resourceDetails:'Metadados de esta versión',
+    resourcePhysicalExecution:'Ejecución física declarada',resourceLastMeasurement:'Última medición declarada',
+    resourcePlannedStart:'Inicio previsto declarado',resourcePlannedEnd:'Fin previsto declarado',
+    resourceGeometriesConfirmed:'Geometrías confirmadas en la fuente',resourcePinsCount:'puntos georreferenciados',
   },
 };
 export const amountFields = Object.freeze({initial_cents:'resourceInitialAmount',global_cents:'resourceGlobalAmount',
