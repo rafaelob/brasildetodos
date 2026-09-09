@@ -75,7 +75,7 @@ def seed_isolated_database(db: Database) -> None:
                 "state": "RR",
                 "latitude": 2.8235,
                 "longitude": -60.6758,
-                "geo_source": "IBGE-CNEFE-2022",
+                "geo_source": "synthetic_test_only",
                 "declared_services": ["ensino_fundamental"],
                 "source": school_source,
             },

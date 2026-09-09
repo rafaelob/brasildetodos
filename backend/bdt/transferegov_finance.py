@@ -36,6 +36,13 @@ EXCLUDED_SENSITIVE_KEYS = frozenset({
 })
 
 
+def public_finance_payload(raw: MoneyEvent | dict) -> dict:
+    """Drop identity/bank columns from a public finance projection. Never a phase total."""
+    payload = raw.model_dump(mode='json') if isinstance(raw, MoneyEvent) else dict(raw)
+    excluded = {key.upper() for key in EXCLUDED_SENSITIVE_KEYS}
+    return {key: value for key, value in payload.items() if str(key).upper() not in excluded}
+
+
 def parse_date_to_iso(text: str | None, fallback_year: str | None = None) -> str:
     """Strict date conversion to YYYY-MM-DD or YYYY-MM."""
     if text:
@@ -242,7 +249,7 @@ def import_transferegov_financial(database: Database, events: Iterable[MoneyEven
     counts = {'agreed': 0, 'amendments': 0, 'transferred': 0, 'total': 0, 'unchanged': 0}
     with database.session() as session:
         for event in events:
-            payload = event.model_dump(mode='json')
+            payload = public_finance_payload(event)
             key = digest([event.source.dataset, event.id])
             existing = session.get(Finance, key)
             if existing:

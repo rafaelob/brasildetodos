@@ -171,14 +171,14 @@ def test_tier1_f03_inep_schools_query_by_state():
 
 
 def test_tier1_f03_inep_schools_cnefe_geocoding():
-    """Verify schools have official IBGE-CNEFE-2022 geocoding metadata."""
+    """Seeded coordinates stay explicit; CNEFE name-match is not a published pin."""
     client = get_readonly_client()
     resp = client.get("/api/places?kind=school&state=RR&limit=10")
     items = resp.json().get("items", [])
     geocoded = [s for s in items if s.get("latitude") is not None]
     assert len(geocoded) > 0, "Expected at least one geocoded school in sample"
     first = geocoded[0]
-    assert first.get("geo_source") == "IBGE-CNEFE-2022", f"Unexpected geo_source: {first.get('geo_source')}"
+    assert first.get("geo_source") == "synthetic_test_only"
 
 
 def test_tier1_f03_inep_schools_coordinates_in_brazil():

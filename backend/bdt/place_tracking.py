@@ -8,6 +8,7 @@ Timeline times mean detection in stored records, never a confirmed real-world ev
 from collections import defaultdict
 from typing import Annotated
 
+from fastapi import Request
 from pydantic import Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -116,7 +117,9 @@ def watch_summary(database, request: WatchRequest) -> dict:
                 'versions_per_place': request.versions_per_place, 'items': items}
 
 
-def install(app, database):
+def install(app, database, rate_limit=None):
     @app.post('/api/saved-places/summary')
-    def summary(body: WatchRequest):
+    def summary(request: Request, body: WatchRequest):
+        if rate_limit is not None:
+            rate_limit(request, 'saved_places', 60)
         return watch_summary(database, body)

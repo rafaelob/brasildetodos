@@ -11,6 +11,7 @@ from .evidence import (Audit, Decision, Document, DocumentInput, Link, LinkInput
     ResourceInput, audit, initialize_extensions, link_payload, register_document, validate_excerpt)
 from .geo import viewport
 from .storage import LoginSession, Municipality, Observation, Place, User
+from . import photos
 
 
 class Note(StrictModel):
@@ -161,6 +162,7 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             if row.status != 'withdrawn':
                 session.execute(update(Observation).where(Observation.id == observation_id, Observation.author_id == user['id'])
                     .values(status='withdrawn'))
+                photos.erase_observation(session, observation_id)
                 audit(session, user['id'], 'observation', observation_id, 'author_withdrawal')
             return {'id': observation_id, 'status': 'withdrawn'}
 
@@ -171,6 +173,7 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                 .values(status='retracted', reviewed_at=now(), reviewer_id=user['id'], review_note=body.note))
             if result.rowcount != 1:
                 raise HTTPException(409, 'not_published')
+            photos.erase_observation(session, observation_id)
             audit(session, user['id'], 'observation', observation_id, 'retracted')
             return {'id': observation_id, 'status': 'retracted'}
 
@@ -182,7 +185,8 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             return {'username': user['username'], 'exported_at': now(),
                 'observations': [{'id': row.id, 'status': row.status, 'created_at': row.created_at,
                     'observation': row.payload, 'review_note': row.review_note} for row in observations],
-                'proposed_links': [link_payload(row) for row in links], 'credentials_included': False,
+                'proposed_links': [link_payload(row) for row in links],
+                'photos': photos.export_account(session, user['id']), 'credentials_included': False,
                 'collaboration': export_groups(session, user['id'])}
 
     @app.post('/api/account/delete')
@@ -198,6 +202,7 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                 observation.payload = {'place_id': observation.place_id, 'mode': 'field',
                     'observed_on': observation.payload.get('observed_on'), 'body': '', 'consent': False, 'erased': True}
                 observation.review_note = None
+            photos.erase_account(session, row.id)
             deactivate_user(session, row.id)
             session.execute(delete(LoginSession).where(LoginSession.user_id == row.id))
             row.username = 'deleted_' + row.id.replace('-', '')

@@ -11,7 +11,7 @@ Empirically challenges:
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -378,10 +378,7 @@ class TestObrasgovBatchLifecycleAdversarial:
 
     def test_lifecycle_status_failed_on_network_outage(self, test_db):
         """When API fails completely, status must transition to 'failed' with 0 mutations."""
-        mock_resp = MagicMock()
-        mock_resp.status = 500
-
-        with patch("urllib.request.urlopen", side_effect=ValueError("obrasgov_http_error_500")):
+        with patch("bdt.obrasgov_batch.fetch_api_json", side_effect=ValueError("obrasgov_http_error_500")):
             stats = batch_ingest_obrasgov(test_db, states=["RR"], max_pages_per_state=1, enrich_details=False)
 
         assert stats["errors"] > 0
@@ -428,12 +425,7 @@ class TestObrasgovBatchLifecycleAdversarial:
             ]
         }
 
-        mock_resp = MagicMock()
-        mock_resp.status = 200
-        mock_resp.read.return_value = json.dumps(sample_response).encode("utf-8")
-        mock_resp.__enter__.return_value = mock_resp
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch("bdt.obrasgov_batch.fetch_api_json", return_value=sample_response):
             stats = batch_ingest_obrasgov(test_db, states=["RR"], max_pages_per_state=1, enrich_details=False)
 
         assert stats["errors"] == 1
@@ -467,12 +459,7 @@ class TestObrasgovBatchLifecycleAdversarial:
             ]
         }
 
-        mock_resp = MagicMock()
-        mock_resp.status = 200
-        mock_resp.read.return_value = json.dumps(sample_response).encode("utf-8")
-        mock_resp.__enter__.return_value = mock_resp
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch("bdt.obrasgov_batch.fetch_api_json", return_value=sample_response):
             stats = batch_ingest_obrasgov(test_db, states=["RR"], max_pages_per_state=1, enrich_details=False)
 
         assert stats["errors"] == 0
@@ -512,12 +499,7 @@ class TestObrasgovBatchLifecycleAdversarial:
             ]
         }
 
-        mock_resp = MagicMock()
-        mock_resp.status = 200
-        mock_resp.read.return_value = json.dumps(sample_response).encode("utf-8")
-        mock_resp.__enter__.return_value = mock_resp
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch("bdt.obrasgov_batch.fetch_api_json", return_value=sample_response):
             batch_ingest_obrasgov(test_db, states=["RR"], max_pages_per_state=1, enrich_details=False)
 
         with test_db.session() as session:

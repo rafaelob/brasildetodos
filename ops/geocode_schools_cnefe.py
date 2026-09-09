@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Run school geocoding against the national catalog using official IBGE CNEFE 2022 coordinates.
+"""Match schools to CNEFE 2022 names as unpublished candidates, not map pins.
 
-Resolves school coordinates (LATITUDE, LONGITUDE) with official IBGE census GPS survey pins,
-recording provenance as 'IBGE-CNEFE-2022' in the audit ledger.
+Exact name matches are stored as cnefe_candidate on the place payload.
+They do not publish latitude/longitude until an official identifier dictionary exists.
 """
 from __future__ import annotations
 

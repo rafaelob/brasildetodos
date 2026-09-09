@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from uuid import uuid4
-from sqlalchemy import JSON, BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, Text, create_engine, event
+from sqlalchemy import JSON, BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, Text, create_engine, event, inspect as inspect_state
 from sqlalchemy.orm import declarative_base, sessionmaker
 from .domain import PlaceInput, digest, fold, now
 
@@ -84,6 +84,30 @@ class RateBucket(Base):
     count = Column(Integer, nullable=False)
     expires_at = Column(BigInteger, nullable=False)
 
+class RecoveryCode(Base):
+    """One live code per user. Only the SHA-256 digest is stored."""
+    __tablename__ = "recovery_codes"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, unique=True)
+    digest = Column(String(64), nullable=False, unique=True)
+    expires_at = Column(BigInteger, nullable=False)
+    version = Column(Integer, nullable=False)
+    created_at = Column(BigInteger, nullable=False)
+
+
+@event.listens_for(User, "before_update")
+def _purge_recovery_codes_when_disabled(mapper, connection, target):
+    # Same transaction as the role change, so a rolled-back disable cannot leave a usable code.
+    if target.role != "disabled":
+        return
+    history = inspect_state(target).attrs.role.history
+    if not history.has_changes():
+        return
+    connection.execute(
+        RecoveryCode.__table__.delete().where(RecoveryCode.__table__.c.user_id == target.id)
+    )
+
+
 class Observation(Base):
     __tablename__ = "observations"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -95,6 +119,8 @@ class Observation(Base):
     reviewer_id = Column(String(36), ForeignKey("users.id"))
     reviewed_at = Column(String(40))
     review_note = Column(Text)
+    contest_count = Column(Integer, nullable=False, default=0, server_default="0")
+    previous_reviewer_id = Column(String(36), ForeignKey("users.id"))
 
 class Database:
     def __init__(self, url: str):

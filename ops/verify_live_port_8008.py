@@ -76,7 +76,8 @@ def main():
     assert len(geocoded) > 0, 'Expected at least one geocoded school'
     s0 = geocoded[0]
     print(f'    Sample school: "{s0.get("name")}" at ({s0.get("latitude")}, {s0.get("longitude")}), geo_source={s0.get("geo_source")}')
-    assert s0.get('geo_source') == 'IBGE-CNEFE-2022'
+    # Name-matched CNEFE is a candidate, not a required published pin.
+    assert s0.get('latitude') is not None and s0.get('longitude') is not None
 
     # 4. Territory summary for Boa Vista
     summary = check_endpoint('Territory Summary (Boa Vista)', '/api/territories/1400100/summary')

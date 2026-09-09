@@ -1,11 +1,21 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+import hashlib
+import json
+import sys
+import zipfile
+from pathlib import Path
+
 import pytest
-from decimal import Decimal
 from sqlalchemy import select
 
 from bdt.domain import Source
-from bdt.storage import Database, Finance, Ingestion, Municipality
+from bdt.storage import Finance, Ingestion, Municipality
 from bdt.transferegov_finance import (
+    EXCLUDED_SENSITIVE_KEYS,
+    REQUIRED_ADITIVO,
+    REQUIRED_CONVENIO,
+    REQUIRED_CROSSWALK,
+    REQUIRED_DESEMBOLSO,
     parse_date_to_iso,
     parse_brl_cents,
     load_municipality_crosswalk,
@@ -13,7 +23,11 @@ from bdt.transferegov_finance import (
     normalize_amendments,
     normalize_disbursements,
     import_transferegov_financial,
+    public_finance_payload,
 )
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'ops'))
+import transferegov_financial_download_and_ingest as tg_ops
 
 
 @pytest.fixture
@@ -184,4 +198,165 @@ def test_import_transferegov_financial_transactional(database, fake_source):
     counts_re = import_transferegov_financial(database, events, fake_source)
     assert counts_re['unchanged'] == 3
     assert counts_re['total'] == 0
+
+
+def test_public_finance_payload_excludes_sensitive_keys(fake_source):
+    raw = {
+        'id': 'transferegov:agreement:948971',
+        'phase': 'agreed',
+        'cents': 260635937,
+        'NR_CONVENIO': '948971',
+        'CPF': '00000000000',
+        'CONTA': '12345-6',
+        'BANCO': '001',
+        'AGENCIA': '0001',
+        'NR_SIAFI': 'siafi',
+        'UG_EMITENTE_DH': 'ug',
+        'OBSERVACAO_DH': 'secret-note',
+        'CD_IDENTIF_PROPONENTE': 'ident',
+        'cpf': 'also-secret',
+    }
+    payload = public_finance_payload(raw)
+    assert EXCLUDED_SENSITIVE_KEYS.isdisjoint(payload)
+    assert {key.upper() for key in payload}.isdisjoint({key.upper() for key in EXCLUDED_SENSITIVE_KEYS})
+    assert payload['phase'] == 'agreed'
+    assert payload['cents'] == 260635937
+    assert 'financial_total' not in payload
+    event_payload = public_finance_payload(next(iter(normalize_agreements(
+        [{'NR_CONVENIO': '948971', 'IND_ASSINADO': 'SIM', 'VL_GLOBAL_CONV': '10,00',
+          'VL_REPASSE_CONV': '10,00', 'DIA_ASSIN_CONV': '19/12/2023', 'ANO': '2023',
+          'SIT_CONVENIO': 'Em execução'}],
+        {'948971': ('3550308', 'MUNICIPIO DE SAO PAULO')},
+        fake_source,
+    ))))
+    assert EXCLUDED_SENSITIVE_KEYS.isdisjoint(event_payload)
+    assert event_payload['phase'] == 'agreed'
+
+
+def _write_archive(path: Path, member: str, header: list[str], rows: list[list[str]]) -> dict:
+    body = ';'.join(header) + '\n' + ''.join(';'.join(row) + '\n' for row in rows)
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr(member, body.encode('utf-8'))
+    data = path.read_bytes()
+    return {
+        'url': 'https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/' + path.name,
+        'path': str(path),
+        'bytes': len(data),
+        'sha256': hashlib.sha256(data).hexdigest(),
+        'status': 'cached',
+    }
+
+
+def _cached_downloads(tmp_path: Path) -> Path:
+    folder = tmp_path / 'transferegov'
+    folder.mkdir()
+    convenio_header = sorted(REQUIRED_CONVENIO)
+    aditivo_header = sorted(REQUIRED_ADITIVO)
+    desembolso_header = sorted(REQUIRED_DESEMBOLSO)
+    crosswalk_header = sorted(REQUIRED_CROSSWALK)
+
+    def cells(header, mapping):
+        return [mapping.get(name, '') for name in header]
+
+    receipts = {
+        'siconv_prop_inst_indicadores_municipios.zip': _write_archive(
+            folder / 'siconv_prop_inst_indicadores_municipios.zip',
+            'siconv_prop_inst_indicadores_municipios.csv',
+            crosswalk_header,
+            [cells(crosswalk_header, {'NR_CONVENIO': '948971', 'COD_MUNIC_IBGE': '3550308',
+                                      'NM_PROPONENTE': 'MUNICIPIO DE SAO PAULO'})],
+        ),
+        'siconv_convenio.zip': _write_archive(
+            folder / 'siconv_convenio.zip',
+            'siconv_convenio.csv',
+            convenio_header,
+            [
+                cells(convenio_header, {'NR_CONVENIO': '948971', 'IND_ASSINADO': 'SIM',
+                                        'VL_GLOBAL_CONV': '2.606.359,37', 'VL_REPASSE_CONV': '2.603.659,37',
+                                        'DIA_ASSIN_CONV': '19/12/2023', 'ANO': '2023',
+                                        'SIT_CONVENIO': 'Em execução'}),
+                cells(convenio_header, {'NR_CONVENIO': '966185', 'IND_ASSINADO': 'NÃO',
+                                        'VL_GLOBAL_CONV': '1.912.000,00', 'VL_REPASSE_CONV': '1.910.000,00',
+                                        'DIA_ASSIN_CONV': '', 'ANO': '2024',
+                                        'SIT_CONVENIO': 'Proposta Aprovada'}),
+                cells(convenio_header, {'NR_CONVENIO': '888888', 'IND_ASSINADO': 'SIM',
+                                        'VL_GLOBAL_CONV': '500.000,00', 'VL_REPASSE_CONV': '500.000,00',
+                                        'DIA_ASSIN_CONV': '01/01/2024', 'ANO': '2024',
+                                        'SIT_CONVENIO': 'Em execução'}),
+            ],
+        ),
+        'siconv_termo_aditivo.zip': _write_archive(
+            folder / 'siconv_termo_aditivo.zip',
+            'siconv_termo_aditivo.csv',
+            aditivo_header,
+            [
+                cells(aditivo_header, {'NR_CONVENIO': '948971', 'NUMERO_TA': '2/2020',
+                                       'TIPO_TA': 'Supressão', 'VL_GLOBAL_TA': '-32.400,55',
+                                       'DT_ASSINATURA_TA': '15/05/2020'}),
+                cells(aditivo_header, {'NR_CONVENIO': '948971', 'NUMERO_TA': '1/2020',
+                                       'TIPO_TA': 'Alteração da Vigência', 'VL_GLOBAL_TA': '0,00',
+                                       'DT_ASSINATURA_TA': '10/01/2020'}),
+            ],
+        ),
+        'siconv_desembolso.zip': _write_archive(
+            folder / 'siconv_desembolso.zip',
+            'siconv_desembolso.csv',
+            desembolso_header,
+            [cells(desembolso_header, {'ID_DESEMBOLSO': '366482', 'NR_CONVENIO': '948971',
+                                      'DATA_DESEMBOLSO': '03/01/2025', 'VL_DESEMBOLSADO': '288.497,91'})],
+        ),
+    }
+    (folder / 'receipts.json').write_text(json.dumps(receipts), encoding='utf-8')
+    return folder
+
+
+def test_freeze_validator_not_certified_and_phases_not_summed(tmp_path):
+    folder = _cached_downloads(tmp_path)
+    report = tg_ops.freeze_cached_archives(folder, sample_limit=50)
+    assert report['status'] == 'validated'
+    assert report['national_catalog_certified'] is False
+    assert report['financial_total_computed'] is False
+    assert report['public_data_v1_unchanged'] is True
+    assert report['records_imported'] == 0
+    assert report['phases_summed'] is False
+    assert 'total_cents' not in report
+    assert 'combined_cents' not in report
+    assert report['counts']['convenio']['signed'] == 2
+    assert report['counts']['convenio']['preconvenio'] == 1
+    assert report['counts']['convenio']['orphan_instruments'] == 2
+    assert report['counts']['aditivo']['negative'] == 1
+    assert report['counts']['aditivo']['zero'] == 1
+    for bucket in report['counts'].values():
+        if isinstance(bucket, dict):
+            assert 'cents' not in bucket
+            assert 'total_cents' not in bucket
+    assert 'financial_total' not in report
+    for archive in report['archives']:
+        assert archive['status'] == 'validated'
+        assert archive['sha256']
+        assert archive['bytes'] > 0
+
+
+def test_freeze_hash_mismatch_stays_uncertified(tmp_path):
+    folder = _cached_downloads(tmp_path)
+    receipts = json.loads((folder / 'receipts.json').read_text(encoding='utf-8'))
+    receipts['siconv_convenio.zip']['sha256'] = '0' * 64
+    (folder / 'receipts.json').write_text(json.dumps(receipts), encoding='utf-8')
+    report = tg_ops.freeze_cached_archives(folder, sample_limit=10)
+    assert report['national_catalog_certified'] is False
+    assert report['financial_total_computed'] is False
+    assert report['records_imported'] == 0
+    assert report['status'] == 'failed'
+    convenio = next(row for row in report['archives'] if row['name'] == 'siconv_convenio.zip')
+    assert convenio['status'] == 'failed'
+    assert convenio['reason'].startswith('archive_hash_mismatch')
+
+
+def test_operator_ingest_refuses_live_app_db(tmp_path):
+    with pytest.raises(ValueError, match='refuse_live_app_database'):
+        tg_ops.refuse_live_app_database(Path('data/bdt.db'))
+    with pytest.raises(ValueError, match='refuse_live_app_database'):
+        tg_ops.run_ingest(tmp_path / 'bdt.db', tmp_path / 'missing')
+    with pytest.raises(ValueError, match='database_required_for_ingest'):
+        tg_ops.refuse_live_app_database(None)
 

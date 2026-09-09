@@ -11,6 +11,7 @@ import binascii
 from datetime import date
 import hashlib
 from io import BytesIO
+import logging
 import math
 import time
 from typing import Literal
@@ -36,6 +37,7 @@ MAX_USER_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 256 * 1024 * 1024
 UNPUBLISHED_TTL = 30 * 24 * 3600
 ACTIVE_STATES = ('pending', 'approved', 'rejected')
+log = logging.getLogger('bdt.photos')
 
 
 class PhotoVersion(Base):
@@ -301,3 +303,95 @@ def purge_expired(database, *, at: int | None = None, limit: int = 1000) -> int:
                     Photo.author_id != Observation.author_id, Observation.payload['erased'].as_boolean() == True))
             .order_by(Photo.expires_at, Photo.id).limit(limit)).all()
         return erase(session, [p for p, o, u in rows if not visible(p, o, u)], state='expired')
+
+
+def load(session, photo_id: str) -> tuple[Photo, Observation, User]:
+    row = session.execute(select(Photo, Observation, User).join(Observation, Photo.observation_id == Observation.id)
+                          .join(User, Photo.author_id == User.id).where(Photo.id == photo_id)).one_or_none()
+    if row is None:
+        raise ValueError('photo_not_found')
+    return row[0], row[1], row[2]
+
+
+def stored_bytes(session, photo: Photo) -> bytes:
+    row = session.get(PhotoContent, photo.id)
+    if row is None or photo.bytes <= 0 or not row.content:
+        raise ValueError('photo_not_found')
+    return row.content
+
+
+def submit(session, body: PhotoInput, author_id: str) -> Photo:
+    lock_budget(session)
+    locked = session.execute(update(Observation).where(
+        Observation.id == body.observation_id, Observation.author_id == author_id,
+        Observation.status != 'withdrawn').values(place_id=Observation.place_id))
+    if locked.rowcount != 1:
+        raise ValueError('observation_not_found')
+    observation = session.get(Observation, body.observation_id)
+    if observation is None or observation.payload.get('erased'):
+        raise ValueError('observation_not_found')
+    per_observation = session.scalar(select(func.count()).select_from(Photo).where(
+        Photo.observation_id == observation.id, Photo.bytes > 0)) or 0
+    if per_observation >= MAX_PER_OBSERVATION:
+        raise ValueError('photo_quota_observation')
+    per_user = session.scalar(select(func.count()).select_from(Photo).where(
+        Photo.author_id == author_id, Photo.bytes > 0)) or 0
+    if per_user >= MAX_PER_USER:
+        raise ValueError('photo_quota_user')
+    derived = sanitize(body.image_base64, body.masks)
+    user_bytes = int(session.scalar(select(func.coalesce(func.sum(Photo.bytes), 0)).where(
+        Photo.author_id == author_id)) or 0)
+    if user_bytes + derived['bytes'] > MAX_USER_BYTES:
+        raise ValueError('photo_quota_user_bytes')
+    total_bytes = int(session.scalar(select(func.coalesce(func.sum(Photo.bytes), 0))) or 0)
+    if total_bytes + derived['bytes'] > MAX_TOTAL_BYTES:
+        raise ValueError('photo_quota_total')
+    photo = Photo(observation_id=observation.id, author_id=author_id, state='pending',
+                  caption=body.caption, credit=body.credit, captured_on=body.captured_on.isoformat(),
+                  license=body.license, sha256=derived['sha256'], width=derived['width'],
+                  height=derived['height'], bytes=derived['bytes'], masks_applied=derived['masks_applied'],
+                  expires_at=int(time.time()) + UNPUBLISHED_TTL)
+    session.add(photo)
+    session.flush()
+    session.add(PhotoContent(photo_id=photo.id, content=derived['content']))
+    session.flush()
+    log.info('photo.submit photo_id=%s observation_id=%s size=%s', photo.id, observation.id, photo.bytes)
+    return photo
+
+
+def review_photo(session, photo_id: str, body: PhotoReview, reviewer_id: str) -> Photo:
+    lock_budget(session)
+    photo, _observation, _author = load(session, photo_id)
+    if photo.author_id == reviewer_id:
+        raise ValueError('self_review_forbidden')
+    if body.decision == 'approved' and body.privacy_checked is not True:
+        raise ValueError('photo_privacy_review_required')
+    allowed = ((photo.state == 'pending' and body.decision in {'approved', 'rejected'})
+               or (photo.state == 'approved' and body.decision == 'retracted'))
+    if (not allowed or photo.revision != body.expected_revision or photo.sha256 != body.sha256
+            or photo.bytes <= 0):
+        raise ValueError('photo_revision_conflict')
+    changed = session.execute(update(Photo).where(
+        Photo.id == photo.id, Photo.revision == body.expected_revision, Photo.sha256 == body.sha256,
+        Photo.state == photo.state, Photo.bytes > 0).values(
+        state=body.decision, reviewer_id=reviewer_id, reviewed_at=now(), review_note=body.note,
+        revision=body.expected_revision + 1))
+    if changed.rowcount != 1:
+        raise ValueError('photo_revision_conflict')
+    session.refresh(photo)
+    log.info('photo.review photo_id=%s decision=%s', photo.id, body.decision)
+    return photo
+
+
+def remove_photo(session, photo_id: str, body: PhotoRemoval, author_id: str) -> Photo:
+    lock_budget(session)
+    photo, _observation, _author = load(session, photo_id)
+    if photo.author_id != author_id:
+        raise ValueError('photo_not_found')
+    if body.confirmed is not True:
+        raise ValueError('photo_removal_unconfirmed')
+    if photo.bytes > 0:
+        erase(session, [photo])
+        session.refresh(photo)
+    log.info('photo.remove photo_id=%s', photo_id)
+    return photo

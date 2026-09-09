@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from . import __version__
+from . import __version__, photos
 from .domain import ObservationInput, financial_cells, fold, now
 from .storage import Change, Database, Finance, Ingestion, LoginSession, Municipality, Observation, Place, RateBucket, User
 
@@ -50,8 +50,11 @@ class Review(BaseModel):
 
 
 def public_observation(row: Observation) -> dict:
-    return {'id': row.id, 'place_id': row.place_id, 'status': row.status, 'created_at': row.created_at,
-            'reviewed_at': row.reviewed_at, 'observation': row.payload}
+    payload = {'id': row.id, 'place_id': row.place_id, 'status': row.status, 'created_at': row.created_at,
+               'reviewed_at': row.reviewed_at, 'observation': row.payload}
+    if getattr(row, 'contest_count', 0):
+        payload['contested'] = True
+    return payload
 
 
 def create_app(database_url: str | None = None, *, testing: bool = False) -> FastAPI:
@@ -101,19 +104,25 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
 
     @app.middleware('http')
     async def security_headers(request: Request, call_next):
+        path = request.url.path
+        # Photo JSON includes a bounded base64 derivative; other routes stay at 32KiB.
+        limit = photos.MAX_REQUEST_BYTES if os.getenv('BDT_PHOTO_UPLOADS') == '1' and path.startswith('/api/photos') else 32768
         length = request.headers.get('content-length')
-        if length and (not length.isdigit() or int(length) > 32768):
+        if length and (not length.isdigit() or int(length) > limit):
             return JSONResponse({'detail': 'request_too_large'}, status_code=413)
         origin = request.headers.get('origin')
         if origin is not None and origin.rstrip('/') not in allowed_origins:
             return JSONResponse({'detail': 'origin_not_allowed'}, status_code=403)
+        if os.getenv('BDT_PHOTO_UPLOADS') != '1' and (
+                path.startswith('/api/photos') or path.startswith('/api/public/photos')):
+            return JSONResponse({'detail': 'photo_uploads_disabled'}, status_code=404)
         if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
             if request.headers.get('x-bdt-client') != 'web':
                 return JSONResponse({'detail': 'csrf_header_required'}, status_code=403)
             chunks, size = [], 0
             async for chunk in request.stream():
                 size += len(chunk)
-                if size > 32768:
+                if size > limit:
                     return JSONResponse({'detail': 'request_too_large'}, status_code=413)
                 chunks.append(chunk)
             request._body = b''.join(chunks)
@@ -122,7 +131,7 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
         response.headers['Referrer-Policy'] = 'no-referrer'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(self)'
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
         if request.url.path.startswith('/api/'):
             response.headers['Cache-Control'] = 'no-store'
         if secure:
@@ -174,7 +183,8 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
         if re.fullmatch(r'[0-9a-f]{40}', revision):
             code += '/tree/' + revision
         return {'registration_enabled': os.getenv('BDT_ALLOW_REGISTRATION') == '1',
-                'source_code': code, 'revision': revision, 'photo_uploads': False,
+                'source_code': code, 'revision': revision,
+                'photo_uploads': os.getenv('BDT_PHOTO_UPLOADS') == '1',
                 'evidence_workbench': True, 'viewport_api': True}
 
     @app.post('/api/auth/register', status_code=201)
@@ -310,9 +320,13 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
                 raise HTTPException(404, 'observation_not_found')
             if row.author_id == user['id']:
                 raise HTTPException(403, 'self_review_forbidden')
+            if row.previous_reviewer_id == user['id']:
+                raise HTTPException(403, 'independent_review_required')
             if row.status != 'pending':
                 raise HTTPException(409, 'already_reviewed')
-            changed = session.execute(update(Observation).where(Observation.id == observation_id, Observation.status == 'pending')
+            changed = session.execute(update(Observation).where(
+                Observation.id == observation_id, Observation.status == 'pending',
+                Observation.previous_reviewer_id.is_distinct_from(user['id']))
                 .values(status=body.decision, reviewer_id=user['id'], reviewed_at=now(), review_note=body.note))
             if changed.rowcount != 1:
                 raise HTTPException(409, 'already_reviewed')
@@ -325,8 +339,14 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
     install(app, database, current_user, reviewer, rate_limit, check_password)
     from .coverage_dashboard import install as install_coverage
     from .place_tracking import install as install_tracking
+    from .recovery import install as install_recovery
     install_coverage(app, database)
-    install_tracking(app, database)
+    install_tracking(app, database, rate_limit)
+    install_recovery(app, database, current_user, rate_limit, check_password, password_hash)
+    from .photo_http import install as install_photos
+    install_photos(app, database, current_user, reviewer, rate_limit)
+    from .moderation_contest import install as install_contest
+    install_contest(app, database, current_user, rate_limit)
     from .regions import install as install_regions
     install_regions(app, database)
     static = Path(os.getenv('BDT_STATIC_DIR', 'web/dist'))

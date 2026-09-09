@@ -1,33 +1,34 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Geocode school places using official IBGE CNEFE 2022 census GPS coordinates.
+"""CNEFE 2022 name matches are unpublished coordinate candidates, not map pins.
 
-Preserves strict data integrity:
-- Official survey coordinates (LATITUDE, LONGITUDE) from IBGE Censo 2022.
-- Matched strictly within the same official IBGE municipality (COD_MUNICIPIO).
-- Records geo_source as 'IBGE-CNEFE-2022' and logs changes into the audit ledger.
+Official survey coordinates stay on payload cnefe_candidate after an exact
+normalized name match inside the same IBGE municipality. Place.latitude and
+Place.longitude stay unset until an official identifier dictionary exists.
+Ambiguous duplicate names are dropped at parse time. Downloads are cache-first;
+ftp.ibge.gov.br is not in ingest.HOSTS.
 """
 from __future__ import annotations
 
 import csv
 import io
 import logging
+import os
 import re
 import unicodedata
 import urllib.request
 import zipfile
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
 from sqlalchemy import select
 
-from .domain import PlaceInput, now
-from .storage import Database, Place, upsert_place
+from .storage import Database, Place
 
 logger = logging.getLogger('bdt.school_geocoder')
 
 CNEFE_BASE = 'https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/Censo_Demografico_2022/Arquivos_CNEFE/CSV/UF'
 USER_AGENT = 'BrasilDeTodos/0.3 (+https://github.com/rafaelob/brasildetodos)'
+OPERATOR_DOWNLOAD_ENV = 'BDT_CNEFE_OPERATOR_DOWNLOAD'
 
 STATE_IBGE_CODES: dict[str, str] = {
     'RO': '11', 'AC': '12', 'AM': '13', 'RR': '14', 'PA': '15', 'AP': '16', 'TO': '17',
@@ -58,33 +59,54 @@ def normalize_school_name(name: str | None) -> str:
     return ' '.join(filtered)
 
 
-
-def download_cnefe_state_zip(state: str, cache_dir: Path | None = None, timeout: int = 60) -> bytes:
-    """Download CNEFE state zip archive from IBGE FTP mirror or read from local cache."""
+def _cnefe_cache_path(state: str, cache_dir: Path | None) -> tuple[str, Path | None]:
     state_upper = state.upper()
     code = STATE_IBGE_CODES.get(state_upper)
     if not code:
         raise ValueError(f'unknown_state_code_{state_upper}')
-
     filename = f'{code}_{state_upper}.zip'
-    if cache_dir:
-        cache_path = cache_dir / filename
-        if cache_path.is_file() and cache_path.stat().st_size > 0:
-            logger.info(f'Reading {filename} from cache: {cache_path}')
-            return cache_path.read_bytes()
+    if cache_dir is None:
+        return filename, None
+    return filename, cache_dir / filename
+
+
+def download_cnefe_state_zip(state: str, cache_dir: Path | None = None, timeout: int = 60) -> bytes:
+    """Read a CNEFE state zip from local cache.
+
+    ftp.ibge.gov.br is not in ingest.HOSTS. A cache miss raises unless
+    BDT_CNEFE_OPERATOR_DOWNLOAD=1, which is an operator exception, not a HOSTS
+    expansion to FTP.
+    """
+    filename, cache_path = _cnefe_cache_path(state, cache_dir)
+    if cache_path is not None and cache_path.is_file() and cache_path.stat().st_size > 0:
+        logger.info(f'Reading {filename} from cache: {cache_path}')
+        return cache_path.read_bytes()
+
+    missing = str(cache_path) if cache_path is not None else filename
+    if os.environ.get(OPERATOR_DOWNLOAD_ENV) != '1':
+        raise ValueError(
+            f'CNEFE cache miss: missing {missing}. '
+            'ftp.ibge.gov.br is not in ingest.HOSTS HTTPS allowlist; '
+            'refusing silent FTP/HTTP download. Place the zip in the cache directory, '
+            f'or set {OPERATOR_DOWNLOAD_ENV}=1 as an operator exception '
+            '(not a HOSTS expansion to FTP).'
+        )
 
     url = f'{CNEFE_BASE}/{filename}'
-    logger.info(f'Downloading CNEFE {filename} from {url}...')
+    logger.warning(
+        f'CNEFE operator-exception download of {filename} from {url}; '
+        f'{OPERATOR_DOWNLOAD_ENV}=1 is not an ingest.HOSTS expansion to FTP'
+    )
     req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         if resp.status != 200:
             raise ValueError(f'ibge_download_failed_{resp.status}')
         data = resp.read()
 
-    if cache_dir:
+    if cache_dir is not None:
         cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_path = cache_dir / filename
-        cache_path.write_bytes(data)
+        dest = cache_dir / filename
+        dest.write_bytes(data)
 
     return data
 
@@ -146,39 +168,20 @@ def parse_cnefe_schools(zip_bytes: bytes) -> dict[str, dict[str, tuple[float, fl
 
 
 def find_cnefe_match(school_name: str, mun_cnefe: dict[str, tuple[float, float, str]]) -> tuple[float, float, str] | None:
-    """Match a school against municipality CNEFE entries with high precision."""
+    """Exact normalized name only. Token-subset matches are not coordinates."""
     n_key = normalize_school_name(school_name)
     if not n_key:
         return None
-
-    # 1. Exact match
-    if n_key in mun_cnefe:
-        return mun_cnefe[n_key]
-
-    # 2. Token-based unambiguous match
-    n_words = set(n_key.split())
-    if len(n_words) >= 2 or (len(n_words) == 1 and len(n_key) >= 8):
-        matches = []
-        for c_key, val in mun_cnefe.items():
-            c_words = set(c_key.split())
-            if not c_words:
-                continue
-            if n_words.issubset(c_words) or c_words.issubset(n_words):
-                matches.append(val)
-                if len(matches) > 1:
-                    break
-        if len(matches) == 1:
-            return matches[0]
-
-    return None
+    return mun_cnefe.get(n_key)
 
 
 def geocode_schools_for_state(database: Database, state: str,
                               cnefe_by_mun: dict[str, dict[str, tuple[float, float, str]]],
                               *, batch_size: int = 200) -> dict[str, int]:
-    """Geocode all schools in a state using official CNEFE coordinates.
+    """Store unpublished CNEFE name-match candidates for schools in a state.
 
-    Saves changes into the audit ledger and places table.
+    Never copies matched coordinates onto Place.latitude / Place.longitude or
+    geo_source. A name match is not an official identifier dictionary.
     """
     stats = Counter()
 
@@ -190,42 +193,49 @@ def geocode_schools_for_state(database: Database, state: str,
         places = session.scalars(query).all()
         stats['total_schools'] = len(places)
 
-        pending_updates = []
+        pending = 0
         for place in places:
-            # Skip if already has coordinates
             if place.latitude is not None and place.longitude is not None:
                 stats['already_geocoded'] += 1
                 continue
 
             mun_dict = cnefe_by_mun.get(place.municipality_id)
             if not mun_dict:
-                stats['no_mun_cnefe'] = 1
+                stats['no_mun_cnefe'] += 1
                 continue
 
             match = find_cnefe_match(place.name, mun_dict)
             if match:
                 lat, lon, cnefe_name = match
-                payload = dict(place.payload)
-                payload['latitude'] = lat
-                payload['longitude'] = lon
-                payload['geo_source'] = 'IBGE-CNEFE-2022'
-
-                try:
-                    p_input = PlaceInput.model_validate(payload)
-                    pending_updates.append(p_input)
-                    stats['matched'] += 1
-                except Exception as val_err:
+                if not isinstance(place.payload, dict):
                     stats['validation_error'] += 1
-                    logger.debug(f'Validation error for {place.id}: {val_err}')
+                    logger.debug(f'payload is not a dict for {place.id}')
+                    continue
+                payload = dict(place.payload)
+                payload.pop('latitude', None)
+                payload.pop('longitude', None)
+                if payload.get('geo_source') == 'IBGE-CNEFE-2022':
+                    payload.pop('geo_source', None)
+                payload['cnefe_candidate'] = {
+                    'lat': lat,
+                    'lon': lon,
+                    'cnefe_name': cnefe_name,
+                    'match': 'exact_name',
+                }
+                place.payload = payload
+                stats['matched'] += 1
+                pending += 1
+                logger.debug(
+                    f'cnefe_candidate stored place_id={place.id} '
+                    f'municipality_id={place.municipality_id} match=exact_name'
+                )
+                if pending >= batch_size:
+                    session.commit()
+                    pending = 0
             else:
                 stats['unmatched'] += 1
 
-        # Apply updates in batches
-        for i in range(0, len(pending_updates), batch_size):
-            batch = pending_updates[i:i + batch_size]
-            for p_in in batch:
-                outcome = upsert_place(session, p_in)
-                stats[f'outcome_{outcome}'] += 1
+        if pending:
             session.commit()
 
     return dict(stats)

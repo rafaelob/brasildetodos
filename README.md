@@ -105,6 +105,7 @@ Isso abre uma instância **local**, vazia, com volume SQLite. Por omissão o Com
 - Obras entram como registros normalizados com referência; PNCP/Transferegov/Obrasgov não geram pinos por endereço do comprador ou proximidade de nome.
 - O mapa consulta o recorte visível independentemente da página da lista, agrupando pontos quando necessário. Isso não certifica a completude do catálogo ou a renderização externa. 3D depende de altura publicada e zoom; não é gêmeo digital, análise de acessibilidade ou fotografia atual.
 - Não há Mapillary/Panoramax, grupos síncronos, envio automático a órgãos públicos ou autenticação gov.br.
+- Ferramentas MCP de operador existem para staging, sondas de uma página e proposta de CLI ([MCP_SOURCES.md](docs/MCP_SOURCES.md)); não são consulta cidadã por inteligência artificial ao governo.
 - Código não interpreta conformidade legal, não detecta corrupção e não substitui profissionais ou autoridades. Informação oficial, observação e hipótese permanecem distintas.
 
 ## Documentação e colaboração

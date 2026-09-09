@@ -1,0 +1,104 @@
+{
+  "schema": "bdt.transferegov-finance-freeze.v1",
+  "started_at": "2026-09-09T23:00:20.759328+00:00",
+  "mode": "freeze",
+  "downloads": "data/downloads/transferegov",
+  "count_scope": "header_counter_pass",
+  "sample_limit": null,
+  "archives": [
+    {
+      "name": "siconv_prop_inst_indicadores_municipios.zip",
+      "bytes": 10634953,
+      "sha256": "6a41f50bf2ed2bd667646bf4979e478fa1c83eb3239ac5e416e32f082d6530ad",
+      "member": "siconv_prop_inst_indicadores_municipios.csv",
+      "header_field_count": 41,
+      "required_columns_present": [
+        "COD_MUNIC_IBGE",
+        "NM_PROPONENTE",
+        "NR_CONVENIO"
+      ],
+      "status": "validated"
+    },
+    {
+      "name": "siconv_convenio.zip",
+      "bytes": 18386648,
+      "sha256": "925f04af4c9b80b18e13af895b93d75987c8bce18bd176e78da2c9d8830fce33",
+      "member": "siconv_convenio.csv",
+      "header_field_count": 40,
+      "required_columns_present": [
+        "ANO",
+        "DIA_ASSIN_CONV",
+        "IND_ASSINADO",
+        "NR_CONVENIO",
+        "SIT_CONVENIO",
+        "VL_GLOBAL_CONV",
+        "VL_REPASSE_CONV"
+      ],
+      "status": "validated"
+    },
+    {
+      "name": "siconv_termo_aditivo.zip",
+      "bytes": 60529075,
+      "sha256": "152664c1b71b37e03f32d5d1562504d8949f0a71392bb269581724b8ba817550",
+      "member": "siconv_termo_aditivo.csv",
+      "header_field_count": 11,
+      "required_columns_present": [
+        "DT_ASSINATURA_TA",
+        "NR_CONVENIO",
+        "NUMERO_TA",
+        "TIPO_TA",
+        "VL_GLOBAL_TA"
+      ],
+      "status": "validated"
+    },
+    {
+      "name": "siconv_desembolso.zip",
+      "bytes": 16665018,
+      "sha256": "3c4f40deef5c724f2f5f14a0a252b4aaa333023773eb69f723a9e9b65ce79a93",
+      "member": "siconv_desembolso.csv",
+      "header_field_count": 11,
+      "required_columns_present": [
+        "DATA_DESEMBOLSO",
+        "ID_DESEMBOLSO",
+        "NR_CONVENIO",
+        "VL_DESEMBOLSADO"
+      ],
+      "status": "validated"
+    }
+  ],
+  "full_import": "operator_only_new_sqlite",
+  "live_app_database_refused": "data/bdt.db",
+  "public_deployment": false,
+  "counts": {
+    "crosswalk": {
+      "rows_seen": 236404,
+      "mapped": 85823
+    },
+    "convenio": {
+      "rows_seen": 287388,
+      "signed": 237412,
+      "preconvenio": 49976,
+      "orphan_instruments": 201565
+    },
+    "aditivo": {
+      "rows_seen": 458544,
+      "negative": 36170,
+      "zero": 342783,
+      "positive": 62569,
+      "unparsed": 17022,
+      "orphan_instruments": 299149
+    },
+    "desembolso": {
+      "rows_seen": 382255,
+      "orphan_instruments": 252705
+    },
+    "orphan_counts_relative_to_loaded_crosswalk_ids": true
+  },
+  "status": "validated",
+  "finished_at": "2026-09-09T23:00:33.602110+00:00",
+  "records_imported": 0,
+  "financial_total_computed": false,
+  "national_catalog_certified": false,
+  "public_data_v1_unchanged": true,
+  "phases_summed": false
+}

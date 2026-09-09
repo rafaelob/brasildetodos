@@ -38,6 +38,10 @@ Data de referência: 2026-09-07. Este registro consolida resultados observados; 
 - [ ] Executar o aceite sobre dados oficiais identificados em Python 3.14.7 e o frontend compilado em Node 24.20.0.
 - [ ] Confirmar os commits no main, a CI da mesma revisão e atualizar TODO/ROADMAP/STATUS e as issues correspondentes.
 
+## Freeze 2026-09-09
+
+Validação dos ZIP cacheados em `data/downloads/transferegov/` contra `receipts.json` (bytes, SHA-256, membro ZIP e colunas obrigatórias do CSV). Contagens de assinados vs pré-convênio, aditivos negativos e instrumentos órfãos por passagem completa de cabeçalho/contador (sem persistir linhas); importação integral não executada (`records_imported: 0`). Relatório `docs/reports/20260909-transferegov-freeze.json`: `financial_total_computed: false`, `national_catalog_certified: false`, `public_data_v1_unchanged: true`. Ingestão de operador exige `--database` em SQLite novo e recusa `data/bdt.db`. Este freeze não republica B07 e não marca os itens pendentes acima como concluídos.
+
 ## Demais bloqueios que este lote não resolve
 
 Upload web de fotografias e recuperação de conta permanecem sem publicação confirmada da integração central da API. A escrita anterior foi bloqueada pela verificação de segurança da plataforma, não por uma alegação de GitHub somente leitura. O componente independente de preparação de imagens não encerra esses fluxos.

@@ -32,6 +32,32 @@ Somente estas seis famílias são de primeira classe. FNS, CGU, SICONFI, PDDE e
 módulos Transferegov/Obrasgov além dos perfis acima **não** são conectores
 embarcados neste catálogo; não há cobertura fictícia para eles.
 
+FNS Fundo a Fundo **ainda não está neste catálogo**: ponto oficial
+[portalfns.saude.gov.br/downloads](https://portalfns.saude.gov.br/downloads/),
+sem conector, sem SHA/colunas certificados, sem linha em `GET /api/coverage`.
+Isso é fonte não ligada (`not_wired`), não “zero repasses”. Licença do portal
+CC BY-ND 3.0 **impede ZIP público derivado**. Spike:
+[reports/20260909-fns-spike.md](reports/20260909-fns-spike.md).
+
+CGU Portal da Transparência **ainda não está neste catálogo**: o recenseamento,
+se existir, é CSV em
+[download-de-dados](https://portaldatransparencia.gov.br/download-de-dados)
+(convênios, recursos transferidos, emendas) — não a API pontual. Transferências
+e convênios usam código **SIAFI**, não IBGE7; emendas têm município IBGE que
+pode vir vazio. Bolsa/BPC/servidores nominais permanecem recusados. Sem HOSTS
+novo. Spike:
+[reports/20260909-cgu-spike.md](reports/20260909-cgu-spike.md).
+
+SICONFI **ainda não está neste catálogo**: HTTPS
+`apidatalake.tesouro.gov.br` serve RREO/DCA do **ente**, nunca pagamento de
+escola. Conjunto em dados.gov.br sob **ODbL**. Sem HOSTS nesta onda. Spike:
+[reports/20260909-siconfi-spike.md](reports/20260909-siconfi-spike.md).
+
+PDDE/FNDE **ainda não está neste catálogo**: o PDDE Básico paga UEx/EEx/EM
+(CNPJ), não um Place. `CO_ENTIDADE` aparece em recorte SECADI Campo/Água, não
+provado no Básico. Sem HOSTS nesta onda. Spike:
+[reports/20260909-pdde-spike.md](reports/20260909-pdde-spike.md).
+
 ## Como ler esta instalação
 
 Depois de subir a API local (clone vazio ou banco já importado):

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "brasildetodos-sources": {
+      "command": "bdt-mcp",
+      "args": [],
+      "env": {
+        "BDT_MCP_JAIL": "data/mcp-staging"
+      }
+    }
+  }
+}

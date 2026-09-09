@@ -3,7 +3,7 @@
   "python": "3.14.7",
   "system": "Linux",
   "architecture": "x86_64",
-  "pyproject_sha256": "2f34fe2235cb24b097ca9ca66f95316ceb1450bea7352a23f16a4a7b47c71c5b",
+  "pyproject_sha256": "32975f95a2caea78363bdee8ba97a465e26db6c5c7a3e8870a67dd17900db7e1",
   "lock_sha256": "7a2b0871796b3b71bda0483afae8be8c32ff650afe315095e8417d11a144609a",
   "packages": 37,
   "scope": "runtime_test_postgres_and_build_dependencies",
