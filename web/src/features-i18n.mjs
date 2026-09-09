@@ -14,7 +14,12 @@ export const featureMessages = {
     mapRecords:'registros georreferenciados nesta área', mapDataFail:'Os dados desta área não carregaram. A lista permanece disponível.', refresh:'Atualizar',
     resourceContract:'Contrato', resourceInstrument:'Instrumento de transferência', resourceProposal:'Proposta', resourceWork:'Obra', title:'Título', selectedDocument:'Documento selecionado',
     sourceRestricted:'Texto restrito à revisão', missingExtraction:'Extração ainda não disponível.', relationshipAuthor:'Autor do vínculo', resourceScope:'Registro administrativo; confira a abrangência na fonte.',
-    openWorkbench:'Abrir revisão documental', noticeData:'As informações descrevem registros carregados, não disponibilidade de vagas ou atendimento em tempo real.'
+    openWorkbench:'Abrir revisão documental', noticeData:'As informações descrevem registros carregados, não disponibilidade de vagas ou atendimento em tempo real.',
+    extractedCandidates:'Entidades e candidatos identificados', useAsExcerpt:'Usar como trecho',
+    routeNative:'Extração Nativa', routeOcrCandidate:'Candidata a OCR', routeOcrProcessed:'OCR Executado', routeReviewEncoding:'Revisão de Codificação',
+    fieldAgreement:'Convênio', fieldProposal:'Proposta', fieldContract:'Contrato', fieldAmendment:'Termo Aditivo',
+    fieldProcess:'Processo', fieldCnpj:'CNPJ', fieldEstimated:'Valor Estimado', fieldGlobal:'Valor Global',
+    fieldCapacity:'Capacidade Planejada', fieldLegalBasis:'Base Legal'
   },
   en: {
     workbench:'Document review', resourcesTitle:'Agreements and procurement', links:'Documented relationships', linksEmpty:'No reviewed relationship is available for this place.',
@@ -31,7 +36,12 @@ export const featureMessages = {
     mapRecords:'geocoded records in this area', mapDataFail:'Data for this area could not load. The list remains available.', refresh:'Refresh',
     resourceContract:'Contract', resourceInstrument:'Transfer agreement', resourceProposal:'Proposal', resourceWork:'Public work', title:'Title', selectedDocument:'Selected document',
     sourceRestricted:'Review-restricted text', missingExtraction:'Extraction is not available yet.', relationshipAuthor:'Relationship author', resourceScope:'Administrative record; check its scope in the source.',
-    openWorkbench:'Open document review', noticeData:'Information describes loaded records, not real-time places or appointments.'
+    openWorkbench:'Open document review', noticeData:'Information describes loaded records, not real-time places or appointments.',
+    extractedCandidates:'Identified entities and candidates', useAsExcerpt:'Use as excerpt',
+    routeNative:'Native Extraction', routeOcrCandidate:'OCR Candidate', routeOcrProcessed:'OCR Processed', routeReviewEncoding:'Encoding Review',
+    fieldAgreement:'Agreement', fieldProposal:'Proposal', fieldContract:'Contract', fieldAmendment:'Amendment',
+    fieldProcess:'Process', fieldCnpj:'CNPJ', fieldEstimated:'Estimated Value', fieldGlobal:'Global Value',
+    fieldCapacity:'Planned Capacity', fieldLegalBasis:'Legal Basis'
   },
   es: {
     workbench:'Revisión documental', resourcesTitle:'Convenios y contrataciones', links:'Relaciones documentadas', linksEmpty:'No hay una relación revisada disponible para este lugar.',
@@ -48,7 +58,12 @@ export const featureMessages = {
     mapRecords:'registros georreferenciados en esta área', mapDataFail:'No se cargaron los datos de esta área. La lista sigue disponible.', refresh:'Actualizar',
     resourceContract:'Contrato', resourceInstrument:'Convenio de transferencia', resourceProposal:'Propuesta', resourceWork:'Obra pública', title:'Título', selectedDocument:'Documento seleccionado',
     sourceRestricted:'Texto restringido a revisión', missingExtraction:'La extracción todavía no está disponible.', relationshipAuthor:'Autor de la relación', resourceScope:'Registro administrativo; comprueba su alcance en la fuente.',
-    openWorkbench:'Abrir revisión documental', noticeData:'La información describe registros cargados, no plazas o citas disponibles en tiempo real.'
+    openWorkbench:'Abrir revisión documental', noticeData:'La información describe registros cargados, no plazas o citas disponibles en tiempo real.',
+    extractedCandidates:'Entidades y candidatos identificados', useAsExcerpt:'Usar como extracto',
+    routeNative:'Extracción Nativa', routeOcrCandidate:'Candidata a OCR', routeOcrProcessed:'OCR Procesado', routeReviewEncoding:'Revisión de Codificación',
+    fieldAgreement:'Convenio', fieldProposal:'Propuesta', fieldContract:'Contrato', fieldAmendment:'Adenda / Enmienda',
+    fieldProcess:'Expediente', fieldCnpj:'CNPJ', fieldEstimated:'Valor Estimado', fieldGlobal:'Valor Global',
+    fieldCapacity:'Capacidad Planificada', fieldLegalBasis:'Base Legal'
   }
 };
 export function featureText(locale, key) { return featureMessages[locale]?.[key]; }

@@ -1,1 +1,19 @@
 .source-fields{display:grid;gap:.8rem;border:1px solid var(--line);border-radius:10px;padding:1rem;min-width:0}.source-fields legend{padding:0 .3rem;font-weight:700}.panel>summary{cursor:pointer;min-height:44px;font-weight:700}.panel>form{margin-top:1rem}.extracted-text{max-height:55vh;overflow:auto;font-size:.9rem;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line)}blockquote{margin:1rem 0;padding:.7rem 1rem;border-left:3px solid var(--green);background:#f3f7f0;overflow-wrap:anywhere}.withdraw-control{margin:1rem 0;padding:.8rem;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}.header-right{flex-wrap:wrap}.header-right button{overflow-wrap:anywhere}.page code{overflow-wrap:anywhere}.detail-columns>div{min-width:0}.map-panel>small{display:block;padding:.4rem 1rem}.panel details{margin-top:1rem}.panel details summary{cursor:pointer;min-height:44px}@media(max-width:480px){.source-fields{padding:.7rem}.detail-columns{grid-template-columns:minmax(0,1fr)}.panel{padding:1rem}}
+
+/* Document OCR & Candidate Inspection */
+.workbench-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.route-badge{display:inline-block;padding:3px 8px;font-size:0.75rem;font-weight:700;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em}
+.route-badge.route-native{background:#e8f4ee;color:#12644e;border:1px solid #b7d6c4}
+.route-badge.route-ocr_candidate{background:#fff8e6;color:#8a5800;border:1px solid #ffd680}
+.route-badge.route-ocr_processed{background:#e6f0fa;color:#0b5394;border:1px solid #a3c9f1}
+.route-badge.route-review_encoding{background:#fdf0ed;color:#9c412b;border:1px solid #f3b9ad}
+
+.candidates-container{margin:1rem 0;padding:0.85rem;background:#f9fcf9;border:1px solid #c8d8cb;border-radius:10px}
+.candidates-container h3{margin:0 0 0.6rem 0;font-size:0.88rem;color:#112f23}
+.candidates-list{display:flex;flex-direction:column;gap:6px}
+.candidate-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#ffffff;border:1px solid #d4e3d7;border-radius:8px;font-size:0.82rem;flex-wrap:wrap}
+.candidate-badge{background:#e9f2ec;color:#14523e;font-weight:700;font-size:0.72rem;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.candidate-text{color:#112f23;font-family:monospace;word-break:break-all;flex:1;min-width:120px}
+.candidate-apply-btn{border:1px solid #b7d6c4;background:#f4faf6;color:#14523e;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease}
+.candidate-apply-btn:hover{background:#12644e;color:#ffffff;border-color:#12644e}
+

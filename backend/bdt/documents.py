@@ -14,13 +14,19 @@ def candidates(text: str) -> list[dict]:
     patterns = {
         "agreement_reference": r"CONV[ÊE]NIO\s*(?:N[°ºO.]?\s*)?([0-9]{3,8}/[0-9]{4})",
         "proposal_reference": r"PROPOSTA\s*(?:N[°ºO.]?\s*)?([0-9]{3,8}/[0-9]{4})",
+        "contract_reference": r"CONTRATO\s*(?:N[°ºO.]?\s*)?([0-9]{1,8}/[0-9]{4})",
+        "amendment_reference": r"TERMO\s+ADITIVO\s*(?:N[°ºO.]?\s*)?([0-9]{1,4}/[0-9]{4})",
+        "process_reference": r"PROCESSO\s*(?:ADMINISTRATIVO)?\s*(?:N[°ºO.]?\s*)?([0-9]{3,7}/[0-9]{4}|[0-9]{5}\.[0-9]{6}/[0-9]{4}-[0-9]{2})",
+        "cnpj_reference": r"(?:CNPJ(?:\s*N[°ºO.]?)?\s*:?\s*)?([0-9]{2}\.[0-9]{3}\.[0-9]{3}/[0-9]{4}-[0-9]{2})",
         "estimated_cents": r"VALOR\s+ESTIMADO\s*:?\s*(R\$\s*[0-9.]+,[0-9]{2})",
+        "global_value": r"VALOR\s+(?:GLOBAL|TOTAL|HOMOLOGADO)\s*:?\s*(R\$\s*[0-9.]+,[0-9]{2})",
         "planned_capacity": r"AT[ÉE]\s+([0-9]+)\s+CRIAN[ÇC]AS",
+        "legal_basis": r"LEI\s+(?:FEDERAL\s+)?(?:N[°ºO.]?\s*)?([0-9]{1,2}\.[0-9]{3}(?:/[0-9]{2,4})?|[0-9]{4,5}/[0-9]{2,4})",
     }
     for field, pattern in patterns.items():
         for match in re.finditer(pattern, text, re.I):
             raw = match.group(1)
-            value = brl(raw) if field == "estimated_cents" else int(raw) if field == "planned_capacity" else raw
+            value = brl(raw) if field in ("estimated_cents", "global_value") else int(raw) if field == "planned_capacity" else raw
             output.append({"field": field, "value": value, "raw": raw, "start": match.start(1), "end": match.end(1), "state": "candidate", "publication_allowed": False})
     return output
 

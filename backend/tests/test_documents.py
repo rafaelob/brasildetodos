@@ -45,3 +45,42 @@ def test_non_pdf_rejected(tmp_path):
 @pytest.mark.parametrize('number,lang',[(0,'por'),(1,'por;echo'),(1,'../../')])
 def test_ocr_arguments_checked(tmp_path,number,lang):
     with pytest.raises(ValueError):ocr_page(tmp_path/'missing.pdf',number,lang)
+
+
+def test_procurement_document_candidates():
+    text = (
+        "CONTRATO N. 45/2024. TERMO ADITIVO Nº 03/2025. "
+        "PROCESSO ADMINISTRATIVO N. 23000.012345/2024-12. "
+        "CONTRATADO: EMPRESA BRASILEIRA LTDA, CNPJ: 12.345.678/0001-90. "
+        "VALOR GLOBAL: R$ 1.500.250,75. "
+        "BASE LEGAL: LEI N. 14.133/2021."
+    )
+    found = candidates(text)
+    fields = {x['field'] for x in found}
+    assert 'contract_reference' in fields
+    assert 'amendment_reference' in fields
+    assert 'process_reference' in fields
+    assert 'cnpj_reference' in fields
+    assert 'global_value' in fields
+    assert 'legal_basis' in fields
+
+    contract = next(x for x in found if x['field'] == 'contract_reference')
+    assert contract['value'] == '45/2024'
+    assert contract['state'] == 'candidate'
+    assert contract['publication_allowed'] is False
+
+    aditivo = next(x for x in found if x['field'] == 'amendment_reference')
+    assert aditivo['value'] == '03/2025'
+
+    proc = next(x for x in found if x['field'] == 'process_reference')
+    assert proc['value'] == '23000.012345/2024-12'
+
+    cnpj_item = next(x for x in found if x['field'] == 'cnpj_reference')
+    assert cnpj_item['value'] == '12.345.678/0001-90'
+
+    val = next(x for x in found if x['field'] == 'global_value')
+    assert val['value'] == 150025075
+
+    lei = next(x for x in found if x['field'] == 'legal_basis')
+    assert lei['value'] == '14.133/2021'
+
