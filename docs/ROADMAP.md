@@ -2,9 +2,11 @@
 # Roadmap reconciliado — Brasil de Todos
 
 Revisão funcional: `8324b762`. Estado de execução: `../TODO.md`.
-Matriz por capacidade: `FEATURE_MATRIX.md`. Evidências: `STATUS.md` e
-`reports/20260906-verified-closeout.json`. A versão anterior está preservada em
-`history/ROADMAP_89584b82.md`; não usar seus bloqueios antigos como estado atual.
+Matriz por capacidade: `FEATURE_MATRIX.md`. Evidências: `STATUS.md`,
+`reports/20260906-verified-closeout.json` (fechamento 06/09) e
+`data/releases/education-2025-20260907-v1.json` (catálogo escolar posterior).
+A versão anterior está preservada em `history/ROADMAP_89584b82.md`; não usar
+seus bloqueios antigos como estado atual.
 
 ## Base já publicada
 
@@ -15,28 +17,41 @@ recursos versionados, compartilhamento/exportações e grupos privados persisten
 As interfaces estão integradas e os doze percursos Chromium são executados nos
 três idiomas e larguras definidas. Isso não certifica leitores de tela ou aparelhos.
 
-O catálogo selecionado contém 96.123 registros CNES elegíveis no perfil adotado,
-com sete sem coordenadas. A release pública inclui ainda 6.679 recursos: 6.677
-contratos PNCP publicados em 04/09/2026, um plano especial e um projeto Obrasgov.
-Os arquivos e hashes estão em Releases; o acervo sintético do OCR está versionado
-em `tests/corpus/ocr-reviewed`. Não são um corpus oficial nem dados de produção.
+O catálogo `public-data-20260906-v1` contém 96.123 registros CNES elegíveis no
+perfil adotado, com sete sem coordenadas, e 6.679 recursos: 6.677 contratos PNCP
+publicados em 04/09/2026, um plano especial e um projeto Obrasgov; tabela finance
+com 0 eventos. Os arquivos e hashes estão em Releases; o acervo sintético do OCR
+está versionado em `tests/corpus/ocr-reviewed`. Não são um corpus oficial nem
+dados de produção.
 
-O lote atual fecha instalação atômica do pacote completo em banco novo, proteção
-contra sobrescrita/arquivos auxiliares, seleção independente dos bytes publicados,
-verificação contínua do corpus e repetição do aceite com a release real.
+A release `education-2025-20260907-v1` é independente: 138.086 escolas públicas
+declaradas ativas, todas sem coordenadas (0 geometria), com registros nas 27 UFs;
+seleção `data/releases/education-2025-20260907-v1.json`. Não substitui a edição
+CNES/recursos. Presença nas 27 UFs não é completude; a união dos ZIPs não é KPI
+de instalação viva nem deploy público.
+
+O lote de 06/09/2026 fecha instalação atômica de `public-data-20260906-v1` em
+banco novo, proteção contra sobrescrita/arquivos auxiliares, seleção independente
+dos bytes publicados, verificação contínua do corpus e repetição do aceite com
+essa release. A união dos ZIPs de saúde e educação não é KPI de instalação viva.
 
 ## P0 — Dados úteis, atuais e reproduzíveis
 
-Prioridade D01–D06 do TODO: resolver transporte oficial escolar sem desabilitar
-TLS; importar apenas tabelas escolares 2025; reconciliar denominadores;
-atualizar CNES com competência explícita; programar revisitas/retomada e gerar
-edições revisadas. A descoberta do ZIP 2025 funcionou; o download falhou na
-verificação do certificado. Não substituir edição, fonte ou origem silenciosamente.
+Prioridade D01–D06 do TODO. Em 06/09/2026 o download Inep falhou com
+`SSLCertVerificationError` código 20 (`reports/20260906-inep-tls-cb873ed.json`);
+TLS não foi desabilitado. Em 07/09/2026 `education-2025-20260907-v1` publicou
+138.086 escolas públicas ativas, 0 geometria, 27 UFs. Permanecem: transporte TLS
+verificado para edições futuras; reconciliar denominadores; atualizar CNES com
+competência explícita; programar revisitas/retomada e gerar edições revisadas.
+Não substituir edição, fonte ou origem silenciosamente. 27 UFs não certifica
+completude. `public-data-20260906-v1` continua a edição CNES/recursos.
 
 Aceite: arquivos oficiais preservados, partições reconciliadas, registros sem geo
 pesquisáveis, relatório de exclusões/quarentena, importação atômica, reexecução
-idempotente e pacote novo validado antes de disponibilização. A release v1 continua
-uma seleção histórica fixa, não um catálogo que se atualiza sozinho.
+idempotente e pacote novo validado antes de disponibilização. As tags
+`public-data-20260906-v1` e `education-2025-20260907-v1` continuam seleções
+históricas fixas, não um catálogo que se atualiza sozinho. A união dos ZIPs não
+é KPI de instalação viva.
 
 ## P0 — Recursos e obras sem atribuições falsas
 

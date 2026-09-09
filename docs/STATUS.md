@@ -2,8 +2,11 @@
 # Estado verificado — fechamento de grupos, OCR e distribuição
 
 Atualizado em 06/09/2026 (America/Sao_Paulo). Somente main; sem force push.
-Código verificado: `8324b7620021e1c5bb3a32e7439026a3a0067af2`.
+Código verificado do fechamento de grupos/OCR/`public-data`:
+`8324b7620021e1c5bb3a32e7439026a3a0067af2`.
 Plano inicial deste fechamento: `ec753635779d473c16105832ee36302c92352451`.
+Reconciliação educacional em 09/09/2026: o fechamento acima não inclui escolas;
+a release `education-2025-20260907-v1` é posterior e está na seção escolar.
 
 ## Resultado
 
@@ -66,21 +69,32 @@ financeiros na tabela finance: valores cadastrais de contratos/planos não viram
 pagamentos. A release é uma prévia de dados com seleção por hash; imutabilidade
 administrativa do GitHub está desabilitada. Ver `BUNDLE_INSTALLATION.md`.
 
-## Coleta escolar: falha real mantida
+## Coleta escolar: incidente TLS de 06/09/2026 e release 07/09/2026
 
-A execução anterior `34069973954` encontrou o link oficial da edição 2025, mas
-a conexão de download falhou com `SSLCertVerificationError`, código 20; não foi
-falha DNS nesse diagnóstico. A inspeção `34070468415` não alterou confiança nem
-desabilitou TLS e não baixou o dataset. Os recibos estruturados dessa observação
-foram preservados em reports. Nenhuma nova escola foi incluída neste fechamento.
-Esta retomada revalidou a release existente; não efetuou nova coleta governamental.
+Em 06/09/2026 a execução `34069973954` encontrou o link oficial da edição 2025,
+mas a conexão de download falhou com `SSLCertVerificationError`, código 20; não
+foi falha DNS nesse diagnóstico. A inspeção `34070468415` não alterou confiança
+nem desabilitou TLS e não baixou o dataset. Recibos:
+`reports/20260906-education-transport-e0943f9.json` e
+`reports/20260906-inep-tls-cb873ed.json` (`collector_verification_disabled`
+falso). O fechamento `8324b762` revalidou `public-data-20260906-v1` e não
+incluiu escolas.
+
+Em 07/09/2026 a release `education-2025-20260907-v1` foi publicada a partir da
+coleta `34078768110`, revisão `96aa4bf80cc13402f0d35d47a8deabcae6d30db3`:
+138.086 escolas públicas declaradas ativas, 0 geometria, registros nas 27 UFs;
+seleção `data/releases/education-2025-20260907-v1.json`. Presença nas 27 UFs não
+certifica completude; denominadores oficiais seguem abertos. Essa publicação não
+substitui `public-data-20260906-v1` (96.123 lugares CNES, 6.679 recursos, tabela
+finance 0). A união dos ZIPs não é KPI de instalação viva nem deploy público.
 
 ## Pendências reais
 
-Educação nacional e denominadores; nova competência CNES e atualização periódica;
-demais módulos Transferegov/Obrasgov/PDDE/FNS e reconciliação financeira; corpus
-oficial de OCR, fila e retenção; fotos/panoramas; mapas externos; recuperação de
-conta/moderação; acessibilidade assistiva/dispositivos; segurança e desempenho;
-implantação pública com HTTPS, armazenamento durável, monitoramento e recuperação.
+Denominadores escolares/CNES e atualização periódica; transporte TLS verificado
+para edições futuras; nova competência CNES; demais módulos
+Transferegov/Obrasgov/PDDE/FNS e reconciliação financeira; corpus oficial de OCR,
+fila e retenção; fotos/panoramas; mapas externos; recuperação de conta/moderação;
+acessibilidade assistiva/dispositivos; segurança e desempenho; implantação pública
+com HTTPS, armazenamento durável, monitoramento e recuperação.
 Detalhamento executável: `../TODO.md`; visão: `ROADMAP.md`; matriz: `FEATURE_MATRIX.md`.
 O texto anterior permanece intacto em `history/STATUS_89584b82.md`.

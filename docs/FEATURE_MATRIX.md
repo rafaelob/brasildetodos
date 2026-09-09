@@ -2,9 +2,12 @@
 # Matriz de capacidades e limites verificáveis
 
 Referência de código: `8324b762`; execuções e hashes em
-`reports/20260906-verified-closeout.json`. Nenhum status significa conclusão
-integral do projeto. Implementação, aceite do software, cobertura e produção são
-colunas conceitualmente distintas. Dados sintéticos existem apenas em testes.
+`reports/20260906-verified-closeout.json`. Catálogo escolar posterior:
+`education-2025-20260907-v1`, seleção
+`data/releases/education-2025-20260907-v1.json`. Nenhum status significa
+conclusão integral do projeto. Implementação, aceite do software, cobertura e
+produção são colunas conceitualmente distintas. Dados sintéticos existem apenas
+em testes.
 
 | Capacidade | Implementação/aceite disponível | Lacuna que permanece |
 |---|---|---|
@@ -14,7 +17,7 @@ colunas conceitualmente distintas. Dados sintéticos existem apenas em testes.
 | Minha região | Diretório municipal, busca e resumo; browser regions | Não certifica disponibilidade de todos os serviços do município |
 | Cobertura e importações | Painel e histórico paginado integrados | Denominadores oficiais reconciliados para certificação nacional |
 | CNES | Pacote com 96.123 elegíveis, sete sem coordenadas, consulta aceita | Nova competência e validação do perfil/denominadores |
-| Educação | Leitor nacional e validações; descoberta oficial 2025 | Download falhou em TLS, carga nacional ainda ausente |
+| Educação | Leitor nacional e validações; `education-2025-20260907-v1` com 138.086 escolas públicas ativas, 0 geometria, 27 UFs; seleção `data/releases/education-2025-20260907-v1.json` | Incidente Inep 06/09/2026: `SSLCertVerificationError` código 20 (`reports/20260906-inep-tls-cb873ed.json`); TLS não desabilitado. 27 UFs não é completude; denominadores abertos |
 | Recursos PNCP | Janela de 6.677 contratos importada; precisão e objetos preservados | Histórico nacional completo, atualização recorrente e reconciliação |
 | Transferegov/Obrasgov | Perfis de plano especial e projeto; um registro real de cada aceito | Demais módulos, pagamentos, execução física e geometrias |
 | Histórico e exportação | Versões, antes/depois, links, CSV/JSON/texto e seleção limitada; quatro percursos específicos | Valores de metadados não constituem pagamento |

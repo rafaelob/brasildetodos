@@ -25,6 +25,13 @@ from bdt.storage import Database, Municipality, upsert_place
 from map_test_support import style, tile
 
 
+def open_opt_in_map(panel) -> None:
+    expect(panel.locator('.map-collapsed-bar')).to_be_visible()
+    button = panel.locator('.map-reopen-btn')
+    expect(button).to_be_visible()
+    button.click()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--live', action='store_true')
@@ -95,7 +102,7 @@ def main() -> None:
                             expect(page.get_by_role('button',name=item.name,exact=True)).to_be_visible()
                             assert not basemap_requests and not workers, 'Map must be opt-in and lazy'
                             panel=page.locator('.map-panel')
-                            panel.get_by_role('button',name='Explorar no mapa',exact=True).click()
+                            open_opt_in_map(panel)
                             expect(panel.locator('.map-caption')).to_contain_text('1 registros',timeout=35000)
                             expect(panel.locator('.map-canvas canvas')).to_be_visible()
                             assert workers and all(origin in worker for worker in workers),workers
@@ -153,14 +160,14 @@ def main() -> None:
                                 panel.get_by_role('button',name='Fechar mapa',exact=True).click()
                                 expect(panel.locator('canvas')).to_have_count(0)
                                 flags['no_buildings']=True
-                                panel.get_by_role('button',name='Explorar no mapa',exact=True).click()
+                                open_opt_in_map(panel)
                                 expect(panel.locator('.map-caption')).to_contain_text('1 registros')
                                 expect(panel.get_by_role('button',name='Vista 3D',exact=True)).to_be_disabled()
                                 expect(panel.get_by_text('O estilo atual não fornece uma camada de edificações compatível com 3D.',exact=True)).to_be_visible()
                                 if width==320:
                                     panel.get_by_role('button',name='Fechar mapa',exact=True).click()
                                     flags['fail_style']=True
-                                    panel.get_by_role('button',name='Explorar no mapa',exact=True).click()
+                                    open_opt_in_map(panel)
                                     expect(panel.get_by_role('button',name='Recarregar mapa',exact=True)).to_be_visible(timeout=25000)
                                     expect(page.get_by_role('button',name=item.name,exact=True)).to_be_visible()
                                     flags['fail_style']=False

@@ -51,18 +51,16 @@ test('Feature F13 & F14: Mobile & desktop header fluidity', () => {
     'style.css header should align desktop padding with 1440px max-width boundary'
   );
 
-  // Mobile compactness (max-height <= 90px in 2 rows)
+  // Language/account controls wrap; 44px targets must not overflow the row
   assert.match(
     styleCss,
-    /max-height:\s*90px/,
-    'style.css must enforce compact mobile header height (<= 90px)'
+    /\.header-right\s*\{[^}]*flex-wrap:\s*wrap/,
+    '.header-right must wrap on narrow viewports so 44px controls stay usable'
   );
-
-  // Mobile .header-right prevents wrapping on mobile
-  assert.match(
+  assert.doesNotMatch(
     styleCss,
     /\.header-right\s*\{[^}]*flex-wrap:\s*nowrap/,
-    '.header-right must prevent line wrap on mobile viewports'
+    '.header-right must not force nowrap (overflows language/account buttons)'
   );
 });
 

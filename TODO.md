@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # TODO executável — Brasil de Todos
 
-Atualizado em 06/09/2026 (America/Sao_Paulo). Código de fechamento: `8324b762`.
+Atualizado em 09/09/2026 (America/Sao_Paulo). Código de fechamento: `8324b762`.
 Trabalho somente no main; Python 3.14.7 / Node 24.20.0; sem force push.
+A release escolar `education-2025-20260907-v1` entrou depois do fechamento de 06/09/2026.
 O estado anterior foi preservado em `docs/history/TODO_89584b82.md`. Suas falhas
 são registros históricos, não a situação atual. O projeto inteiro não está
 concluído: este documento fecha o lote de grupos/acervo/publicação e explicita
@@ -44,8 +45,8 @@ Plano: `docs/SPRINT_20260906_VERIFIED_CLOSEOUT.md`. Relatório e identificadores
 
 ### P0. Educação nacional e atualização dos catálogos
 
-- [ ] D01 Resolver a falha de validação TLS observada no download oficial do Inep, mantendo hostname/CA/HTTPS verificados. Diagnóstico `34069973954`: `SSLCertVerificationError`, código 20. Inspeção `34070468415` não baixou o dataset nem alterou confiança.
-- [ ] D02 Baixar e importar as tabelas escolares da edição 2025, sem registros individuais de alunos/docentes, preservando ZIP, hashes, dicionário e referência da edição.
+- [ ] D01 Em 06/09/2026 a execução `34069973954` falhou no download oficial do Inep com `SSLCertVerificationError`, código 20 (recibo `docs/reports/20260906-education-transport-e0943f9.json`); a inspeção `34070468415` (`docs/reports/20260906-inep-tls-cb873ed.json`) não baixou o dataset, não alterou confiança e não desabilitou TLS. Em 07/09/2026 o catálogo escolar foi empacotado a partir da coleta `34078768110`, sem repetir aquele download ao vivo. Resta um caminho HTTPS verificado (hostname, CA e cadeia completa) para edições posteriores; não desabilitar TLS.
+- [x] D02 Em 07/09/2026 foi publicada `education-2025-20260907-v1` (`data/releases/education-2025-20260907-v1.json`): 138.086 escolas públicas declaradas ativas, 0 geometria, de 214.192 linhas (76.106 fora do perfil); ZIP SHA-256 `483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7`, 23.807.757 bytes; sem registros individuais de alunos/docentes. A instalação do ZIP por um operador num clone específico é distinta da publicação; não afirmar que todo clone está carregado.
 - [ ] D03 Reconciliar contagens elegíveis/excluídas/quarentena por UF/município contra denominadores da fonte. Não concluir completude apenas pela presença nas 27 UFs.
 - [ ] D04 Validar nova competência CNES e política de atualização; distinguir cadastro ativo, atendimento SUS declarado e atendimento disponível agora.
 - [ ] D05 Programar coleta incremental com revisitas, janelas sobrepostas, alteração de esquema, retomada e indicadores de atraso; preservar a versão válida anterior.

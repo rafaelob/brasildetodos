@@ -97,4 +97,16 @@ test('boundaryBbox computes valid [minX, minY, maxX, maxY] bounds',()=>{
   assert.equal(boundaryBbox({}),null);
   assert.equal(boundaryBbox({type:'FeatureCollection',features:[]}),null);
 });
+test('Map.tsx keeps the map collapsed until opt-in',()=>{
+  const component=readFileSync(new URL('../src/Map.tsx',import.meta.url),'utf8');
+  assert.match(component,/const \[enabled,setEnabled\]=useState\(false\)/);
+  assert.equal(component.includes('useState(true)'),false);
+  assert.ok(component.includes('mapConsent'));
+});
+test('Map.tsx builds popups from DOM text instead of HTML strings',()=>{
+  const component=readFileSync(new URL('../src/Map.tsx',import.meta.url),'utf8');
+  assert.equal(component.includes('setHTML'),false);
+  assert.ok(component.includes('setDOMContent'));
+  assert.ok(component.includes('textContent'));
+});
 

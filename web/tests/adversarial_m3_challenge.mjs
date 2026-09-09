@@ -182,19 +182,19 @@ runCheck('style.css: Desktop header aligns padding with 1440px max-width', () =>
   );
 });
 
-runCheck('style.css: Mobile header enforces compact layout (max-height: 90px, flex-wrap: nowrap)', () => {
+runCheck('style.css: Mobile header wraps language/account controls (flex-wrap: wrap)', () => {
   const styleCss = fs.readFileSync(styleCssPath, 'utf8');
 
   assert.match(
     styleCss,
-    /max-height:\s*90px;/,
-    'style.css must restrict mobile header height to 90px'
+    /\.header-right\s*\{[^}]*flex-wrap:\s*wrap/,
+    '.header-right must wrap on mobile viewports so 44px controls stay usable'
   );
 
-  assert.match(
+  assert.doesNotMatch(
     styleCss,
-    /\.header-right\s*\{[^}]*flex-wrap:\s*nowrap;/,
-    '.header-right must specify flex-wrap: nowrap on mobile viewports'
+    /\.header-right\s*\{[^}]*flex-wrap:\s*nowrap/,
+    '.header-right must not force nowrap on mobile viewports'
   );
 });
 

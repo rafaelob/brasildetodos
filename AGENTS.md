@@ -10,3 +10,5 @@
 - All citizen strings require pt-BR/en/es entries. Map is progressive; accessible list remains operational without WebGL/GPS/tiles.
 - Writes need authentication, CSRF checks and moderation. Never auto-publish text/PDF extraction or citizen photos. Do not inspect, print or commit secrets.
 - Preserve unrelated work. Publication, passing tests, national ingestion and public deployment are separate results and must be reported separately.
+- IAJUS and DOCIA must not appear on public or citizen-facing surfaces (README, web UI copy, and `docs/` product docs). Fleet internals under `scripts/ops/` and `control_docs/` are excluded from that prohibition.
+- Docker Compose and localhost (including the documented `:8008` bind) are a local instance, never production.

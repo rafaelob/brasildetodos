@@ -11,6 +11,31 @@ export const coverageMessages={
  export function sourceLabel(value,t){return Object.hasOwn(labels,value)?labels[value]:t('coverageOther');}
  export function statusLabel(value,t){const keys={completed:'coverageCompleted',partial:'coveragePartial',failed:'coverageFailed',running:'coverageRunning'};return t(Object.hasOwn(keys,value)?keys[value]:'coverageUnknown');}
  export function coverageCount(value,locale,t){return Number.isSafeInteger(value)&&value>=0?value.toLocaleString(locale):t('coverageUnknown');}
+function coverageInteger(value){
+ return Number.isSafeInteger(value)&&value>=0?value:null;
+}
+function coverageRecord(value){
+ return value&&typeof value==='object'&&!Array.isArray(value)?value:null;
+}
+export function heroFromCoverage(payload){
+ const data=coverageRecord(payload);
+ const summary=coverageRecord(data&&data.summary);
+ const places=coverageInteger(summary&&summary.places);
+ const sources=data&&Array.isArray(data.sources)?data.sources:[];
+ let failedImports=0;
+ for(const source of sources){
+  const attempt=coverageRecord(coverageRecord(source)?.last_attempt);
+  if(attempt&&attempt.status==='failed')failedImports+=1;
+ }
+ return {
+  certified:false,
+  emptyInstall:places===0,
+  places,
+  municipalities:coverageInteger(data&&data.municipalities),
+  withoutGeometry:coverageInteger(summary&&summary.without_geometry),
+  failedImports
+ };
+}
 export function partitionSelection(rows,source='all',state='all'){
  return rows.filter(row=>(source==='all'||row.source_id===source)&&(state==='all'||row.state===state));
 }

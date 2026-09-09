@@ -24,7 +24,7 @@ const CITY_PRESETS:CityPreset[]=[
 ];
 
 export default function MapView({select,t,onBounds,filters={},locale='pt-BR',focusCoordinates=null}:Props){
-  const [enabled,setEnabled]=useState(true),[attempt,setAttempt]=useState(0);
+  const [enabled,setEnabled]=useState(false),[attempt,setAttempt]=useState(0);
   const [failed,setFailed]=useState(false),[tileWarning,setTileWarning]=useState(false),[dataFailed,setDataFailed]=useState(false);
   const [ready,setReady]=useState(false),[loadingData,setLoadingData]=useState(false),[hasBuildings,setHasBuildings]=useState(false);
   const [threeD,setThreeD]=useState(false),[matched,setMatched]=useState<number|null>(null);
@@ -136,9 +136,18 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
               const f=event.features?.[0],c=(f?.geometry as any)?.coordinates;
               const name=f?.properties?.name||f?.properties?.id,kind=f?.properties?.kind;
               if(c&&name){
-                popup.setLngLat(c as [number,number])
-                  .setHTML(`<div class="map-popup"><span class="pill ${kind}">${t(kind||'school')}</span><strong>${name}</strong><small>${text('clickToInspect')}</small></div>`)
-                  .addTo(instance);
+                const root=document.createElement('div');
+                root.className='map-popup';
+                const pill=document.createElement('span');
+                const kindClass=kind==='school'||kind==='health'||kind==='work'?kind:'';
+                pill.className=kindClass?`pill ${kindClass}`:'pill';
+                pill.textContent=t(typeof kind==='string'&&kind?kind:'school');
+                const title=document.createElement('strong');
+                title.textContent=String(name);
+                const hint=document.createElement('small');
+                hint.textContent=text('clickToInspect');
+                root.append(pill,title,hint);
+                popup.setLngLat(c as [number,number]).setDOMContent(root).addTo(instance);
               }
             });
             instance.on('mouseleave','bdt-single',()=>{
@@ -254,7 +263,7 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
     instance.flyTo({center:city.center,zoom:city.zoom,pitch:city.pitch,bearing:city.bearing,duration:reducedMotion()?0:1200});
   }
   return <aside className="map-panel" aria-label={t('map')}>
-    {!enabled?<div className="map-collapsed-bar"><button className="primary map-reopen-btn" onClick={()=>setEnabled(true)}>🗺️ {t('loadMap')}</button></div>:
+    {!enabled?<div className="map-collapsed-bar"><div><button className="primary map-reopen-btn" onClick={()=>setEnabled(true)}>🗺️ {t('loadMap')}</button><p>{t('mapConsent')}</p></div></div>:
     <div className="map-stage">
       <div ref={host} className="map-canvas" aria-label={text('canvas')}/>
 

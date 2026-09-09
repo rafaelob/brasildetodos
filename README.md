@@ -1,8 +1,21 @@
 # Brasil de Todos
 
-**O mapa vivo do que é público.** Plataforma web open source para encontrar serviços, acompanhar intervenções e contribuir com informações revisadas sobre o território brasileiro. Educação e saúde, mapas 2D/3D, documentos e recursos públicos, sem LLM obrigatório.
+**O mapa vivo do que é público.** Plataforma web open source para encontrar serviços, acompanhar intervenções e contribuir com informações revisadas sobre o território brasileiro. Educação e saúde, mapas 2D/3D, documentos e recursos públicos. O runtime não exige LLM, banco vetorial nem chave paga de mapa.
 
-> **Estado: implementação inicial funcional; não é um catálogo nacional já carregado.** A aplicação começa vazia. Não há dados demonstrativos disfarçados de registros oficiais. Os importadores aceitam arquivos nacionais, mas a ingestão integral, seus volumes e a completude por território ainda precisam ser certificados.
+> **Este clone começa vazio.** Escopo nacional é requisito do produto, não cobertura desta instalação. Não há dados demonstrativos disfarçados de registros oficiais. Edições certificadas existem como releases distintas no GitHub (`public-data-20260906-v1`, `education-2025-20260907-v1`) e **não** são os totais desta cópia. Instalá-las é passo de operador, separado do `git clone`. `GET /api/coverage` é a verdade desta instalação; `national_catalog_certified` é sempre `false`.
+
+## Fontes
+
+Seis famílias. O mapa canônico (conector × esta instalação × última edição certificada) está em [Fontes](docs/SOURCES.md). Comandos de importação, perfis e falhas explícitas: [Dados](docs/DATA.md). Contagens abaixo descrevem artefatos publicados, não o banco deste clone.
+
+- **IBGE** — municípios (tabela territorial; conversão de códigos depende desta carga).
+- **Inep** — Censo Escolar. Edição certificada `education-2025-20260907-v1`: 138.086 escolas públicas ativas declaradas, 0 geometria. Continuam na lista; não são vagas.
+- **CNES** — estabelecimentos. Edição certificada `public-data-20260906-v1`: 96.123 no perfil ambulatorial SUS declarado. Não é toda a rede SUS nem agenda em tempo real. A primeira página da API não é o Brasil.
+- **PNCP** — contratos (metadados da consulta, não pagamentos). Município do comprador não é local de execução.
+- **Transferegov** — transferências via CSV e perfil revisado. Relatório ou cache com `records_imported: 0` é congelamento de inspeção, não sucesso silencioso. Fases financeiras não se somam.
+- **Obrasgov** — projetos. Não gera pin pelo endereço do comprador nem por proximidade de nome.
+
+A verdade ao vivo desta instalação é `GET /api/coverage` (`national_catalog_certified` permanece `false` mesmo depois de importar um arquivo nacional ou uma edição certificada). Importadores aceitam arquivos oficiais; ingestão integral, volumes e completude por território só existem quando certificados à parte.
 
 ## Implementado
 
@@ -35,7 +48,7 @@ cd ..
 uvicorn bdt.api:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
-Abra `http://localhost:8000`. Para desenvolvimento, rode a API na porta 8000 e `npm run dev` em `web/` (proxy `/api`). Use `BDT_PUBLIC_ORIGIN=http://localhost:5173` na API quando o navegador usar essa origem.
+Abra `http://localhost:8000`. Para desenvolvimento, rode a API na porta 8000 e `npm run dev` em `web/` (proxy `/api`). Use `BDT_PUBLIC_ORIGIN=http://localhost:5173` na API quando o navegador usar essa origem. Depois do init, `GET /api/coverage` deve mostrar catálogo vazio e `national_catalog_certified: false`.
 
 ### Dados reais, não seeds
 
@@ -46,7 +59,7 @@ bdt import-ibge data/municipios.json \
   --reference-date DATA_DA_EDICAO
 ```
 
-Substitua `DATA_DA_EDICAO` pela referência efetiva. Para as demais fontes, siga [o guia de dados](docs/DATA.md). **Não use a primeira página da API CNES como se fosse o Brasil inteiro.** Download não equivale a cobertura certificada. `GET /api/coverage` expõe o que efetivamente foi carregado.
+Substitua `DATA_DA_EDICAO` pela referência efetiva. Para as demais famílias, siga [Fontes](docs/SOURCES.md) e [o guia de dados](docs/DATA.md). **Não use a primeira página da API CNES como se fosse o Brasil inteiro.** Download não equivale a cobertura certificada. Edições GitHub não entram sozinhas neste banco.
 
 ### Colaboração
 
@@ -82,22 +95,22 @@ Testes usam dados sintéticos exclusivamente em `backend/tests/`; não comprovam
 docker compose up --build
 ```
 
-Isso abre uma instância **local**, vazia, com volume SQLite; não publica um serviço de produção. A imagem roda sem root e serve interface e API na mesma origem. Produção requer HTTPS, domínio permitido, revisão de segurança, backup e responsáveis. PostgreSQL é suportado pelo acesso relacional; PostGIS/tiles vetoriais/migrações evolutivas e implantação cloud são próximos incrementos, não funcionalidades já certificadas. [Operação](docs/OPERATIONS.md).
+Isso abre uma instância **local**, vazia, com volume SQLite. Por omissão o Compose publica `127.0.0.1:8008` (`BDT_PORT`); loopback e porta 8008 **não** são produção. A imagem roda sem root e serve interface e API na mesma origem. Produção exige HTTPS, domínio permitido, revisão de segurança, backup e responsáveis — este repositório não certifica esse passo. PostgreSQL é suportado pelo acesso relacional; PostGIS/tiles vetoriais/migrações evolutivas e implantação cloud são próximos incrementos, não funcionalidades já certificadas. [Operação](docs/OPERATIONS.md).
 
 ## Limites conhecidos
 
-- Não há ingestão nacional certificada, sincronização automática de todos os portais, correlação completa entre instrumentos nem deploy público nesta entrega.
+- Clone vazio não é catálogo nacional. Edições certificadas no GitHub não alteram `national_catalog_certified`. Não há sincronização automática de todos os portais, correlação completa entre instrumentos nem deploy público nesta entrega.
 - O importador Inep exige os cabeçalhos declarados. Uma nova edição com formato diferente deve receber perfil revisado; falha explícita é preferível a adivinhar campos.
 - CNES: o recorte atual é atendimento **ambulatorial SUS declarado**, não toda rede SUS, não prova de propriedade pública e não agenda em tempo real.
-- Obras entram como registros normalizados com referência; PNCP/Transferegov não geram pinos por endereço do comprador ou proximidade de nome.
+- Obras entram como registros normalizados com referência; PNCP/Transferegov/Obrasgov não geram pinos por endereço do comprador ou proximidade de nome.
 - O mapa consulta o recorte visível independentemente da página da lista, agrupando pontos quando necessário. Isso não certifica a completude do catálogo ou a renderização externa. 3D depende de altura publicada e zoom; não é gêmeo digital, análise de acessibilidade ou fotografia atual.
 - Não há Mapillary/Panoramax, grupos síncronos, envio automático a órgãos públicos ou autenticação gov.br.
 - Código não interpreta conformidade legal, não detecta corrupção e não substitui profissionais ou autoridades. Informação oficial, observação e hipótese permanecem distintas.
 
 ## Documentação e colaboração
 
-[Arquitetura](docs/ARCHITECTURE.md) · [Dados](docs/DATA.md) · [Operação](docs/OPERATIONS.md) · [Roadmap](docs/ROADMAP.md) · [Segurança](SECURITY.md) · [Contribuir](CONTRIBUTING.md).
+[Fontes](docs/SOURCES.md) · [Dados](docs/DATA.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Operação](docs/OPERATIONS.md) · [Roadmap](docs/ROADMAP.md) · [Segurança](SECURITY.md) · [Contribuir](CONTRIBUTING.md).
 
 ## Licenciamento
 
-Código original: **AGPL-3.0-or-later**; texto integral em `LICENSE`. Documentação original em `docs/`: **CC-BY-4.0**, salvo indicação específica. Dados, mapas, bibliotecas e documentos de terceiros conservam suas licenças. Consulte [atribuição](docs/ATTRIBUTION.md). A licença de código não autoriza apresentar um fork como a instância oficial. Projeto independente, sem afiliação presumida a órgão público, IAJUS ou DOCIA.
+Código original: **AGPL-3.0-or-later**; texto integral em `LICENSE`. Documentação original em `docs/`: **CC-BY-4.0**, salvo indicação específica. Dados, mapas, bibliotecas e documentos de terceiros conservam suas licenças. Consulte [atribuição](docs/ATTRIBUTION.md). A licença de código não autoriza apresentar um fork como a instância oficial. Projeto independente, sem afiliação presumida a órgão público.

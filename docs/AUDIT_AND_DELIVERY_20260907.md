@@ -7,7 +7,7 @@ Base inspecionada: `3dd1af52e8e89faacf254d8cf637163e97db13b8`. Snapshot Actions 
 
 Foram recuperados AGENTS.md, TODO.md, planos de sprints, matriz de funcionalidades, plano mestre e issues abertas #2–#5. O plano histórico Conferido — Pacote unificado é uma fonte de requisitos, não evidência de implementação. Seus recortes municipais, idioma único e sugestões de vínculo por proximidade foram explicitamente substituídos pelo contrato nacional/trilíngue e de proveniência do usuário. Mapa/3D, imagens, participação e documentação continuam parte do escopo.
 
-O `TODO.md` ainda descreve TLS/Inep como bloqueio, mas as releases escolares e a instalação conjunta já foram publicadas. O plano mestre está no GitHub (commit `3dd1af52`), apesar de o resumo anterior não ter confirmado isso. As issues #2–#5 preservam a situação da PR inicial e misturam funcionalidades entregues com partes ainda abertas. Não fechar essas issues inteiras por causa de um incremento parcial.
+O `TODO.md` ainda lista TLS/Inep (D01) e a importação escolar 2025 (D02) como itens abertos. Isso é atraso de documentação frente a `docs/EDUCATION_RELEASE.md`, não o estado atual da publicação do catálogo — ver Atualização 2026-09-07/09. O plano mestre está no GitHub (commit `3dd1af52`), apesar de o resumo anterior não ter confirmado isso. As issues #2–#5 preservam a situação da PR inicial e misturam funcionalidades entregues com partes ainda abertas. Não fechar essas issues inteiras por causa de um incremento parcial.
 
 Há 352 entradas no snapshot, incluindo diretórios; isso não é uma contagem de funcionalidades. Não usar checkboxes, número de testes ou presença de arquivos como percentual de produto concluído.
 
@@ -21,6 +21,16 @@ Há 352 entradas no snapshot, incluindo diretórios; isso não é uma contagem d
 - Corpus de OCR versionado é sintético. Não renomeá-lo para corpus governamental.
 - Fotografias e panoramas continuam ausentes do fluxo de produção; `/api/config` anuncia `photo_uploads: false`.
 - Não foi identificada instância pública implantada ou certificado de acessibilidade/dispositivos físicos.
+
+## Atualização 2026-09-07/09
+
+A publicação escolar vigente não é o incidente TLS de 2026-09-06. A seleção `education-2025-20260907-v1` em `data/releases/education-2025-20260907-v1.json` (coleta `34078768110`, revisão `96aa4bf80cc13402f0d35d47a8deabcae6d30db3`) registra 138.086 escolas públicas declaradas ativas, 0 com geometria (`without_geometry` = 138.086), 27 UFs e SHA-256 do ZIP `483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7` (23.807.757 bytes). Condições: `docs/EDUCATION_RELEASE.md`. Presença nas 27 UFs não fecha o denominador D03 nem certifica completude contra a fonte.
+
+A falha `SSLCertVerificationError` código 20 no diagnóstico `34069973954` permanece incidente **histórico** de transporte (`docs/reports/20260906-education-transport-e0943f9.json`; inspeção `docs/reports/20260906-inep-tls-cb873ed.json`). Não descreve o estado atual da publicação do catálogo. Manter D01 aberto no `TODO.md` não apaga a release já selecionada; este arquivo não altera `TODO.md`.
+
+O somatório 234.209 (96.123 CNES + 138.086 escolas) é o total esperado da instalação conjunta dos ZIPs já selecionados (`docs/UNIFIED_INSTALLATION.md`; `places = health.places + education.eligible` em `ops/install_national_catalog.py`). Não é KPI ao vivo nem certificado nacional: `/api/coverage` continua com `national_catalog_certified: false`.
+
+Permanecem não entregues neste recorte: recuperação de conta (somente plano `docs/SPRINT_20260907_ACCOUNT_RECOVERY.md`; sem rotas de recuperação em `/api/auth`); fotografias só como biblioteca local (`bdt.photos` / `ops/prepare_photo.py`), com `/api/config` `photo_uploads: false`; nenhuma instância pública de produção identificada. R03–R08 e as frentes abaixo continuam abertas.
 
 ## Frentes restantes, sem apagar os planos existentes
 
