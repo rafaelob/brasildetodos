@@ -1,0 +1,27 @@
+{
+  "schema_version": 2,
+  "project": "Brasil de Todos",
+  "started_week": "2026-W37",
+  "week_timezone": "-03:00",
+  "releases": [
+    {
+      "version": "2026.09.09",
+      "date": "2026-09-09",
+      "title": "Catálogo honesto e ingestão financeira de operador",
+      "user_impact": [
+        "Um clone vazio continua vazio: a cobertura da instalação não se apresenta como o Brasil inteiro.",
+        "Quem opera o catálogo pode validar e ingerir os ZIPs financeiros do Transferegov já conferidos em um banco sqlite novo, sem somar fases e sem gravar no banco ao vivo da aplicação.",
+        "O cache local de endereços CNEFE está inventariado: 11 unidades da federação presentes, 16 ausentes como falta de arquivo — não como zero escolas.",
+        "Recuperação de conta, contestação de moderação e envio de foto pela rede continuam disponíveis só quando ligados de propósito; foto na rede permanece desligada por omissão."
+      ],
+      "technical": [
+        "GET /api/coverage em sqlite fresco: municipalities 0, summary.places 0, national_catalog_certified false.",
+        "Operador: python -m ops.transferegov_financial_download_and_ingest --mode ingest --database <sqlite novo>; recusa data/bdt.db. Recibo bdt.transferegov-finance-ingest.v1 com URL, bytes, SHA-256, contagens por fase e exclusões.",
+        "Ingestão limitada dos ZIPs cacheados (2000 linhas por tabela após o cruzamento municipal): 1420 eventos gravados (563 acordados, 187 aditivos, 670 transferidos). financial_total_computed false. Relatório docs/reports/20260909-transferegov-ingest.json.",
+        "IBGE municípios baixados só via servicodados.ibge.gov.br (2.470.036 bytes, SHA-256 86ecdccd…). ftp.ibge.gov.br permanece fora de HOSTS.",
+        "FNS, CGU, SICONFI e PDDE continuam not_wired. Amostra Obrasgov não foi recenseada por HTTP ao vivo nesta onda.",
+        "Produção pública (domínio, HTTPS, Postgres durável) permanece fora desta entrega."
+      ]
+    }
+  ]
+}

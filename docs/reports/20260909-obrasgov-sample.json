@@ -1,0 +1,17 @@
+{
+  "schema": "bdt.obrasgov-sample.v1",
+  "national_catalog_certified": false,
+  "brazil_census": false,
+  "public_deployment": false,
+  "sample_states": [
+    "RR",
+    "AP",
+    "AC",
+    "SE",
+    "RO"
+  ],
+  "pages_fetched": 0,
+  "facility_id_invented": false,
+  "status": "not_run_live_http",
+  "reason": "quality CI / this wave does not recense via live Obrasgov"
+}

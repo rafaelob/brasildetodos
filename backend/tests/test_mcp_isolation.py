@@ -231,6 +231,13 @@ def test_path_jail_and_hosts_allowlist(tmp_path, staging_isolation):
     assert staging_mod.HOSTS is HOSTS
 
 
+def test_ftp_ibge_is_outside_hosts_and_staging_rejects_it():
+    assert 'ftp.ibge.gov.br' not in HOSTS
+    assert staging_mod.HOSTS is HOSTS
+    with pytest.raises(ValueError, match='allowlist'):
+        inep_download_file(url='https://ftp.ibge.gov.br/x')
+
+
 def test_timeout_and_malformed_page_are_not_certified(monkeypatch, staging_isolation):
     def timeout(*_a, **_k):
         raise httpx.TimeoutException('synthetic')

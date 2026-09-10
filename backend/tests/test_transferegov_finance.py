@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import select
 
 from bdt.domain import Source
-from bdt.storage import Finance, Ingestion, Municipality
+from bdt.storage import Database, Finance, Ingestion, Municipality
 from bdt.transferegov_finance import (
     EXCLUDED_SENSITIVE_KEYS,
     REQUIRED_ADITIVO,
@@ -310,6 +310,40 @@ def _cached_downloads(tmp_path: Path) -> Path:
     return folder
 
 
+def _operator_finance_sqlite(tmp_path: Path, source: Source) -> Path:
+    db_path = tmp_path / 'operator-finance.db'
+    database = Database(f'sqlite:///{db_path.resolve()}')
+    database.initialize()
+    with database.session() as session:
+        session.add(Municipality(
+            id='3550308', name='São Paulo', state='SP',
+            source=source.model_dump()
+        ))
+    database.engine.dispose()
+    return db_path
+
+
+def _ingest_archive_receipts(report: dict) -> list[dict]:
+    raw = report.get('archives', report.get('receipts'))
+    if isinstance(raw, dict):
+        return [
+            {'name': name, **(row if isinstance(row, dict) else {})}
+            for name, row in raw.items()
+        ]
+    if isinstance(raw, list):
+        return [row for row in raw if isinstance(row, dict)]
+    return []
+
+
+def _phase_counts(report: dict) -> dict:
+    nested = report.get('counts')
+    if isinstance(nested, dict) and {'agreed', 'amendments', 'transferred', 'total'} <= nested.keys():
+        return nested
+    if {'agreed', 'amendments', 'transferred', 'total'} <= report.keys():
+        return report
+    raise AssertionError('run_ingest receipt must include phase counts agreed/amendments/transferred/total')
+
+
 def test_freeze_validator_not_certified_and_phases_not_summed(tmp_path):
     folder = _cached_downloads(tmp_path)
     report = tg_ops.freeze_cached_archives(folder, sample_limit=50)
@@ -359,4 +393,141 @@ def test_operator_ingest_refuses_live_app_db(tmp_path):
         tg_ops.run_ingest(tmp_path / 'bdt.db', tmp_path / 'missing')
     with pytest.raises(ValueError, match='database_required_for_ingest'):
         tg_ops.refuse_live_app_database(None)
+
+
+def test_operator_ingest_writes_phases_to_new_sqlite(tmp_path, fake_source):
+    db_path = _operator_finance_sqlite(tmp_path, fake_source)
+    assert db_path.name != 'bdt.db'
+    report = tg_ops.run_ingest(db_path, _cached_downloads(tmp_path))
+    assert report.get('financial_total_computed') is not True
+    assert 'total_cents' not in report
+    assert 'combined_cents' not in report
+    assert 'financial_total' not in report
+    nested = report.get('counts')
+    if isinstance(nested, dict):
+        assert 'total_cents' not in nested
+        assert 'combined_cents' not in nested
+        assert 'financial_total' not in nested
+    if 'national_catalog_certified' in report:
+        assert report['national_catalog_certified'] is False
+
+    database = Database(f'sqlite:///{db_path.resolve()}')
+    try:
+        with database.session() as session:
+            finances = list(session.scalars(select(Finance).where(Finance.municipality_id == '3550308')))
+        by_id = {row.payload['id']: row for row in finances}
+        assert set(by_id) == {
+            'transferegov:agreement:948971',
+            'transferegov:amendment:948971:2-2020',
+            'transferegov:disbursement:366482',
+        }
+        agreement = by_id['transferegov:agreement:948971']
+        amendment = by_id['transferegov:amendment:948971:2-2020']
+        disbursement = by_id['transferegov:disbursement:366482']
+        assert agreement.cents == 260635937
+        assert agreement.payload['phase'] == 'agreed'
+        assert amendment.cents == -3240055
+        assert amendment.payload['phase'] == 'agreed'
+        assert disbursement.cents == 28849791
+        assert disbursement.payload['phase'] == 'transferred'
+        assert [row.payload['phase'] for row in finances].count('agreed') == 2
+        assert [row.payload['phase'] for row in finances].count('transferred') == 1
+        assert all(row.facility_id is None for row in finances)
+        assert all(row.payload.get('facility_id') is None for row in finances)
+    finally:
+        database.engine.dispose()
+
+
+def test_operator_ingest_receipt_has_provenance(tmp_path, fake_source):
+    db_path = _operator_finance_sqlite(tmp_path, fake_source)
+    downloads = _cached_downloads(tmp_path)
+    report = tg_ops.run_ingest(db_path, downloads)
+    counts = _phase_counts(report)
+    assert counts['agreed'] == 1
+    assert counts['amendments'] == 1
+    assert counts['transferred'] == 1
+    assert counts['total'] == 3
+    assert counts['total'] == counts['agreed'] + counts['amendments'] + counts['transferred']
+    for key in ('cents', 'total_cents', 'combined_cents', 'financial_total'):
+        assert key not in counts
+
+    rows = _ingest_archive_receipts(report)
+    named = {}
+    for row in rows:
+        name = row.get('name') or Path(str(row.get('path', ''))).name
+        named[name] = row
+    assert named, 'run_ingest receipt must include per-archive url/bytes/sha256'
+    for name in tg_ops.TARGET_FILES:
+        row = named[name]
+        assert isinstance(row.get('url'), str) and name in row['url']
+        data = (downloads / name).read_bytes()
+        assert isinstance(row['bytes'], int) and row['bytes'] == len(data)
+        sha = row['sha256']
+        assert isinstance(sha, str) and len(sha) == 64
+        int(sha, 16)
+        assert sha.lower() == hashlib.sha256(data).hexdigest()
+
+    exclusions = report.get('exclusions')
+    if exclusions is None:
+        exclusions = next(
+            (report[key] for key in ('excluded', 'not_imported', 'omitted') if key in report),
+            None,
+        )
+    assert exclusions not in (None, '', [], {})
+    text = exclusions if isinstance(exclusions, str) else json.dumps(exclusions, ensure_ascii=False)
+    folded = (
+        text.lower()
+        .replace('á', 'a').replace('é', 'e').replace('í', 'i')
+        .replace('ó', 'o').replace('ú', 'u').replace('â', 'a')
+        .replace('ê', 'e').replace('ô', 'o').replace('ã', 'a')
+        .replace('õ', 'o').replace('ç', 'c')
+    )
+    compact = folded.replace('-', '').replace(' ', '')
+    assert 'preconvenio' in compact
+    assert 'sensitive' in folded or any(key.lower() in folded for key in EXCLUDED_SENSITIVE_KEYS)
+
+
+def test_operator_ingest_limit_zero_imports_no_rows(tmp_path, fake_source):
+    db_path = _operator_finance_sqlite(tmp_path, fake_source)
+    report = tg_ops.run_ingest(
+        db_path, _cached_downloads(tmp_path),
+        limit_agreements=0, limit_amendments=0, limit_disbursements=0,
+    )
+    assert report['records_imported'] == 0
+    assert report['counts']['agreed'] == 0
+    assert report['counts']['amendments'] == 0
+    assert report['counts']['transferred'] == 0
+    assert report['limits'] == {'agreements': 0, 'amendments': 0, 'disbursements': 0}
+    assert report['financial_total_computed'] is False
+    assert report['national_catalog_certified'] is False
+    database = Database(f'sqlite:///{db_path.resolve()}')
+    try:
+        with database.session() as session:
+            assert list(session.scalars(select(Finance))) == []
+    finally:
+        database.engine.dispose()
+
+
+def test_committed_operator_ingest_receipt_is_not_a_national_total():
+    root = Path(__file__).resolve().parents[2]
+    ingest = json.loads((root / 'docs' / 'reports' / '20260909-transferegov-ingest.json').read_text(encoding='utf-8'))
+    freeze = json.loads((root / 'docs' / 'reports' / '20260909-transferegov-freeze.json').read_text(encoding='utf-8'))
+    assert ingest['schema'] == 'bdt.transferegov-finance-ingest.v1'
+    assert ingest['national_catalog_certified'] is False
+    assert ingest['financial_total_computed'] is False
+    assert ingest['phases_summed'] is False
+    assert ingest['live_app_database_refused'] == 'data/bdt.db'
+    assert ingest['database'] != 'data/bdt.db'
+    assert ingest['records_imported'] == ingest['counts']['total']
+    assert ingest['records_imported'] == (
+        ingest['counts']['agreed'] + ingest['counts']['amendments'] + ingest['counts']['transferred']
+    )
+    assert 'total_cents' not in ingest
+    assert ingest['limits'] == {'agreements': 2000, 'amendments': 2000, 'disbursements': 2000}
+    freeze_hash = {row['name']: row['sha256'] for row in freeze['archives']}
+    for archive in ingest['archives']:
+        assert archive['url'].startswith('https://api-publica.transferegov.gestao.gov.br/')
+        assert archive['bytes'] > 0
+        assert archive['sha256'] == freeze_hash[archive['name']]
+        assert len(archive['sha256']) == 64
 

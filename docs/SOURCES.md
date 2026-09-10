@@ -58,6 +58,40 @@ PDDE/FNDE **ainda não está neste catálogo**: o PDDE Básico paga UEx/EEx/EM
 provado no Básico. Sem HOSTS nesta onda. Spike:
 [reports/20260909-pdde-spike.md](reports/20260909-pdde-spike.md).
 
+## Restante (honestidade)
+
+Caches e CLIs de operador abaixo **não** preenchem a tabela das seis famílias,
+**não** ligam FNS/CGU/SICONFI/PDDE e **não** mudam
+`national_catalog_certified` (permanece `false`).
+
+**Transferegov financeiro.** ZIPs cacheados em `data/downloads/transferegov/`.
+O freeze
+[`reports/20260909-transferegov-freeze.json`](reports/20260909-transferegov-freeze.json)
+tem `records_imported: 0`: validou bytes, SHA-256, membro ZIP e cabeçalhos;
+não persistiu linhas. Importação integral é só operador, em SQLite **novo**:
+
+```bash
+python -m ops.transferegov_financial_download_and_ingest --mode ingest \
+  --database data/transferegov-finance.db
+```
+
+O comando recusa `data/bdt.db`. Fases (previsão, aditivo, desembolso) **nunca**
+se somam. Este freeze/ingest **não** republica a tabela `finance` da edição
+`public-data-20260906-v1` (permanece **0**).
+
+**CNEFE 2022.** O cache em `data/cnefe_cache/` é **parcial**. Inventário:
+[`reports/20260909-cnefe-cache-inventory.md`](reports/20260909-cnefe-cache-inventory.md).
+UFs sem ZIP são falta documentada, não “zero escolas”. `ftp.ibge.gov.br` está
+**fora** de `HOSTS`. Candidatos de nome (`cnefe_candidate`) ficam inéditos;
+**não** são pinos no mapa.
+
+**Obrasgov.** A amostra limitada de páginas/UFs
+(`python ops/ingest_obrasgov_batch.py`) **não** é recenseamento do Brasil.
+Um projeto na edição certificada também não o é.
+
+FNS, CGU, SICONFI e PDDE permanecem `not_wired` nos parágrafos acima: sem
+conector, sem linha em `GET /api/coverage`, sem cobertura fictícia.
+
 ## Como ler esta instalação
 
 Depois de subir a API local (clone vazio ou banco já importado):

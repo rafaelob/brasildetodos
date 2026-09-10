@@ -4,7 +4,8 @@
 Freeze/validate mode checks cached zip bytes, SHA-256 against receipts.json, zip
 member names and CSV headers. It never downloads, never writes data/bdt.db, and
 never sums financial phases. Full import is operator-only on an explicit
-``--database`` that is not the live application sqlite.
+``--database`` that is not the live application sqlite. The ingest operator
+returns an uncertified receipt with row counts, never a summed financial total.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from bdt.ingest import municipality_lookup
 from bdt.storage import Database
 from bdt.sync import atomic_json, download_retry, file_hash
 from bdt.transferegov_finance import (
+    EXCLUDED_SENSITIVE_KEYS,
     REQUIRED_ADITIVO,
     REQUIRED_CONVENIO,
     REQUIRED_CROSSWALK,
@@ -264,14 +266,43 @@ def _honesty(report: dict) -> dict:
     report['national_catalog_certified'] = False
     report['public_data_v1_unchanged'] = True
     report['phases_summed'] = False
-    if 'total_cents' in report or 'combined_cents' in report:
+    if 'total_cents' in report or 'combined_cents' in report or 'financial_total' in report:
         raise ValueError('phases_must_not_be_summed')
     counts = report.get('counts')
     if isinstance(counts, dict):
+        if 'total_cents' in counts or 'combined_cents' in counts or 'financial_total' in counts:
+            raise ValueError('phases_must_not_be_summed')
         for value in counts.values():
-            if isinstance(value, dict) and ('cents' in value or 'total_cents' in value):
+            if isinstance(value, dict) and (
+                'cents' in value or 'total_cents' in value or 'combined_cents' in value or 'financial_total' in value
+            ):
                 raise ValueError('phases_must_not_be_summed')
     return report
+
+
+def _ingest_honesty(report: dict) -> dict:
+    """Ingest persisted rows; still forbid phase totals and catalog certification."""
+    counts = report.get('counts')
+    imported = counts.get('total') if isinstance(counts, dict) else None
+    _honesty(report)
+    if not isinstance(imported, int):
+        raise ValueError('ingest_counts_total_required')
+    report['records_imported'] = imported
+    return report
+
+
+def _download_archives(receipts: dict) -> list[dict]:
+    archives = []
+    for name in TARGET_FILES:
+        receipt = receipts[name]
+        archives.append({
+            'name': name,
+            'url': receipt['url'],
+            'bytes': receipt['bytes'],
+            'sha256': receipt['sha256'],
+            'status': receipt['status'],
+        })
+    return archives
 
 
 def freeze_cached_archives(
@@ -361,56 +392,94 @@ def freeze_cached_archives(
 
 
 def run_ingest(db_path: Path, downloads_dir: Path, *, limit_agreements: int | None = None, limit_amendments: int | None = None, limit_disbursements: int | None = None) -> dict:
-    refuse_live_app_database(db_path)
+    db_path = refuse_live_app_database(db_path)
     t0 = time.time()
     receipts = download_all(downloads_dir)
     database = Database(f'sqlite:///{db_path.resolve()}')
-    lookup = municipality_lookup(database)
+    database.initialize()
+    try:
+        lookup = municipality_lookup(database)
 
-    # 1. Load crosswalk
-    cw_path = downloads_dir / 'siconv_prop_inst_indicadores_municipios.zip'
-    cw_rows = stream_csv_zip(cw_path, 'siconv_prop_inst_indicadores_municipios.csv')
-    crosswalk = load_municipality_crosswalk(cw_rows, lookup)
+        # 1. Load crosswalk
+        cw_path = downloads_dir / 'siconv_prop_inst_indicadores_municipios.zip'
+        cw_rows = stream_csv_zip(cw_path, 'siconv_prop_inst_indicadores_municipios.csv')
+        crosswalk = load_municipality_crosswalk(cw_rows, lookup)
 
-    # Source provenance
-    conv_receipt = receipts['siconv_convenio.zip']
-    source = Source(
-        dataset='transferegov',
-        url=conv_receipt['url'],
-        record_id='transferegov-national-financial',
-        collected_at=now(),
-        snapshot_sha256=conv_receipt['sha256'],
-        reference_date='2026',
-    )
+        # Source provenance
+        conv_receipt = receipts['siconv_convenio.zip']
+        source = Source(
+            dataset='transferegov',
+            url=conv_receipt['url'],
+            record_id='transferegov-national-financial',
+            collected_at=now(),
+            snapshot_sha256=conv_receipt['sha256'],
+            reference_date='2026',
+        )
 
-    # 2. Normalize agreements
-    conv_path = downloads_dir / 'siconv_convenio.zip'
-    conv_rows = stream_csv_zip(conv_path, 'siconv_convenio.csv')
-    if limit_agreements:
-        conv_rows = (row for _, row in zip(range(limit_agreements), conv_rows))
-    agreements = list(normalize_agreements(conv_rows, crosswalk, source))
+        # 2. Normalize agreements
+        conv_path = downloads_dir / 'siconv_convenio.zip'
+        conv_rows = stream_csv_zip(conv_path, 'siconv_convenio.csv')
+        if limit_agreements is not None:
+            conv_rows = (row for _, row in zip(range(limit_agreements), conv_rows))
+        agreements = list(normalize_agreements(conv_rows, crosswalk, source))
 
-    # 3. Normalize amendments
-    adit_path = downloads_dir / 'siconv_termo_aditivo.zip'
-    adit_rows = stream_csv_zip(adit_path, 'siconv_termo_aditivo.csv')
-    if limit_amendments:
-        adit_rows = (row for _, row in zip(range(limit_amendments), adit_rows))
-    amendments = list(normalize_amendments(adit_rows, crosswalk, source))
+        # 3. Normalize amendments
+        adit_path = downloads_dir / 'siconv_termo_aditivo.zip'
+        adit_rows = stream_csv_zip(adit_path, 'siconv_termo_aditivo.csv')
+        if limit_amendments is not None:
+            adit_rows = (row for _, row in zip(range(limit_amendments), adit_rows))
+        amendments = list(normalize_amendments(adit_rows, crosswalk, source))
 
-    # 4. Normalize disbursements
-    disb_path = downloads_dir / 'siconv_desembolso.zip'
-    disb_rows = stream_csv_zip(disb_path, 'siconv_desembolso.csv')
-    if limit_disbursements:
-        disb_rows = (row for _, row in zip(range(limit_disbursements), disb_rows))
-    disbursements = list(normalize_disbursements(disb_rows, crosswalk, source))
+        # 4. Normalize disbursements
+        disb_path = downloads_dir / 'siconv_desembolso.zip'
+        disb_rows = stream_csv_zip(disb_path, 'siconv_desembolso.csv')
+        if limit_disbursements is not None:
+            disb_rows = (row for _, row in zip(range(limit_disbursements), disb_rows))
+        disbursements = list(normalize_disbursements(disb_rows, crosswalk, source))
 
-    # 5. Import transactionally
-    events = agreements + amendments + disbursements
-    counts = import_transferegov_financial(database, events, source)
-    counts['elapsed_seconds'] = round(time.time() - t0, 2)
-    counts['crosswalk_entries'] = len(crosswalk)
-    database.engine.dispose()
-    return counts
+        # 5. Import transactionally
+        events = agreements + amendments + disbursements
+        imported = import_transferegov_financial(database, events, source)
+        crosswalk_entries = len(crosswalk)
+    finally:
+        database.engine.dispose()
+
+    counts = {
+        'agreed': imported['agreed'],
+        'amendments': imported['amendments'],
+        'transferred': imported['transferred'],
+        'total': imported['total'],
+        'unchanged': imported['unchanged'],
+        'crosswalk_entries': crosswalk_entries,
+        'elapsed_seconds': round(time.time() - t0, 2),
+    }
+    report = {
+        'schema': 'bdt.transferegov-finance-ingest.v1',
+        'mode': 'ingest',
+        'database': str(db_path).replace('\\', '/'),
+        'downloads': str(downloads_dir).replace('\\', '/'),
+        'archives': _download_archives(receipts),
+        'counts': counts,
+        'exclusions': {
+            'sensitive_keys': sorted(EXCLUDED_SENSITIVE_KEYS),
+            'preconvenio_not_imported': True,
+            'orphans_not_imported': True,
+            'facility_id': None,
+        },
+        'records_imported': counts['total'],
+        'financial_total_computed': False,
+        'national_catalog_certified': False,
+        'phases_summed': False,
+        'live_app_database_refused': 'data/bdt.db',
+        'public_deployment': False,
+        'full_import': 'operator_only_new_sqlite',
+        'limits': {
+            'agreements': limit_agreements,
+            'amendments': limit_amendments,
+            'disbursements': limit_disbursements,
+        },
+    }
+    return _ingest_honesty(report)
 
 
 def main(argv=None):
@@ -440,6 +509,10 @@ def main(argv=None):
         limit_amendments=args.limit_amendments,
         limit_disbursements=args.limit_disbursements,
     )
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        atomic_json(args.output, result)
+        result['output'] = str(args.output).replace('\\', '/')
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

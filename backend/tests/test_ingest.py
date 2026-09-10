@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import func, select
 from bdt.domain import now
-from bdt.ingest import cnes_record, csv_records, file_source, import_finance, import_ibge, import_places, inep_record, municipality_lookup, pncp_contracts, safe_download, transferegov_rows
+from bdt.ingest import HOSTS, cnes_record, csv_records, file_source, import_finance, import_ibge, import_places, inep_record, municipality_lookup, pncp_contracts, safe_download, transferegov_rows
 from bdt.storage import Change, Finance, Ingestion, Place, upsert_place
 
 
@@ -111,9 +111,13 @@ def test_pncp_is_contract_not_payment():
     rows=pncp_contracts({'data':[{'numeroControlePNCP':'synthetic','objetoContrato':'Objeto de teste','valorInicial':Decimal('120.50'),'unidadeOrgao':{'codigoIbge':'1234567'}}]})
     assert rows[0]['phase']=='contracted' and rows[0]['cents']==12050 and rows[0]['place_id'] is None
 
-@pytest.mark.parametrize('url',['http://pncp.gov.br/x','https://example.org','https://pncp.gov.br:8443/x','https://u:p@pncp.gov.br','https://pncp.gov.br.evil.example/x','file:///tmp/x'])
+@pytest.mark.parametrize('url',['http://pncp.gov.br/x','https://example.org','https://pncp.gov.br:8443/x','https://u:p@pncp.gov.br','https://pncp.gov.br.evil.example/x','file:///tmp/x','https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/x'])
 def test_operator_downloader_rejects_unreviewed_sources(url,tmp_path):
     with pytest.raises(ValueError):safe_download(url,tmp_path/'x')
+
+def test_ftp_ibge_host_is_not_in_allowlist():
+    assert 'ftp.ibge.gov.br' not in HOSTS
+    assert 'servicodados.ibge.gov.br' in HOSTS
 
 def test_private_resolution_rejected(monkeypatch,tmp_path):
     monkeypatch.setattr('bdt.ingest.socket.getaddrinfo',lambda *a,**k:[(None,None,None,None,('127.0.0.1',443))])

@@ -161,7 +161,9 @@ bdt import-transferegov data/arquivo.csv --profile data/perfil-revisado.json \
 ZIP: acrescente `--member` (e `--encoding` se não for `utf-8-sig`). Download
 antigo acessível não comprova atualização. `bdt import-transferegov-finance` é
 outro caminho (ZIP SICONV; padrão `data/downloads/transferegov`) e não substitui
-o perfil revisado.
+o perfil revisado. Esse comando recusa `data/bdt.db`; use sqlite **novo** e
+municípios IBGE já carregados. Fases não se somam. Freeze vs ingest:
+[SOURCES.md](SOURCES.md#restante-honestidade).
 
 ## Finanças normalizadas
 

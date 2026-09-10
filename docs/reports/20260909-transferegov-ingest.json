@@ -1,0 +1,73 @@
+{
+  "schema": "bdt.transferegov-finance-ingest.v1",
+  "mode": "ingest",
+  "database": "operator-new-sqlite-not-data-bdt.db",
+  "downloads": "data/downloads/transferegov",
+  "archives": [
+    {
+      "name": "siconv_prop_inst_indicadores_municipios.zip",
+      "url": "https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/siconv_prop_inst_indicadores_municipios.zip",
+      "bytes": 10634953,
+      "sha256": "6a41f50bf2ed2bd667646bf4979e478fa1c83eb3239ac5e416e32f082d6530ad",
+      "status": "cached"
+    },
+    {
+      "name": "siconv_convenio.zip",
+      "url": "https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/siconv_convenio.zip",
+      "bytes": 18386648,
+      "sha256": "925f04af4c9b80b18e13af895b93d75987c8bce18bd176e78da2c9d8830fce33",
+      "status": "cached"
+    },
+    {
+      "name": "siconv_termo_aditivo.zip",
+      "url": "https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/siconv_termo_aditivo.zip",
+      "bytes": 60529075,
+      "sha256": "152664c1b71b37e03f32d5d1562504d8949f0a71392bb269581724b8ba817550",
+      "status": "cached"
+    },
+    {
+      "name": "siconv_desembolso.zip",
+      "url": "https://api-publica.transferegov.gestao.gov.br/downloads/dadosgov/siconv_desembolso.zip",
+      "bytes": 16665018,
+      "sha256": "3c4f40deef5c724f2f5f14a0a252b4aaa333023773eb69f723a9e9b65ce79a93",
+      "status": "cached"
+    }
+  ],
+  "counts": {
+    "agreed": 563,
+    "amendments": 187,
+    "transferred": 670,
+    "total": 1420,
+    "unchanged": 0,
+    "crosswalk_entries": 85823
+  },
+  "exclusions": {
+    "sensitive_keys": [
+      "AGENCIA",
+      "BANCO",
+      "CD_IDENTIF_PROPONENTE",
+      "CONTA",
+      "CPF",
+      "NR_SIAFI",
+      "OBSERVACAO_DH",
+      "UG_EMITENTE_DH"
+    ],
+    "preconvenio_not_imported": true,
+    "orphans_not_imported": true,
+    "facility_id": null
+  },
+  "records_imported": 1420,
+  "financial_total_computed": false,
+  "national_catalog_certified": false,
+  "phases_summed": false,
+  "live_app_database_refused": "data/bdt.db",
+  "public_deployment": false,
+  "full_import": "operator_only_new_sqlite",
+  "limits": {
+    "agreements": 2000,
+    "amendments": 2000,
+    "disbursements": 2000
+  },
+  "public_data_v1_unchanged": true,
+  "note": "Bounded operator ingest of already-hashed cached ZIPs into a throwaway sqlite after IBGE municipalities were loaded. Not a Brazil financial census. Limits cap CSV rows read after the full municipality crosswalk. Phases are not summed."
+}
