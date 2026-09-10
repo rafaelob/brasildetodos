@@ -68,22 +68,31 @@ Caches e CLIs de operador abaixo **não** preenchem a tabela das seis famílias,
 O freeze
 [`reports/20260909-transferegov-freeze.json`](reports/20260909-transferegov-freeze.json)
 tem `records_imported: 0`: validou bytes, SHA-256, membro ZIP e cabeçalhos;
-não persistiu linhas. Importação integral é só operador, em SQLite **novo**:
+não persistiu linhas. A ingestão de operador **pode** agora transmitir em
+fluxo (stream) todas as linhas dos ZIPs cacheados para um SQLite **novo**
+(não `data/bdt.db`):
 
 ```bash
 python -m ops.transferegov_financial_download_and_ingest --mode ingest \
   --database data/transferegov-finance.db
 ```
 
-O comando recusa `data/bdt.db`. Fases (previsão, aditivo, desembolso) **nunca**
-se somam. Este freeze/ingest **não** republica a tabela `finance` da edição
+O comando recusa `data/bdt.db`. Se o recibo ainda tiver `limits` diferente de
+`null` (tetos em `agreements`/`amendments`/`disbursements`), aquela execução
+foi limitada. Uma execução sem teto ainda **nunca** soma fases (previsão,
+aditivo, desembolso) e **nunca** define `national_catalog_certified`. Este
+freeze/ingest **não** republica a tabela `finance` da edição
 `public-data-20260906-v1` (permanece **0**).
 
-**CNEFE 2022.** O cache em `data/cnefe_cache/` é **parcial**. Inventário:
-[`reports/20260909-cnefe-cache-inventory.md`](reports/20260909-cnefe-cache-inventory.md).
-UFs sem ZIP são falta documentada, não “zero escolas”. `ftp.ibge.gov.br` está
-**fora** de `HOSTS`. Candidatos de nome (`cnefe_candidate`) ficam inéditos;
-**não** são pinos no mapa.
+**CNEFE 2022.** O cache em `data/cnefe_cache/` tem **27/27** UFs em disco
+nesta instalação (onda 2026-09-10). Instantâneo anterior:
+[`reports/20260909-cnefe-cache-inventory.md`](reports/20260909-cnefe-cache-inventory.md)
+(11 presentes). Restante:
+[`reports/20260910-cnefe-remainder.md`](reports/20260910-cnefe-remainder.md).
+`ftp.ibge.gov.br` continua **fora** de `HOSTS`; a coleta das 16 UFs que
+faltavam usou a exceção de operador `BDT_CNEFE_OPERATOR_DOWNLOAD=1`, **não**
+expansão da allowlist. Candidatos de nome (`cnefe_candidate`) ficam inéditos;
+**não** são pinos. 27 ZIPs **não** certificam o catálogo nacional.
 
 **Obrasgov.** A amostra limitada de páginas/UFs
 (`python ops/ingest_obrasgov_batch.py`) **não** é recenseamento do Brasil.

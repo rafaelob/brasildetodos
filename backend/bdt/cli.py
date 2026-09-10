@@ -72,6 +72,11 @@ def main():
         args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         print(str(args.output))
         return
+    elif args.command == "import-transferegov-finance":
+        from ops.transferegov_financial_download_and_ingest import run_ingest
+        db_path = Path(args.database.removeprefix("sqlite:///"))
+        result = run_ingest(db_path, args.downloads, limit_agreements=args.limit_agreements,
+                            limit_amendments=args.limit_amendments, limit_disbursements=args.limit_disbursements)
     else:
         database = Database(args.database)
         database.initialize()
@@ -84,11 +89,6 @@ def main():
             with database.session() as session:
                 session.add(User(username=credentials.username.lower(), password_hash=password_hash(password), role=args.role))
             result = {"created": credentials.username.lower(), "role": args.role}
-        elif args.command == "import-transferegov-finance":
-            from ops.transferegov_financial_download_and_ingest import run_ingest
-            db_path = Path(args.database.removeprefix("sqlite:///"))
-            result = run_ingest(db_path, args.downloads, limit_agreements=args.limit_agreements,
-                                limit_amendments=args.limit_amendments, limit_disbursements=args.limit_disbursements)
         elif args.command == "sync-resources":
             from .resource_profiles import collection_plan
             from .resource_sync import import_resources

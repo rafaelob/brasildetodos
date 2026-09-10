@@ -162,7 +162,16 @@ ZIP: acrescente `--member` (e `--encoding` se não for `utf-8-sig`). Download
 antigo acessível não comprova atualização. `bdt import-transferegov-finance` é
 outro caminho (ZIP SICONV; padrão `data/downloads/transferegov`) e não substitui
 o perfil revisado. Esse comando recusa `data/bdt.db`; use sqlite **novo** e
-municípios IBGE já carregados. Fases não se somam. Freeze vs ingest:
+municípios IBGE já carregados. Fases não se somam. O operador
+`python -m ops.transferegov_financial_download_and_ingest` grava o recibo JSON
+no caminho de `--output` (sem path padrão: o operador informa o arquivo).
+Ingestão sem teto percorre as fases em fluxo e **não** faz `list()` de todas
+as linhas na RAM. Relatórios freeze vs ingest em `docs/reports/`:
+[`20260909-transferegov-freeze.json`](reports/20260909-transferegov-freeze.json)
+(`records_imported: 0`) e
+[`20260909-transferegov-ingest.json`](reports/20260909-transferegov-ingest.json)
+(recibo `bdt.transferegov-finance-ingest.v1`). `national_catalog_certified`
+permanece `false`. Freeze vs ingest:
 [SOURCES.md](SOURCES.md#restante-honestidade).
 
 ## Finanças normalizadas

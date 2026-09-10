@@ -13,6 +13,7 @@ import argparse
 import csv
 import io
 import json
+from itertools import chain
 from pathlib import Path
 import time
 from typing import Iterator
@@ -421,25 +422,26 @@ def run_ingest(db_path: Path, downloads_dir: Path, *, limit_agreements: int | No
         conv_rows = stream_csv_zip(conv_path, 'siconv_convenio.csv')
         if limit_agreements is not None:
             conv_rows = (row for _, row in zip(range(limit_agreements), conv_rows))
-        agreements = list(normalize_agreements(conv_rows, crosswalk, source))
+        agreements = normalize_agreements(conv_rows, crosswalk, source)
 
         # 3. Normalize amendments
         adit_path = downloads_dir / 'siconv_termo_aditivo.zip'
         adit_rows = stream_csv_zip(adit_path, 'siconv_termo_aditivo.csv')
         if limit_amendments is not None:
             adit_rows = (row for _, row in zip(range(limit_amendments), adit_rows))
-        amendments = list(normalize_amendments(adit_rows, crosswalk, source))
+        amendments = normalize_amendments(adit_rows, crosswalk, source)
 
         # 4. Normalize disbursements
         disb_path = downloads_dir / 'siconv_desembolso.zip'
         disb_rows = stream_csv_zip(disb_path, 'siconv_desembolso.csv')
         if limit_disbursements is not None:
             disb_rows = (row for _, row in zip(range(limit_disbursements), disb_rows))
-        disbursements = list(normalize_disbursements(disb_rows, crosswalk, source))
+        disbursements = normalize_disbursements(disb_rows, crosswalk, source)
 
-        # 5. Import transactionally
-        events = agreements + amendments + disbursements
-        imported = import_transferegov_financial(database, events, source)
+        # 5. Import transactionally without materializing every phase in RAM
+        imported = import_transferegov_financial(
+            database, chain(agreements, amendments, disbursements), source,
+        )
         crosswalk_entries = len(crosswalk)
     finally:
         database.engine.dispose()

@@ -7,6 +7,7 @@ import hashlib
 import importlib
 import importlib.abc
 import json
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -124,6 +125,23 @@ def test_api_source_and_import_graph_never_mention_bdt_mcp():
         assert 'bdt_mcp' not in text
         names = _imported_names(ast.parse(text, filename=str(path)))
         assert not any(name == 'bdt_mcp' or name.startswith('bdt_mcp.') for name in names)
+
+
+def test_importing_bdt_api_does_not_load_bdt_mcp_runtime():
+    # This module imports bdt_mcp; a child interpreter is the sys.modules oracle.
+    probe = (
+        'import sys\n'
+        f'sys.path.insert(0, {str(BDT.parent)!r})\n'
+        'import bdt.api as api_mod\n'
+        'assert callable(api_mod.create_app)\n'
+        "assert not any(n == 'bdt_mcp' or n.startswith('bdt_mcp.') for n in sys.modules)\n"
+    )
+    flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+    completed = subprocess.run(
+        [sys.executable, '-X', 'utf8', '-c', probe],
+        capture_output=True, text=True, check=False, creationflags=flags,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_cli_default_path_and_web_do_not_import_bdt_mcp():

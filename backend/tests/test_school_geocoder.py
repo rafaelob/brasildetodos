@@ -209,6 +209,16 @@ def test_download_cnefe_cache_miss_names_file_without_ftp(tmp_path, monkeypatch)
     assert 'BDT_CNEFE_OPERATOR_DOWNLOAD' in message
 
 
+def test_download_cnefe_cache_miss_for_uncached_large_state(tmp_path, monkeypatch):
+    _block_network(monkeypatch)
+    assert list(tmp_path.iterdir()) == []
+    with pytest.raises(ValueError, match=r'35_SP\.zip') as exc:
+        download_cnefe_state_zip('SP', cache_dir=tmp_path)
+    message = str(exc.value)
+    assert 'HOSTS' in message
+    assert 'BDT_CNEFE_OPERATOR_DOWNLOAD' in message
+
+
 def test_download_cnefe_operator_exception_is_explicit(tmp_path, monkeypatch):
     monkeypatch.setenv('BDT_CNEFE_OPERATOR_DOWNLOAD', '1')
 

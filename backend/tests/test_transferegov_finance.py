@@ -200,6 +200,43 @@ def test_import_transferegov_financial_transactional(database, fake_source):
     assert counts_re['total'] == 0
 
 
+def test_import_accepts_generator_not_list(database, fake_source):
+    with database.session() as session:
+        session.add(Municipality(
+            id='3550308', name='São Paulo', state='SP',
+            source=fake_source.model_dump()
+        ))
+    crosswalk = {'948971': ('3550308', 'MUNICIPIO DE SAO PAULO')}
+
+    def events():
+        yield from normalize_agreements([{
+            'NR_CONVENIO': '948971', 'IND_ASSINADO': 'SIM', 'VL_GLOBAL_CONV': '2.606.359,37',
+            'VL_REPASSE_CONV': '2.603.659,37', 'DIA_ASSIN_CONV': '19/12/2023', 'ANO': '2023',
+            'SIT_CONVENIO': 'Em execução'
+        }], crosswalk, fake_source)
+        yield from normalize_amendments([{
+            'NR_CONVENIO': '948971', 'NUMERO_TA': '1/2024', 'TIPO_TA': 'Supressão',
+            'VL_GLOBAL_TA': '-50.000,00', 'DT_ASSINATURA_TA': '10/06/2024'
+        }], crosswalk, fake_source)
+        yield from normalize_disbursements([{
+            'ID_DESEMBOLSO': '366482', 'NR_CONVENIO': '948971',
+            'DATA_DESEMBOLSO': '03/01/2025', 'VL_DESEMBOLSADO': '288.497,91'
+        }], crosswalk, fake_source)
+
+    gen = events()
+    counts = import_transferegov_financial(database, gen, fake_source)
+    assert counts['agreed'] == 1
+    assert counts['amendments'] == 1
+    assert counts['transferred'] == 1
+    assert counts['total'] == 3
+    assert list(gen) == []
+
+
+def test_import_rejects_non_positive_batch_size(database, fake_source):
+    with pytest.raises(ValueError, match='batch_size_must_be_positive'):
+        import_transferegov_financial(database, iter(()), fake_source, batch_size=0)
+
+
 def test_public_finance_payload_excludes_sensitive_keys(fake_source):
     raw = {
         'id': 'transferegov:agreement:948971',

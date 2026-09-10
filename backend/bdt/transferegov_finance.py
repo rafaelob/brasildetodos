@@ -247,7 +247,10 @@ def normalize_disbursements(rows: Iterable[dict[str, str]], crosswalk: dict[str,
 def import_transferegov_financial(database: Database, events: Iterable[MoneyEvent], source: Source, *, batch_size: int = 500) -> dict:
     """Transactionally import normalized MoneyEvents into the finance table."""
     counts = {'agreed': 0, 'amendments': 0, 'transferred': 0, 'total': 0, 'unchanged': 0}
+    if batch_size < 1:
+        raise ValueError('batch_size_must_be_positive')
     with database.session() as session:
+        seen = 0
         for event in events:
             payload = public_finance_payload(event)
             key = digest([event.source.dataset, event.id])
@@ -258,21 +261,24 @@ def import_transferegov_financial(database: Database, events: Iterable[MoneyEven
                 if a != b:
                     raise ValueError(f'Financial correction requires explicit reconciliation for {event.id}')
                 counts['unchanged'] += 1
-                continue
-            session.add(Finance(
-                key=key,
-                municipality_id=event.municipality_id,
-                facility_id=event.facility_id,
-                cents=event.cents,
-                payload=payload,
-            ))
-            if ':agreement:' in event.id:
-                counts['agreed'] += 1
-            elif ':amendment:' in event.id:
-                counts['amendments'] += 1
-            elif ':disbursement:' in event.id:
-                counts['transferred'] += 1
-            counts['total'] += 1
+            else:
+                session.add(Finance(
+                    key=key,
+                    municipality_id=event.municipality_id,
+                    facility_id=event.facility_id,
+                    cents=event.cents,
+                    payload=payload,
+                ))
+                if ':agreement:' in event.id:
+                    counts['agreed'] += 1
+                elif ':amendment:' in event.id:
+                    counts['amendments'] += 1
+                elif ':disbursement:' in event.id:
+                    counts['transferred'] += 1
+                counts['total'] += 1
+            seen += 1
+            if seen % batch_size == 0:
+                session.flush()
 
         run_id = digest(['transferegov_financial_import', source.snapshot_sha256, now()])[:36]
         session.add(Ingestion(
