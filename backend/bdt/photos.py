@@ -324,7 +324,8 @@ def submit(session, body: PhotoInput, author_id: str) -> Photo:
     lock_budget(session)
     locked = session.execute(update(Observation).where(
         Observation.id == body.observation_id, Observation.author_id == author_id,
-        Observation.status != 'withdrawn').values(place_id=Observation.place_id))
+        Observation.status.in_(('pending', 'approved', 'rejected')),
+    ).values(place_id=Observation.place_id))
     if locked.rowcount != 1:
         raise ValueError('observation_not_found')
     observation = session.get(Observation, body.observation_id)

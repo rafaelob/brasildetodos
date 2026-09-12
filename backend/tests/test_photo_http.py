@@ -7,6 +7,7 @@ import logging
 from PIL import Image
 from fastapi.testclient import TestClient
 import pytest
+from sqlalchemy import func, select
 
 from bdt.api import create_app, password_hash
 from bdt.storage import Observation, User
@@ -166,6 +167,35 @@ def test_author_cannot_approve_own_photo(client, database, monkeypatch):
     assert response.status_code == 403
     assert response.json() == {'detail': 'self_review_forbidden'}
     assert client.get(f'/api/public/photos/{photo["id"]}/image').status_code == 404
+
+
+def test_retracted_observation_cannot_receive_new_photo(client, database, monkeypatch):
+    enable(monkeypatch)
+    register(client)
+    add_reviewer(database)
+    login(client)
+    observation_id = observe(client)
+    client.post('/api/auth/logout', headers=HEAD)
+    login(client, 'reviewer')
+    assert client.post(
+        f'/api/review/{observation_id}',
+        headers=HEAD,
+        json={'decision': 'approved', 'note': 'Independent review of synthetic evidence.'},
+    ).status_code == 200
+    assert client.post(
+        f'/api/moderation/observations/{observation_id}/retract',
+        headers=HEAD,
+        json={'note': 'Publication retracted after additional contextual review.'},
+    ).status_code == 200
+    client.post('/api/auth/logout', headers=HEAD)
+    login(client)
+
+    response = client.post('/api/photos', headers=HEAD, json=payload(observation_id))
+    assert response.status_code == 404
+    assert response.json() == {'detail': 'observation_not_found'}
+    with database.session() as session:
+        from bdt.photos import Photo
+        assert session.scalar(select(func.count()).select_from(Photo)) == 0
 
 
 def test_csrf_required_to_upload(client, monkeypatch):

@@ -269,6 +269,19 @@
         "A API retorna document_registration_conflict com HTTP 409 e mantém a repetição exata idempotente.",
         "Regressão da Issue #4: os metadados conflitantes receberam HTTP 201 antes da correção; depois, 65 testes de features, evidência e OCR passaram, com 2 cenários de symlink indisponíveis neste Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.18",
+      "date": "2026-09-12",
+      "title": "Observação retratada não recebe novas fotos",
+      "user_impact": [
+        "Depois de uma retratação por moderação, o autor deixa de anexar novas imagens à contribuição encerrada."
+      ],
+      "technical": [
+        "O bloqueio transacional do upload aceita somente observações pending, approved ou rejected do próprio autor.",
+        "Estados withdrawn e retracted retornam observation_not_found antes de sanitizar ou armazenar bytes.",
+        "Regressão da Issue #5: a API retornou HTTP 201 e criou a foto após a retratação antes da correção; depois, 81 testes de fotos, features e moderação passaram."
+      ]
     }
   ]
 }
