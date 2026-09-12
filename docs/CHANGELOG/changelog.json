@@ -282,6 +282,19 @@
         "Estados withdrawn e retracted retornam observation_not_found antes de sanitizar ou armazenar bytes.",
         "Regressão da Issue #5: a API retornou HTTP 201 e criou a foto após a retratação antes da correção; depois, 81 testes de fotos, features e moderação passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.19",
+      "date": "2026-09-12",
+      "title": "Pacote de extração armazenado é validado ao reutilizar",
+      "user_impact": [
+        "Uma extração documental corrompida deixa de ser apresentada como pacote íntegro apenas porque preservou o hash do original."
+      ],
+      "technical": [
+        "O recibo idempotente exige páginas sequenciais com número inteiro estrito e texto nativo ou OCR em formato textual.",
+        "Números booleanos, páginas duplicadas e textos com tipo inválido falham com stored_document_extraction_invalid; o pacote real continua reutilizável.",
+        "Regressão da Issue #4: as três estruturas inválidas foram aceitas antes da correção; depois, 66 testes de features, evidência e OCR passaram, com 2 cenários de symlink indisponíveis neste Windows."
+      ]
     }
   ]
 }

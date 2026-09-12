@@ -100,6 +100,33 @@ def test_repeated_extraction_reuses_exact_stored_package(database, source, evide
         assert session.get(Document, identity).extraction == stored
 
 
+def test_repeated_extraction_rejects_corrupt_stored_page_structure(database, source, evidence_user, tmp_path):
+    path = tmp_path / 'synthetic.pdf'
+    pdf = canvas.Canvas(str(path)); pdf.drawString(50, 700, 'CONVENIO 977950/2025 - synthetic test only.'); pdf.save()
+    original = path.read_bytes()
+    with database.session() as session:
+        identity = register_document(session, DocumentInput(title='Synthetic document', source=source.model_copy(update={
+            'snapshot_sha256': hashlib.sha256(original).hexdigest()})), evidence_user).id
+    expected = store_extraction(database, identity, path)
+    with database.session() as session:
+        valid = deepcopy(session.get(Document, identity).extraction)
+
+    invalid_pages = [
+        [{'page': True, 'text': 'Invalid boolean page number'}],
+        [{'page': 1, 'text': []}],
+        [{'page': 1, 'text': 'First'}, {'page': 1, 'text': 'Duplicate'}],
+    ]
+    for pages in invalid_pages:
+        with database.session() as session:
+            session.get(Document, identity).extraction = deepcopy(valid) | {'pages': pages}
+        with pytest.raises(ValueError, match='stored_document_extraction_invalid'):
+            store_extraction(database, identity, path)
+
+    with database.session() as session:
+        session.get(Document, identity).extraction = valid
+    assert store_extraction(database, identity, path) == expected
+
+
 def test_reject_changed_bytes_during_extraction(database, source, evidence_user, tmp_path, monkeypatch):
     path = tmp_path / 'synthetic.pdf'; path.write_bytes(b'%PDF-synthetic')
     src = source.model_copy(update={'snapshot_sha256': hashlib.sha256(path.read_bytes()).hexdigest()})

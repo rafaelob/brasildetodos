@@ -164,10 +164,17 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         raise ValueError('document_hash_mismatch')
 
     def receipt(extraction):
-        if (not isinstance(extraction, dict) or extraction.get('sha256') != expected
-                or not isinstance(extraction.get('pages'), list)):
+        if not isinstance(extraction, dict) or extraction.get('sha256') != expected:
             raise ValueError('stored_document_extraction_invalid')
-        return {'document_id': document_id, 'pages': len(extraction['pages']),
+        pages = extraction.get('pages')
+        if not isinstance(pages, list):
+            raise ValueError('stored_document_extraction_invalid')
+        for expected_page, page in enumerate(pages, 1):
+            if (not isinstance(page, dict) or type(page.get('page')) is not int
+                    or page['page'] != expected_page or not isinstance(page.get('text'), str)
+                    or ('ocr_candidate_text' in page and not isinstance(page['ocr_candidate_text'], str))):
+                raise ValueError('stored_document_extraction_invalid')
+        return {'document_id': document_id, 'pages': len(pages),
                 'state': 'extracted', 'public': False}
 
     with database.session() as session:
