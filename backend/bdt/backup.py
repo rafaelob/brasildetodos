@@ -104,7 +104,9 @@ def verify_backup(folder: Path) -> dict:
         raise ValueError('invalid_backup_manifest')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     if (not isinstance(manifest, dict) or manifest.get('format') != FORMAT
-            or manifest.get('schema_version') != 1 or manifest.get('contains_private_data') is not True):
+            or type(manifest.get('schema_version')) is not int or manifest.get('schema_version') != 1
+            or manifest.get('contains_private_data') is not True or manifest.get('encrypted') is not False
+            or manifest.get('restore_requires_new_destination') is not True):
         raise ValueError('unsupported_backup_format')
     size = manifest.get('bytes')
     if type(size) is not int or not 0 < size <= MAX_BYTES:

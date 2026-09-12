@@ -438,6 +438,19 @@
         "A regra comum cobre saída voluntária, remoção pelo dono e desativação de conta.",
         "Regressão da Issue #5: as duas rotas mantiveram a tarefa aceita antes da correção; depois, 49 testes de grupos e features passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.31",
+      "date": "2026-09-12",
+      "title": "Backup privado exige manifesto coerente",
+      "user_impact": [
+        "A verificação e a restauração recusam um backup que se declara criptografado ou liberado para sobrescrita quando o formato real não oferece essas garantias."
+      ],
+      "technical": [
+        "verify_backup exige schema_version inteiro exato, encrypted=false e restore_requires_new_destination=true antes de validar o arquivo SQLite.",
+        "Valores booleanos não podem mais se passar pela versão numérica do formato.",
+        "Regressão da Issue #5: três manifestos contraditórios passaram antes da correção; depois, 55 testes de backup e grupos passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }

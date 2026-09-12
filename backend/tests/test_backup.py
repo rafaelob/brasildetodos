@@ -85,6 +85,8 @@ def test_bounded_runtime(dbfile,tmp_path,value):
 
 @pytest.mark.parametrize('mutation',[
     lambda m:m.update(format='other'),lambda m:m.update(schema_version=999),
+    lambda m:m.update(schema_version=True),lambda m:m.update(encrypted=True),
+    lambda m:m.update(restore_requires_new_destination=False),
     lambda m:m.update(contains_private_data=False),lambda m:m.update(bytes=True),
     lambda m:m.update(bytes=-1),lambda m:m.update(sha256='wrong'),
 ])
