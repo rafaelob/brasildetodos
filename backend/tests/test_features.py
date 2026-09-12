@@ -254,6 +254,27 @@ def test_export_and_account_deactivation(client, database):
     assert len(client.get('/api/account/export').json()['observations']) == 1
 
 
+def test_account_deletion_withdraws_pending_links_and_erases_private_justification(client, database, source):
+    body = prepare_link(client, database, source)
+    identity = client.post('/api/workbench/links', headers=HEAD, json=body).json()['id']
+    response = client.post('/api/account/delete', headers=HEAD,
+                           json={'password': PASSWORD, 'confirmed': True})
+    assert response.status_code == 200
+
+    login(client, 'reviewer')
+    assert client.get('/api/workbench/links?status=candidate').json() == []
+    retracted = client.get('/api/workbench/links?status=retracted').json()
+    assert len(retracted) == 1 and retracted[0]['id'] == identity
+    assert body['justification'] not in str(retracted)
+    with database.session() as session:
+        link = session.get(Link, identity)
+        assert link.status == 'retracted' and link.revision == 2
+        assert link.justification == 'Author account deleted; private justification erased.'
+        assert [event.action for event in session.scalars(
+            select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))] == [
+                'proposed', 'author_withdrawal_during_account_deletion']
+
+
 def test_account_deactivation_preserves_moderation_retraction(client, database):
     login(client, 'reader'); identity = observe(client)
     login(client, 'reviewer')

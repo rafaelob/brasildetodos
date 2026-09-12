@@ -227,6 +227,13 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                 observation.payload = {'place_id': observation.place_id, 'mode': 'field',
                     'observed_on': observation.payload.get('observed_on'), 'body': '', 'consent': False, 'erased': True}
                 observation.review_note = None
+            for link in session.scalars(select(Link).where(Link.author_id == row.id)):
+                link.justification = 'Author account deleted; private justification erased.'
+                if link.status == 'candidate':
+                    link.status = 'retracted'
+                    link.revision += 1
+                    link.reviewed_at = now()
+                    audit(session, row.id, 'link', link.id, 'author_withdrawal_during_account_deletion')
             photos.erase_account(session, row.id)
             deactivate_user(session, row.id)
             session.execute(delete(LoginSession).where(LoginSession.user_id == row.id))

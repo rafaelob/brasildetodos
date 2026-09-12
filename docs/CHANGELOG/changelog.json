@@ -191,6 +191,19 @@
         "A primeira gravação usa compare-and-swap sobre o estado registered; concorrentes reutilizam o vencedor ou falham sem sobrescrever evidência.",
         "Regressão da Issue #4: o parser foi chamado novamente antes da correção; depois, 70 testes de evidência, comandos de operador, OCR e features passaram, com 2 cenários de symlink indisponíveis sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.12",
+      "date": "2026-09-12",
+      "title": "Exclusão de conta retira vínculos documentais pendentes",
+      "user_impact": [
+        "Ao excluir a conta, propostas documentais ainda pendentes saem da fila de revisão e sua justificativa privada é apagada."
+      ],
+      "technical": [
+        "A mesma transação de desativação move links candidate para retracted, avança a revisão e registra author_withdrawal_during_account_deletion.",
+        "A justificativa privada é substituída por um marcador inerte; vínculos públicos já revisados permanecem preservados conforme a política de retenção existente.",
+        "Regressão da Issue #5: a proposta da conta apagada permaneceu ativa antes da correção; depois, 63 testes de features, grupos e fotos passaram."
+      ]
     }
   ]
 }
