@@ -295,6 +295,19 @@
         "Números booleanos, páginas duplicadas e textos com tipo inválido falham com stored_document_extraction_invalid; o pacote real continua reutilizável.",
         "Regressão da Issue #4: as três estruturas inválidas foram aceitas antes da correção; depois, 66 testes de features, evidência e OCR passaram, com 2 cenários de symlink indisponíveis neste Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.20",
+      "date": "2026-09-12",
+      "title": "Recibos de página recusam booleanos numéricos",
+      "user_impact": [
+        "Uma coleta deixa de ser importada quando usa verdadeiro ou falso no lugar do índice da página ou do tamanho baixado."
+      ],
+      "technical": [
+        "Os campos index e bytes do recibo exigem inteiros não negativos de tipo exato antes da reconciliação de referência e integridade.",
+        "O controle positivo preserva tanto uma página comum quanto a evidência vazia HTTP 204 com valores inteiros.",
+        "Regressão da Issue #2: os dois booleanos foram aceitos antes da correção; depois, 129 testes de coleta, importação e resposta sem conteúdo passaram."
+      ]
     }
   ]
 }

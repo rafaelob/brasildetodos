@@ -276,6 +276,33 @@ def test_collection_manifest_rejects_boolean_record_totals(database, tmp_path):
     assert import_resources(database, valid)['created'] == 1
 
 
+@pytest.mark.parametrize('field', ['index', 'bytes'])
+def test_collection_manifest_rejects_boolean_page_receipt_numbers(database, tmp_path, field):
+    folder = tmp_path / f'boolean-page-{field}'
+    if field == 'index':
+        report = save_collection(folder, [contract()])
+    else:
+        def empty_loader(url, path, max_bytes):
+            path.write_bytes(b'')
+            return {'url': url, 'bytes': 0, 'sha256': hashlib.sha256(b'').hexdigest(),
+                    'status_code': 204, 'collected_at': COLLECTED}
+
+        report = collect(plan(), folder, loader=empty_loader)
+    report['pages'][0][field] = False
+    atomic_json(folder / 'collection.json', report)
+
+    with pytest.raises(ValueError, match='invalid_resource_page_receipt_numbers'):
+        import_resources(database, folder)
+
+    valid = tmp_path / f'integer-page-{field}'
+    if field == 'index':
+        save_collection(valid, [contract()])
+        assert import_resources(database, valid)['created'] == 1
+    else:
+        collect(plan(), valid, loader=empty_loader)
+        assert import_resources(database, valid)['read'] == 0
+
+
 def test_query_window_enforced_per_row(database,tmp_path):
     folder=tmp_path/'bad';save_collection(folder,[contract(dataPublicacaoPncp='2026-08-01T00:00:00')])
     with pytest.raises(ValueError,match='requested_dates'):import_resources(database,folder)

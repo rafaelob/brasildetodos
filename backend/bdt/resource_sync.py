@@ -149,14 +149,19 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
         entry_records = entry.get('records')
         if type(entry_records) is not int or entry_records < 0:
             raise ValueError('invalid_resource_record_totals')
+        entry_index = entry.get('index')
+        entry_bytes = entry.get('bytes')
+        if (type(entry_index) is not int or entry_index < 0
+                or type(entry_bytes) is not int or entry_bytes < 0):
+            raise ValueError('invalid_resource_page_receipt_numbers')
         filename = f'page-{index:06}.json'
-        if entry.get('index') != index or entry.get('file') != filename or entry.get('url') != page_url(plan, index):
+        if entry_index != index or entry.get('file') != filename or entry.get('url') != page_url(plan, index):
             raise ValueError('resource_page_reference_mismatch')
         path = folder / filename
         if path.is_symlink() or path.stat().st_size > plan.max_bytes_per_page:
             raise ValueError('resource_page_not_regular_or_too_large')
         raw = path.read_bytes()
-        if len(raw) != entry.get('bytes') or hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
+        if len(raw) != entry_bytes or hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
             raise ValueError('resource_page_integrity_failure')
         if entry.get('status_code') == 204:
             if (plan.dataset != 'pncp_contracts' or index != 0 or len(entries) != 1
