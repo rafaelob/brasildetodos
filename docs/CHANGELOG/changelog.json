@@ -217,6 +217,19 @@
         "O valor legítimo zero e as representações numéricas textuais continuam aceitos.",
         "Regressão da Issue #3: True era convertido em latitude 1.0 antes da correção; depois, 90 testes do normalizador e do coletor Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.14",
+      "date": "2026-09-12",
+      "title": "Conflito entre município e UF da obra fica visível",
+      "user_impact": [
+        "Uma obra deixa de ser ligada a um município quando a UF declarada pelo Obrasgov contradiz a UF do código IBGE cadastrado."
+      ],
+      "technical": [
+        "O normalizador compara uf_principal com a UF canônica do município antes de atribuir municipality_id e territorial_basis.",
+        "A divergência falha com conflicting_project_territory; o vínculo compatível continua sendo publicado.",
+        "Regressão da Issue #3: o conflito foi aceito antes da correção; depois, 91 testes do normalizador e do coletor Obrasgov passaram."
+      ]
     }
   ]
 }

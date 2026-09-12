@@ -235,6 +235,8 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         municipality = None
         mun_id = str(row.get('cod_ibge') or row.get('codigo_ibge') or '').strip()
         if mun_id and mun_id in municipalities:
+            if state is not None and municipalities[mun_id][1] != state:
+                raise ValueError('conflicting_project_territory')
             municipality = mun_id
             territorial_basis = 'reviewed_project_geometry_municipality'
         else:

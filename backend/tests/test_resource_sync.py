@@ -319,6 +319,25 @@ def test_obrasgov_physical_execution_and_geometries():
     assert res.attributes['territorial_basis'] == 'state_only_municipality_unresolved'
 
 
+def test_obrasgov_rejects_conflicting_project_municipality_state():
+    with pytest.raises(ValueError, match='conflicting_project_territory'):
+        normalize_resource(
+            WORK,
+            project(cod_ibge='1234567', uf_principal='BA'),
+            source(WORK),
+            {'1234567': ('Synthetic municipality', 'SP')},
+        )
+
+    valid = normalize_resource(
+        WORK,
+        project(cod_ibge='1234567', uf_principal='BA'),
+        source(WORK),
+        {'1234567': ('Synthetic municipality', 'BA')},
+    )
+    assert valid.municipality_id == '1234567'
+    assert valid.attributes['territorial_basis'] == 'reviewed_project_geometry_municipality'
+
+
 def test_obrasgov_omits_boolean_fallback_coordinates_but_preserves_zero():
     for latitude, longitude in [(True, -40), (-10, False)]:
         result = normalize_resource(
