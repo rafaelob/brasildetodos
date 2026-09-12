@@ -102,6 +102,19 @@
         "A escolha entre os quatro campos conhecidos usa presença e mantém a precedência do campo primário quando o valor é zero.",
         "Regressão da Issue #3: os dois falsificadores ficaram vermelhos antes das correções e os 66 testes de sincronização de recursos passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.5",
+      "date": "2026-09-12",
+      "title": "Contagens opcionais do Obrasgov deixam de publicar valores inválidos",
+      "user_impact": [
+        "O catálogo deixa de mostrar números negativos, fracionários ou derivados de booleanos como população beneficiada e empregos gerados de uma obra."
+      ],
+      "technical": [
+        "Os dois contadores opcionais agora aceitam somente inteiros não negativos e omitem valores inválidos sem rejeitar o restante do registro oficial.",
+        "A conversão preserva zero, inteiros e representações numéricas integrais, sem truncar frações.",
+        "Regressão da Issue #3: os seis casos inválidos falharam antes da correção e passaram após a validação no normalizador."
+      ]
     }
   ]
 }

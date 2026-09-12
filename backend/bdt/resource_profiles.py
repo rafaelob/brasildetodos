@@ -75,6 +75,18 @@ def money(value):
     return cents
 
 
+def nonnegative_count(value):
+    if value is None or isinstance(value, bool) or not isinstance(value, (str, int, float, Decimal)):
+        return None
+    try:
+        parsed = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError):
+        return None
+    if not parsed.is_finite() or parsed < 0 or parsed != parsed.to_integral_value():
+        return None
+    return int(parsed)
+
+
 def require(row, fields):
     if not isinstance(row, dict) or not set(fields).issubset(row):
         raise ValueError('resource_schema_changed')
@@ -284,18 +296,12 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
                     attributes['project_geometries'] = [{'latitude': lat, 'longitude': lon, 'kind': 'point'}]
             except (ValueError, TypeError):
                 pass
-        pop = row.get('populacao_beneficiada')
+        pop = nonnegative_count(row.get('populacao_beneficiada'))
         if pop is not None:
-            try:
-                attributes['benefited_population'] = int(pop)
-            except (ValueError, TypeError):
-                pass
-        jobs = row.get('qtd_empregos_gerados')
+            attributes['benefited_population'] = pop
+        jobs = nonnegative_count(row.get('qtd_empregos_gerados'))
         if jobs is not None:
-            try:
-                attributes['jobs_generated'] = int(jobs)
-            except (ValueError, TypeError):
-                pass
+            attributes['jobs_generated'] = jobs
         eff_start = date_value(row.get('dt_inicial_efetiva'))
         if eff_start:
             attributes['effective_starts_on'] = eff_start

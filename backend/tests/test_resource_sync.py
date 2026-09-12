@@ -334,3 +334,20 @@ def test_obrasgov_preserves_zero_physical_execution_percentage():
     )
 
     assert result.attributes['physical_execution_percentage'] == 0.0
+
+
+@pytest.mark.parametrize(
+    ('field', 'attribute', 'value'),
+    [
+        ('populacao_beneficiada', 'benefited_population', True),
+        ('populacao_beneficiada', 'benefited_population', -1),
+        ('populacao_beneficiada', 'benefited_population', 1.5),
+        ('qtd_empregos_gerados', 'jobs_generated', True),
+        ('qtd_empregos_gerados', 'jobs_generated', -1),
+        ('qtd_empregos_gerados', 'jobs_generated', 1.5),
+    ],
+)
+def test_obrasgov_omits_invalid_optional_nonnegative_counts(field, attribute, value):
+    result = normalize_resource(WORK, project(**{field: value}), source(WORK), {})
+
+    assert attribute not in result.attributes
