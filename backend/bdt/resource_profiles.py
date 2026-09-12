@@ -233,7 +233,15 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
             entries.append({'planned_cents': money(investment['vl_investimento_previsto']),
                             'source_name': text(investment['desc_nome_fonte_recurso'], field='investimentos_previstos.desc_nome_fonte_recurso')})
         municipality = None
-        mun_id = str(row.get('cod_ibge') or row.get('codigo_ibge') or '').strip()
+        municipality_ids = []
+        for field in ('cod_ibge', 'codigo_ibge'):
+            value = row.get(field)
+            candidate = '' if value is None else str(value).strip()
+            if candidate and candidate not in municipality_ids:
+                municipality_ids.append(candidate)
+        if len(municipality_ids) > 1:
+            raise ValueError('conflicting_project_municipality_fields')
+        mun_id = municipality_ids[0] if municipality_ids else ''
         if mun_id and mun_id in municipalities:
             if state is not None and municipalities[mun_id][1] != state:
                 raise ValueError('conflicting_project_territory')

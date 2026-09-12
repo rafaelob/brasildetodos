@@ -347,6 +347,19 @@
         "O recibo legítimo com status 200 inteiro permanece publicável como controle positivo.",
         "Regressão da Issue #2: status_code 200.0 publicou um local antes da correção; depois, os 44 testes do contrato genérico de coleta passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.24",
+      "date": "2026-09-12",
+      "title": "Códigos municipais conflitantes não vinculam uma obra",
+      "user_impact": [
+        "Uma obra deixa de ser ligada a um município quando os dois campos de código IBGE do Obrasgov apontam para municípios diferentes."
+      ],
+      "technical": [
+        "O normalizador reconcilia cod_ibge e codigo_ibge antes de consultar o cadastro municipal e falha com conflicting_project_municipality_fields quando há duas identidades distintas.",
+        "Dois campos com o mesmo código continuam produzindo o vínculo municipal revisado.",
+        "Regressão da Issue #3: dois códigos válidos e divergentes foram publicados antes da correção; depois, 96 testes do normalizador e do coletor Obrasgov passaram."
+      ]
     }
   ]
 }
