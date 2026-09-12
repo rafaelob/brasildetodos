@@ -325,7 +325,10 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         source = Source(**(source.model_dump() | {'record_id': identity, 'reference_date': None}))
         kind = 'work'
     attributes['version_basis'] = 'publisher_update' if profile == 'pncp_contracts' else 'collection_snapshot'
-    record_url = base + '?' + urlencode({identity_key: identity}) if profile != 'pncp_contracts' else source.url
+    if profile == 'pncp_contracts':
+        record_url = f'https://pncp.gov.br/app/contratos/{match[1]}/{match[3]}/{match[2]}'
+    else:
+        record_url = base + '?' + urlencode({identity_key: identity})
     attributes['collection_page_url'] = source.url
     attributes['record_reference_url'] = record_url
     return ResourceInput(id=f'{profile}:{identity}', kind=kind, title=title,

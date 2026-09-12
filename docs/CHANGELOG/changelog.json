@@ -596,6 +596,19 @@
         "A recusa de chaves duplicadas acontece antes da comparação do manifesto e da revalidação da extração.",
         "Regressão da Issue #4: duas declarações opostas de production_import_allowed foram aceitas antes da correção; depois, 16 testes do arquivador passaram, com 2 cenários de symlink indisponíveis neste Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.43",
+      "date": "2026-09-12",
+      "title": "Contrato do PNCP aponta para seu registro público exato",
+      "user_impact": [
+        "Cada contrato do PNCP passa a oferecer uma referência direta ao próprio registro público, em vez de levar à página coletiva usada na coleta."
+      ],
+      "technical": [
+        "O link usa o CNPJ, o ano e o sequencial de seis dígitos já reconciliados com numeroControlePNCP pelo normalizador.",
+        "collection_page_url continua preservando a URL de coleta; record_reference_url passa a usar a rota pública /app/contratos/{cnpj}/{ano}/{sequencial}.",
+        "Regressão da Issue #3: o falsificador observou a URL coletiva antes da correção; depois, os 81 testes de sincronização de recursos passaram."
+      ]
     }
   ]
 }

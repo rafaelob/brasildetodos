@@ -121,6 +121,15 @@ def test_pncp_identity_and_exact_publisher_field_casing():
     assert revenue.attributes['budget_direction']=='revenue'
 
 
+def test_pncp_record_reference_targets_the_exact_public_contract():
+    body = normalize_resource(PNCP, contract(), source(), {'1234567': ('Test', 'BA')})
+
+    assert body.attributes['collection_page_url'] == 'https://pncp.gov.br/api/consulta/v1/contratos'
+    assert body.attributes['record_reference_url'] == (
+        'https://pncp.gov.br/app/contratos/12345678000199/2026/000001'
+    )
+
+
 @pytest.mark.parametrize('changes',[
     {'anoContrato':2025},{'sequencialContrato':2},{'orgaoEntidade':{'cnpj':'00000000000100'}},
     {'dataAtualizacao':None},{'valorInicial':None},{'dataAssinatura':'2026-02-31'},
