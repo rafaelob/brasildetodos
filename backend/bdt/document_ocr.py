@@ -16,7 +16,7 @@ from sqlalchemy import select, update
 
 from .documents import candidates, ocr_page
 from .domain import now
-from .evidence import Document, audit, initialize_extensions
+from .evidence import Document, audit, initialize_extensions, validated_extraction_pages
 from .storage import Database, User
 from .sync import file_hash
 
@@ -50,7 +50,8 @@ def process_ocr(database, document_id: str, path: Path, *, operator: str, pages:
         if doc.source['snapshot_sha256'] != original_hash or doc.extraction.get('sha256') != original_hash:
             raise ValueError('document_ocr_hash_mismatch')
         extraction = copy.deepcopy(doc.extraction)
-        selected = {page['page']: page for page in extraction.get('pages', [])}
+        stored_pages = validated_extraction_pages(extraction, original_hash)
+        selected = {page['page']: page for page in stored_pages}
         for number in pages:
             if number not in selected or selected[number].get('route') not in {'ocr_candidate', 'review_encoding'}:
                 raise ValueError('selected_page_is_not_an_inspected_ocr_candidate')

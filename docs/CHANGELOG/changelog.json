@@ -555,6 +555,21 @@
         "Uma mutação temporária em territory.py derrubou o guard com locator exato e sua remoção restaurou o verde.",
         "Regressão da Issue #2: 170 testes das sete superfícies afetadas passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.40",
+      "date": "2026-09-12",
+      "title": "OCR recusa pacote corrompido e preserva repetição idempotente",
+      "user_impact": [
+        "O OCR seletivo não processa uma página quando o pacote de extração armazenado perdeu a numeração íntegra.",
+        "Repetir o comando local para o mesmo arquivo continua reutilizando a evidência existente, mesmo quando a nova execução tem outro horário de coleta."
+      ],
+      "technical": [
+        "A validação estrutural do pacote de evidência agora é compartilhada pela gravação idempotente e pelo worker de OCR.",
+        "Números de página precisam ser inteiros estritos e sequenciais; um booleano não pode se passar pela página 1 e substituir outra entrada no índice.",
+        "A identidade do snapshot continua exigindo título, URL, data de referência e demais metadados iguais; collected_at é preservado do primeiro registro e não transforma uma repetição do mesmo snapshot em conflito.",
+        "Regressão da Issue #4: o pacote adulterado chegou ao engine antes da correção e foi recusado antes da lease e do OCR depois dela; a suíte integral também expôs e protegeu a repetição do comando de operador."
+      ]
     }
   ]
 }

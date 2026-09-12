@@ -137,7 +137,9 @@ def register_document(session, body: DocumentInput, author_id: str) -> Document:
     source = body.source.model_dump(mode='json')
     existing = session.get(Document, identity)
     if existing:
-        if existing.title != body.title or existing.source != source:
+        observed_source = {key: value for key, value in source.items() if key != 'collected_at'}
+        stored_source = {key: value for key, value in existing.source.items() if key != 'collected_at'}
+        if existing.title != body.title or stored_source != observed_source:
             raise ValueError('document_registration_conflict')
         return existing
     row = Document(id=identity, title=body.title, source=source, author_id=author_id)
@@ -155,6 +157,20 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validated_extraction_pages(extraction: object, expected_sha256: str) -> list[dict]:
+    if not isinstance(extraction, dict) or extraction.get('sha256') != expected_sha256:
+        raise ValueError('stored_document_extraction_invalid')
+    pages = extraction.get('pages')
+    if not isinstance(pages, list) or not pages:
+        raise ValueError('stored_document_extraction_invalid')
+    for expected_page, page in enumerate(pages, 1):
+        if (not isinstance(page, dict) or type(page.get('page')) is not int
+                or page['page'] != expected_page or not isinstance(page.get('text'), str)
+                or ('ocr_candidate_text' in page and not isinstance(page['ocr_candidate_text'], str))):
+            raise ValueError('stored_document_extraction_invalid')
+    return pages
+
+
 def store_extraction(database, document_id: str, path: Path, *, max_pages: int = 100) -> dict:
     """Operator-only extraction; hashes verify bytes, not legal authenticity."""
     from .documents import inspect_pdf
@@ -170,16 +186,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         raise ValueError('document_hash_mismatch')
 
     def receipt(extraction):
-        if not isinstance(extraction, dict) or extraction.get('sha256') != expected:
-            raise ValueError('stored_document_extraction_invalid')
-        pages = extraction.get('pages')
-        if not isinstance(pages, list) or not pages:
-            raise ValueError('stored_document_extraction_invalid')
-        for expected_page, page in enumerate(pages, 1):
-            if (not isinstance(page, dict) or type(page.get('page')) is not int
-                    or page['page'] != expected_page or not isinstance(page.get('text'), str)
-                    or ('ocr_candidate_text' in page and not isinstance(page['ocr_candidate_text'], str))):
-                raise ValueError('stored_document_extraction_invalid')
+        pages = validated_extraction_pages(extraction, expected)
         return {'document_id': document_id, 'pages': len(pages),
                 'state': 'extracted', 'public': False}
 

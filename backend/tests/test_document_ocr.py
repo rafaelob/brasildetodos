@@ -85,6 +85,22 @@ def test_non_candidate_pages_do_not_call_engine(database,document):
             process_ocr(database,identity,path,operator='ocr_operator',pages=pages,engine=lambda *a,**k:pytest.fail('must not OCR'))
 
 
+def test_corrupt_stored_page_number_never_reaches_ocr(database,document):
+    identity,path=document
+    with database.session() as session:
+        row=session.get(Document,identity)
+        extraction=copy.deepcopy(row.extraction)
+        extraction['pages'][1]['page']=True
+        row.extraction=extraction
+    with pytest.raises(ValueError,match='stored_document_extraction_invalid'):
+        process_ocr(database,identity,path,operator='ocr_operator',pages=[1],
+                    engine=lambda *a,**k:pytest.fail('invalid evidence must not reach OCR'))
+    with database.session() as session:
+        row=session.get(Document,identity)
+        assert row.state=='extracted'
+        assert not session.scalar(select(Audit).where(Audit.action=='ocr_started'))
+
+
 def test_second_ocr_requires_explicit_review(database,document):
     call(database,document,engine=lambda *a,**k:'first reviewed later')
     with pytest.raises(ValueError,match='already_has_ocr'): call(database,document)
