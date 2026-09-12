@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from .cnes_bulk import convert
 from .domain import Source, digest, now
 from .ingest import cnes_record, import_places, municipality_lookup, official_id
+from .json_codec import decode
 from .storage import Ingestion
 from .sync import atomic_json, file_hash
 
@@ -117,14 +118,14 @@ def prepared_rows(folder: Path):
                 break
             if len(line) > MAX_ROW_BYTES:
                 raise ValueError('prepared_row_size_budget')
-            yield json.loads(line)
+            yield decode(line)
 
 
 def publish(database, folder: Path) -> dict:
     folder = Path(folder)
     if folder.is_symlink() or (folder/'quality.json').is_symlink() or (folder/'prepared.jsonl').is_symlink():
         raise ValueError('quality_artifact_symlink')
-    report = json.loads((folder/'quality.json').read_text())
+    report = decode((folder/'quality.json').read_bytes())
     if report.get('format') != 'bdt-cnes-quality-v1' or report.get('status') not in {'ready', 'ready_with_quarantine'}:
         raise ValueError('quality_report_not_ready')
     if report.get('national_catalog_certified') is not False:

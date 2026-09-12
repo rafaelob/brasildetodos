@@ -541,6 +541,20 @@
         "A recusa acontece antes de iniciar qualquer transação de ingestão no banco.",
         "Regressão da Issue #2: um registro com dois id foi aceito antes da correção; depois, 30 testes da ingestão passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.39",
+      "date": "2026-09-12",
+      "title": "Fronteiras JSON compartilham validação estrita",
+      "user_impact": [
+        "Coletas, perfis, relatórios, geometrias e snapshots deixam de interpretar silenciosamente chaves JSON repetidas ou números não finitos."
+      ],
+      "technical": [
+        "Um guard AST varre os 46 módulos de backend/bdt e proíbe json.load ou json.loads fora de json_codec.py.",
+        "Nove leituras restantes em CLI, qualidade CNES, Obrasgov, regiões, recursos e território foram migradas ao codec comum; o denominador caiu de 9 violações para zero.",
+        "Uma mutação temporária em territory.py derrubou o guard com locator exato e sua remoção restaurou o verde.",
+        "Regressão da Issue #2: 170 testes das sete superfícies afetadas passaram."
+      ]
     }
   ]
 }

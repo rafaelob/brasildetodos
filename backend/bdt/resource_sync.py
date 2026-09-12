@@ -286,7 +286,7 @@ def main():
         updates=args.updates, page_size=args.page_size, max_pages=args.max_pages)
     if args.collect:
         collect(plan, args.folder)
-    stored = json.loads((args.folder / 'collection.json').read_text())
+    stored = decode((args.folder / 'collection.json').read_bytes())
     if stored.get('plan_sha256') != digest(plan.model_dump()):
         raise ValueError('cli_plan_differs_from_collection')
     database = Database(args.database_url)

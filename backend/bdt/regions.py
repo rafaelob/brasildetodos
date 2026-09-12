@@ -14,6 +14,7 @@ from .catalog_release import consistent_read
 from .coverage_dashboard import SOURCES, STATES, source_group
 from .domain import Source, fold, now
 from .evidence import Resource
+from .json_codec import decode
 from .storage import Finance, Municipality, Place
 
 DIRECTORY_BUDGET = 20000
@@ -157,7 +158,7 @@ def fetch_municipality_geometry(database, municipality_id: str) -> dict | None:
     cache_file = cache_dir / f'{municipality_id}.geojson'
     if cache_file.is_file() and cache_file.stat().st_size > 0:
         try:
-            return json.loads(cache_file.read_text(encoding='utf-8'))
+            return decode(cache_file.read_bytes())
         except Exception:
             pass
     url = f'https://servicodados.ibge.gov.br/api/v3/malhas/municipios/{municipality_id}?formato=application/vnd.geo+json'
@@ -170,7 +171,7 @@ def fetch_municipality_geometry(database, municipality_id: str) -> dict | None:
             if raw.startswith(b'\x1f\x8b'):
                 import gzip
                 raw = gzip.decompress(raw)
-            data = json.loads(raw.decode('utf-8'))
+            data = decode(raw)
     except urllib.error.HTTPError as http_err:
         if http_err.code == 404:
             return None
@@ -189,4 +190,3 @@ def fetch_municipality_geometry(database, municipality_id: str) -> dict | None:
     except Exception:
         pass
     return data
-

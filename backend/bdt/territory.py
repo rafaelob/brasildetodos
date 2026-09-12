@@ -5,12 +5,12 @@ invented data or silently refresh their reference/collection dates.
 """
 from __future__ import annotations
 from contextlib import closing
-import json
 import re
 import sqlite3
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 from .domain import Source
+from .json_codec import decode
 from .storage import Municipality
 from .sync import file_hash
 
@@ -31,7 +31,7 @@ def import_territory_snapshot(database, path: Path) -> dict:
                 raise ValueError('invalid_territory_identity')
             if state not in 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split():
                 raise ValueError('invalid_territory_state')
-            record=Source.model_validate(json.loads(provenance))
+            record=Source.model_validate(decode(provenance.encode('utf-8')))
             if record.dataset!='ibge' or urlsplit(record.url).hostname!='servicodados.ibge.gov.br' or record.record_id!=identity:
                 raise ValueError('snapshot_requires_original_ibge_provenance')
             seen.add(identity);dates.add(str(record.collected_at));hashes.add(record.snapshot_sha256)

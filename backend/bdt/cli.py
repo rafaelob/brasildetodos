@@ -7,6 +7,7 @@ from pathlib import Path
 from .api import password_hash
 from .documents import candidates, inspect_pdf, ocr_page
 from .ingest import csv_records, file_source, import_finance, import_ibge, import_places, json_records, safe_download, transferegov_rows
+from .json_codec import decode
 from .storage import Database, User
 
 
@@ -98,7 +99,7 @@ def main():
                                    page_size=args.page_size, max_pages=args.max_pages)
             if args.collect:
                 collect(plan, args.folder)
-            stored = json.loads((args.folder / 'collection.json').read_text(encoding='utf-8'))
+            stored = decode((args.folder / 'collection.json').read_bytes())
             if stored.get('plan_sha256') != digest(plan.model_dump()):
                 raise ValueError('cli_plan_differs_from_collection')
             result = import_resources(database, args.folder)
@@ -114,7 +115,7 @@ def main():
             elif dataset == "finance":
                 result = {"inserted": import_finance(database, json_records(args.path), source)}
             else:
-                profile = json.loads(args.profile.read_text(encoding="utf-8"))
+                profile = decode(args.profile.read_bytes())
                 rows = transferegov_rows(csv_records(args.path, args.member, args.encoding), **profile)
                 result = {"inserted": import_finance(database, rows, source)}
     if "database" in locals():

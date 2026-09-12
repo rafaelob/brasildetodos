@@ -22,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from .domain import Source, digest, now
 from .evidence import Resource
 from .ingest import HOSTS
+from .json_codec import decode
 from .resource_profiles import STATES, normalize_resource
 from .resource_sync import ResourceRevision, changed_fields, initialize_resource_versions, semantic
 from .storage import Database, Ingestion, Municipality
@@ -96,7 +97,7 @@ def fetch_api_json(endpoint: str, params: dict[str, Any], timeout: int = 30,
         if not raw:
             raise ValueError('obrasgov_empty_response')
         try:
-            payload = json.loads(raw.decode('utf-8'), parse_float=Decimal)
+            payload = decode(raw, parse_float=Decimal)
         except UnicodeDecodeError as exc:
             raise ValueError('obrasgov_response_not_utf8') from exc
         except json.JSONDecodeError as exc:
