@@ -622,6 +622,19 @@
         "Uma saída inválida libera a lease, preserva a extração nativa e registra somente o tipo do erro no histórico privado.",
         "Regressão da Issue #4: caracteres NUL e zero-width space foram aceitos antes da correção; depois, 43 testes das superfícies de OCR e evidência passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.45",
+      "date": "2026-09-12",
+      "title": "Revisão de vínculo valida o pacote documental",
+      "user_impact": [
+        "Um trecho documental deixa de ser aceito ou publicado quando a numeração armazenada das páginas está corrompida."
+      ],
+      "technical": [
+        "A proposta e a revisão de vínculo reutilizam a validação estrutural compartilhada antes de localizar a página e conferir o trecho.",
+        "Hash do original, sequência e inteiro estrito de página passam a ser requisitos do mesmo portão que protege ingestão, OCR e recuperação.",
+        "Regressão da Issue #4: page=true satisfez a busca da página 1 antes da correção; depois, 59 testes de evidência, vínculos e OCR passaram."
+      ]
     }
   ]
 }

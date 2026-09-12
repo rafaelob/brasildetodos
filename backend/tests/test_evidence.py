@@ -258,14 +258,30 @@ def test_reject_changed_bytes_during_extraction(database, source, evidence_user,
 
 
 def test_excerpt_whitespace_and_pending_states():
-    doc = Document(id='a'*64, state='registered')
+    doc = Document(id='a'*64, state='registered', source={'snapshot_sha256': 'b'*64})
     with pytest.raises(ValueError, match='document_not_extracted'):
         validate_excerpt(doc, 1, 'A test excerpt')
     doc.state = 'extracted'
-    doc.extraction = {'pages': [{'page': 1, 'text': 'A test\n   excerpt', 'ocr_candidate_text': 'other observed words'}]}
+    doc.extraction = {'sha256': 'b'*64, 'pages': [
+        {'page': 1, 'text': 'A test\n   excerpt', 'ocr_candidate_text': 'other observed words'},
+    ]}
     validate_excerpt(doc, 1, 'A test excerpt')
     validate_excerpt(doc, 1, 'other observed words')
     link = Link(id='x', place_id='test:school', resource_id='pncp:1', document_id=doc.id, page=1,
         excerpt='A test excerpt', justification='Private reviewer context', status='reviewed', revision=1)
     assert 'justification' not in link_payload(link, public=True)
     assert link_payload(link)['justification'] == 'Private reviewer context'
+
+
+def test_excerpt_validation_rejects_corrupt_stored_page_number():
+    document = Document(
+        id='a'*64,
+        state='extracted',
+        source={'snapshot_sha256': 'b'*64},
+        extraction={
+            'sha256': 'b'*64,
+            'pages': [{'page': True, 'text': 'Synthetic reviewed excerpt'}],
+        },
+    )
+    with pytest.raises(ValueError, match='stored_document_extraction_invalid'):
+        validate_excerpt(document, 1, 'Synthetic reviewed excerpt')

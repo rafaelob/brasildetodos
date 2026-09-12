@@ -221,7 +221,9 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
 def validate_excerpt(document: Document, page: int, excerpt: str):
     if document.state != 'extracted' or not document.extraction:
         raise ValueError('document_not_extracted')
-    selected = next((p for p in document.extraction.get('pages', []) if p['page'] == page), None)
+    expected_sha256 = document.source.get('snapshot_sha256') if isinstance(document.source, dict) else ''
+    pages = validated_extraction_pages(document.extraction, expected_sha256)
+    selected = next((item for item in pages if item['page'] == page), None)
     if not selected:
         raise ValueError('page_not_found')
     normalize = lambda value: re.sub(r'\s+', ' ', value).strip()

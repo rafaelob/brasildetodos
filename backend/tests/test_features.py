@@ -40,7 +40,9 @@ def prepare_link(client, database, source):
     with database.session() as session:
         row = session.get(Document, identity)
         row.state = 'extracted'
-        row.extraction = {'pages': [{'page': 1, 'text': 'Explicit reference to test:school in this synthetic document.', 'words': [], 'candidates': []}]}
+        row.extraction = {'sha256': source.snapshot_sha256, 'pages': [
+            {'page': 1, 'text': 'Explicit reference to test:school in this synthetic document.', 'words': [], 'candidates': []},
+        ]}
     body = {'place_id': 'test:school', 'resource_id': 'pncp:synthetic/2025', 'document_id': identity, 'page': 1,
             'excerpt': 'Explicit reference to test:school', 'justification': 'The identifier is explicitly included in the synthetic text.'}
     return body
@@ -162,8 +164,10 @@ def test_link_review_revalidates_excerpt_against_current_extraction(client, data
     identity = client.post('/api/workbench/links', headers=HEAD, json=body).json()['id']
     with database.session() as session:
         document = session.get(Document, body['document_id'])
-        document.extraction = {'pages': [{'page': 1, 'text': 'A replacement extraction without the proposed excerpt.',
-                                          'words': [], 'candidates': []}]}
+        document.extraction = {'sha256': source.snapshot_sha256, 'pages': [
+            {'page': 1, 'text': 'A replacement extraction without the proposed excerpt.',
+             'words': [], 'candidates': []},
+        ]}
 
     login(client, 'reviewer')
     response = client.post(f'/api/workbench/links/{identity}/review', headers=HEAD, json=decision())
