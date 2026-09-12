@@ -170,6 +170,22 @@ def test_access_revocation_withdraws_private_sharing(team,mode):
     assert row['observation'] is None and row['state']=='open'
 
 
+@pytest.mark.parametrize('mode',['leave','remove'])
+def test_member_departure_invalidates_their_accepted_review(team,mode):
+    _,_,c=team;g=new_group(c['owner']);add_member(c['owner'],c['member'],g);add_member(c['owner'],c['reviewer'],g);t=task(c['owner'],g)
+    action(c['member'],g,'/tasks/'+t,action='claim');obs=observation(c['member'])
+    action(c['member'],g,'/tasks/'+t,action='submit',observation_id=obs,share_with_group=True)
+    assert action(c['reviewer'],g,'/tasks/'+t,action='accept',note='Independent member review.').status_code==200
+    if mode=='leave':
+        response=action(c['reviewer'],g,'/leave')
+    else:
+        reviewer_id=next(m['id'] for m in detail(c['owner'],g)['members'] if m['username']=='reviewer')
+        response=action(c['owner'],g,'/members/remove',user_id=reviewer_id)
+    assert response.status_code==200,response.text
+    row=detail(c['owner'],g)['tasks']['items'][0]
+    assert row['state']=='submitted' and row['effective_state']=='submitted' and row['review_note'] is None
+
+
 def test_owner_transfer_and_archive_are_real_transitions(team):
     _,_,c=team;g=new_group(c['owner']);add_member(c['owner'],c['member'],g)
     assert action(c['owner'],g,'/leave').status_code==409

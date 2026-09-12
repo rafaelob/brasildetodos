@@ -224,6 +224,12 @@ def remove_member_content(session, group_id, user_id):
             task.state = 'open'
         task.revision += 1
         task.updated_at = now()
+    for task in session.scalars(select(Task).where(Task.group_id == group_id, Task.reviewer_id == user_id)):
+        task.reviewer_id = task.review_note = None
+        if task.state in ('accepted', 'changes_requested'):
+            task.state = 'submitted'
+        task.revision += 1
+        task.updated_at = now()
     session.execute(delete(Member).where(Member.group_id == group_id, Member.user_id == user_id))
 
 

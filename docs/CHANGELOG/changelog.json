@@ -425,6 +425,19 @@
         "A mesma regra protege a primeira gravação e a reutilização idempotente; uma página válida continua concluindo o fluxo.",
         "Regressão da Issue #4: pages vazio marcou o documento como extraído antes da correção; depois, 27 testes de evidência e features passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.30",
+      "date": "2026-09-12",
+      "title": "Saída do grupo invalida a revisão do membro",
+      "user_impact": [
+        "Quando uma pessoa deixa um grupo ou é removida, sua decisão anterior deixa de manter uma tarefa aceita e sua nota privada sai da tarefa."
+      ],
+      "technical": [
+        "A revogação da associação limpa reviewer_id e review_note e devolve decisões accepted ou changes_requested ao estado submitted, preservando a observação compartilhada para nova revisão.",
+        "A regra comum cobre saída voluntária, remoção pelo dono e desativação de conta.",
+        "Regressão da Issue #5: as duas rotas mantiveram a tarefa aceita antes da correção; depois, 49 testes de grupos e features passaram."
+      ]
     }
   ]
 }
