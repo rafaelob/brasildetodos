@@ -76,6 +76,19 @@
         "O coletor recusa total_pages menor que o número da página não vazia já observada, antes de registrar a condição terminal declared_total_pages.",
         "Regressão da Issue #2: o teste responsável e os 28 testes do contrato de coleta paginada passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.3",
+      "date": "2026-09-12",
+      "title": "Retratação também exige moderação independente",
+      "user_impact": [
+        "Quem publicou uma contribuição não pode usar privilégios de revisor para retratar a própria publicação. A decisão continua exigindo outra pessoa."
+      ],
+      "technical": [
+        "POST /api/moderation/observations/{id}/retract retorna self_review_forbidden quando o revisor autenticado também é o autor da observação.",
+        "A recusa preserva o estado aprovado, o revisor independente anterior, a leitura pública e o histórico sem evento de retratação.",
+        "Regressão da Issue #5: o teste responsável e 142 testes das superfícies de moderação, API e cenários adversariais passaram."
+      ]
     }
   ]
 }

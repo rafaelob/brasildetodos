@@ -173,6 +173,24 @@ def test_published_observation_can_be_retracted(client):
     assert client.get('/api/places/test:school').json()['observations'] == []
 
 
+def test_author_reviewer_cannot_retract_own_published_observation(client, database):
+    login(client, 'editor'); identity = observe(client)
+    login(client, 'reviewer')
+    assert client.post(f'/api/review/{identity}', headers=HEAD,
+                       json={'decision':'approved','note':'Independent review of synthetic evidence.'}).status_code == 200
+    login(client, 'editor')
+    response = client.post(f'/api/moderation/observations/{identity}/retract', headers=HEAD,
+                           json={'note':'Author must not act as moderator of this publication.'})
+    assert response.status_code == 403
+    assert response.json() == {'detail': 'self_review_forbidden'}
+    assert len(client.get('/api/places/test:school').json()['observations']) == 1
+    with database.session() as session:
+        row = session.get(Observation, identity)
+        assert row.status == 'approved' and row.reviewer_id != row.author_id
+        assert 'retracted' not in [event.action for event in session.scalars(
+            select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))]
+
+
 def test_author_withdrawal_cannot_overwrite_moderation_retraction(client, database):
     login(client, 'reader'); identity = observe(client)
     login(client, 'reviewer')

@@ -182,6 +182,9 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
     @app.post('/api/moderation/observations/{observation_id}/retract')
     def retract(observation_id: str, body: Note, user=Depends(reviewer)):
         with database.session() as session:
+            row = session.get(Observation, observation_id)
+            if row is not None and row.author_id == user['id']:
+                raise HTTPException(403, 'self_review_forbidden')
             result = session.execute(update(Observation).where(Observation.id == observation_id, Observation.status == 'approved')
                 .values(status='retracted', reviewed_at=now(), reviewer_id=user['id'], review_note=body.note))
             if result.rowcount != 1:
