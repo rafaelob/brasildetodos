@@ -43,8 +43,15 @@ class PagePlan(StrictModel):
             raise ValueError('source_not_allowlisted')
         if self.page_parameter == self.size_parameter or self.page_parameter in self.parameters or self.size_parameter in self.parameters:
             raise ValueError('ambiguous_pagination_parameters')
-        if any(not key or len(key) > 80 for key in (self.root, self.identity, self.page_parameter, self.size_parameter)):
+        response_metadata = (self.total_pages_field, self.total_records_field, self.response_page_field)
+        configured_response_metadata = [field for field in response_metadata if field is not None]
+        if any(not key or len(key) > 80 for key in (
+                self.root, self.identity, self.page_parameter, self.size_parameter,
+                *configured_response_metadata)):
             raise ValueError('invalid_profile_field')
+        response_fields = [self.root, *configured_response_metadata]
+        if len(response_fields) != len(set(response_fields)):
+            raise ValueError('ambiguous_response_fields')
         return self
 
 

@@ -32,7 +32,9 @@ def payload(*ids, **metadata):
 
 @pytest.mark.parametrize('changes', [{'url':'http://apidadosabertos.saude.gov.br/cnes'}, {'url':'https://localhost/cnes'},
     {'url':'https://user:secret@apidadosabertos.saude.gov.br/cnes'}, {'url':'https://apidadosabertos.saude.gov.br:8080/cnes'},
-    {'size_parameter':'offset'}, {'parameters':{'offset':'1'}}, {'root':''}, {'page_size':0}])
+    {'size_parameter':'offset'}, {'parameters':{'offset':'1'}}, {'root':''}, {'page_size':0},
+    {'total_pages_field':''}, {'total_pages_field':'total','total_records_field':'total'},
+    {'total_pages_field':'page','response_page_field':'page'}])
 def test_invalid_profile(changes):
     with pytest.raises(ValueError):
         plan(**changes)

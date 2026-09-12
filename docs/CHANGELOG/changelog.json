@@ -128,6 +128,18 @@
         "A mesma reconciliação ocorre na transação de instalação; uma divergência impede a publicação do novo banco de destino.",
         "Regressão da Issue #2: o manifesto sem fontes passou antes da correção; depois, 64 testes do release público e da instalação nacional passaram, com 2 cenários de symlink não executáveis sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.7",
+      "date": "2026-09-12",
+      "title": "Perfis de paginação recusam metadados ambíguos",
+      "user_impact": [
+        "Uma coleta deixa de iniciar quando o perfil desativa um campo de paginação com nome vazio ou atribui dois significados ao mesmo campo da resposta."
+      ],
+      "technical": [
+        "PagePlan valida os nomes opcionais de página atual, total de páginas e total de registros junto do campo raiz da resposta, recusando vazios e duplicatas antes de qualquer requisição.",
+        "Regressão da Issue #2: as três configurações inválidas passaram antes da correção; depois, 111 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
+      ]
     }
   ]
 }
