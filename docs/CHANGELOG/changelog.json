@@ -204,6 +204,19 @@
         "A justificativa privada é substituída por um marcador inerte; vínculos públicos já revisados permanecem preservados conforme a política de retenção existente.",
         "Regressão da Issue #5: a proposta da conta apagada permaneceu ativa antes da correção; depois, 63 testes de features, grupos e fotos passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.13",
+      "date": "2026-09-12",
+      "title": "Coordenadas booleanas não viram localização de obra",
+      "user_impact": [
+        "Metadados booleanos de latitude ou longitude deixam de publicar uma localização oficial falsa para um projeto do Obrasgov."
+      ],
+      "technical": [
+        "Uma conversão única valida latitude e longitude como números finitos dentro dos limites geográficos e recusa booleanos nos caminhos de geometria e de campos diretos.",
+        "O valor legítimo zero e as representações numéricas textuais continuam aceitos.",
+        "Regressão da Issue #3: True era convertido em latitude 1.0 antes da correção; depois, 90 testes do normalizador e do coletor Obrasgov passaram."
+      ]
     }
   ]
 }

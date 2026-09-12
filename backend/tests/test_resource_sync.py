@@ -319,6 +319,30 @@ def test_obrasgov_physical_execution_and_geometries():
     assert res.attributes['territorial_basis'] == 'state_only_municipality_unresolved'
 
 
+def test_obrasgov_omits_boolean_fallback_coordinates_but_preserves_zero():
+    for latitude, longitude in [(True, -40), (-10, False)]:
+        result = normalize_resource(
+            WORK,
+            project(pins=None, latitude=latitude, longitude=longitude),
+            source(WORK),
+            {},
+        )
+
+        assert 'latitude' not in result.attributes
+        assert 'longitude' not in result.attributes
+        assert 'project_geometries' not in result.attributes
+
+    valid = normalize_resource(
+        WORK,
+        project(pins=None, latitude=0, longitude='-40'),
+        source(WORK),
+        {},
+    )
+    assert valid.attributes['project_geometries'] == [
+        {'latitude': 0.0, 'longitude': -40.0, 'kind': 'point'},
+    ]
+
+
 @pytest.mark.parametrize('value', [True, -0.01, 100.01, 'NaN', 'Infinity', 'not-a-number'])
 def test_obrasgov_rejects_invalid_physical_execution_percentage(value):
     with pytest.raises(ValueError, match='invalid_physical_execution_percentage'):

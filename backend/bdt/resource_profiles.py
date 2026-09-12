@@ -87,6 +87,18 @@ def nonnegative_count(value):
     return int(parsed)
 
 
+def coordinate(value, *, minimum, maximum):
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = float(str(value).rstrip(')').strip())
+    except (ValueError, TypeError):
+        return None
+    if not math.isfinite(parsed) or not minimum <= parsed <= maximum:
+        return None
+    return parsed
+
+
 def require(row, fields):
     if not isinstance(row, dict) or not set(fields).issubset(row):
         raise ValueError('resource_schema_changed')
@@ -265,21 +277,16 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
                     pin_str = str(pin.get('pin') or '')
                     match = re.search(r'POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)', pin_str, re.I)
                     if match:
-                        try:
-                            lon_cand, lat_cand = float(match.group(1)), float(match.group(2))
-                            if -90 <= lat_cand <= 90 and -180 <= lon_cand <= 180:
-                                lat, lon = lat_cand, lon_cand
-                        except (ValueError, TypeError):
-                            pass
+                        lat_cand = coordinate(match.group(2), minimum=-90, maximum=90)
+                        lon_cand = coordinate(match.group(1), minimum=-180, maximum=180)
+                        if lat_cand is not None and lon_cand is not None:
+                            lat, lon = lat_cand, lon_cand
                     if lat is None or lon is None:
                         if 'latitude' in pin and 'longitude' in pin:
-                            try:
-                                lat_cand = float(str(pin['latitude']).rstrip(')').strip())
-                                lon_cand = float(str(pin['longitude']).rstrip(')').strip())
-                                if -90 <= lat_cand <= 90 and -180 <= lon_cand <= 180:
-                                    lat, lon = lat_cand, lon_cand
-                            except (ValueError, TypeError):
-                                pass
+                            lat_cand = coordinate(pin['latitude'], minimum=-90, maximum=90)
+                            lon_cand = coordinate(pin['longitude'], minimum=-180, maximum=180)
+                            if lat_cand is not None and lon_cand is not None:
+                                lat, lon = lat_cand, lon_cand
                     if lat is not None and lon is not None:
                         parsed_pins.append({'latitude': lat, 'longitude': lon, 'kind': str(pin.get('tipo_geometria') or pin.get('tipo') or 'point')})
             if parsed_pins:
@@ -287,15 +294,12 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
                 attributes['latitude'] = parsed_pins[0]['latitude']
                 attributes['longitude'] = parsed_pins[0]['longitude']
         elif 'latitude' in row and 'longitude' in row and row['latitude'] is not None and row['longitude'] is not None:
-            try:
-                lat = float(row['latitude'])
-                lon = float(row['longitude'])
-                if -90 <= lat <= 90 and -180 <= lon <= 180:
-                    attributes['latitude'] = lat
-                    attributes['longitude'] = lon
-                    attributes['project_geometries'] = [{'latitude': lat, 'longitude': lon, 'kind': 'point'}]
-            except (ValueError, TypeError):
-                pass
+            lat = coordinate(row['latitude'], minimum=-90, maximum=90)
+            lon = coordinate(row['longitude'], minimum=-180, maximum=180)
+            if lat is not None and lon is not None:
+                attributes['latitude'] = lat
+                attributes['longitude'] = lon
+                attributes['project_geometries'] = [{'latitude': lat, 'longitude': lon, 'kind': 'point'}]
         pop = nonnegative_count(row.get('populacao_beneficiada'))
         if pop is not None:
             attributes['benefited_population'] = pop
