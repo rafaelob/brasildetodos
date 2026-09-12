@@ -373,6 +373,19 @@
         "O recibo legítimo com status 200 inteiro permanece importável como controle positivo.",
         "Regressão da Issue #2: status_code 200.0 criou um recurso antes da correção; depois, 92 testes de importação, intake e resposta sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.26",
+      "date": "2026-09-12",
+      "title": "Extração inválida não muda o estado do documento",
+      "user_impact": [
+        "Uma falha estrutural na extração deixa o documento pronto para nova tentativa, sem registrar como concluído um pacote inválido."
+      ],
+      "technical": [
+        "store_extraction valida SHA, sequência de páginas e campos textuais antes do compare-and-swap que grava extraction e state=extracted.",
+        "A saída inválida mantém state=registered e extraction nula; uma saída válida subsequente ainda conclui a extração.",
+        "Regressão da Issue #4: o erro deixava o documento extraído antes da correção; depois, 61 testes de evidência, features, OCR e extração passaram."
+      ]
     }
   ]
 }

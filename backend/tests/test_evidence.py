@@ -127,6 +127,34 @@ def test_repeated_extraction_rejects_corrupt_stored_page_structure(database, sou
     assert store_extraction(database, identity, path) == expected
 
 
+def test_invalid_new_extraction_never_commits(database, source, evidence_user, tmp_path, monkeypatch):
+    path = tmp_path / 'synthetic.pdf'
+    path.write_bytes(b'%PDF-synthetic-parser-contract')
+    snapshot = hashlib.sha256(path.read_bytes()).hexdigest()
+    with database.session() as session:
+        identity = register_document(session, DocumentInput(
+            title='Synthetic parser contract',
+            source=source.model_copy(update={'snapshot_sha256': snapshot}),
+        ), evidence_user).id
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: {
+        'sha256': snapshot,
+        'pages': [{'page': True, 'text': 'Invalid boolean page number'}],
+    })
+    with pytest.raises(ValueError, match='stored_document_extraction_invalid'):
+        store_extraction(database, identity, path)
+    with database.session() as session:
+        document = session.get(Document, identity)
+        assert document.state == 'registered'
+        assert document.extraction is None
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: {
+        'sha256': snapshot,
+        'pages': [{'page': 1, 'text': 'Valid native extraction'}],
+    })
+    assert store_extraction(database, identity, path)['pages'] == 1
+
+
 def test_reject_changed_bytes_during_extraction(database, source, evidence_user, tmp_path, monkeypatch):
     path = tmp_path / 'synthetic.pdf'; path.write_bytes(b'%PDF-synthetic')
     src = source.model_copy(update={'snapshot_sha256': hashlib.sha256(path.read_bytes()).hexdigest()})

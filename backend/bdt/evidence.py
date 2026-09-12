@@ -187,6 +187,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
     if extraction['sha256'] != expected:
         raise ValueError('document_changed_during_extraction')
     extraction.pop('filename', None)
+    validated_receipt = receipt(extraction)
     with database.session() as session:
         changed = session.execute(update(Document).where(
             Document.id == document_id, Document.state == 'registered').values(
@@ -199,7 +200,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
                 return receipt(current.extraction)
             raise ValueError('document_extraction_state_conflict')
         audit(session, author_id, 'document', document_id, 'native_extracted', pages=len(extraction['pages']))
-    return receipt(extraction)
+    return validated_receipt
 
 
 def validate_excerpt(document: Document, page: int, excerpt: str):
