@@ -399,6 +399,19 @@
         "A verificação não confia apenas no hash informado pelo extrator; uma mudança mantém o documento registrado e sem pacote de extração.",
         "Regressão da Issue #4: um parser que alterava o arquivo e devolvia o SHA antigo concluiu antes da correção; depois, 25 testes de evidência e features passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.28",
+      "date": "2026-09-12",
+      "title": "Orçamento de páginas é conferido antes da gravação",
+      "user_impact": [
+        "Uma extração deixa de ser registrada quando excede o número de páginas autorizado para o trabalho."
+      ],
+      "technical": [
+        "store_extraction valida max_pages entre 1 e 1000 e compara o número de páginas do recibo validado antes do compare-and-swap.",
+        "O controle não depende de o parser respeitar o argumento; a saída excedente mantém o documento registrado e sem extração.",
+        "Regressão da Issue #4: duas páginas foram persistidas sob orçamento 1 antes da correção; depois, 26 testes de evidência e features passaram."
+      ]
     }
   ]
 }

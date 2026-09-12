@@ -186,6 +186,38 @@ def test_original_changed_during_native_extraction_never_commits(database, sourc
     assert store_extraction(database, identity, path)['pages'] == 1
 
 
+def test_extractor_output_cannot_exceed_requested_page_budget(database, source, evidence_user, tmp_path, monkeypatch):
+    path = tmp_path / 'synthetic.pdf'
+    original = b'%PDF-synthetic-page-budget'
+    path.write_bytes(original)
+    snapshot = hashlib.sha256(original).hexdigest()
+    with database.session() as session:
+        identity = register_document(session, DocumentInput(
+            title='Synthetic page budget',
+            source=source.model_copy(update={'snapshot_sha256': snapshot}),
+        ), evidence_user).id
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: {
+        'sha256': snapshot,
+        'pages': [
+            {'page': 1, 'text': 'First page'},
+            {'page': 2, 'text': 'Second page beyond the budget'},
+        ],
+    })
+    with pytest.raises(ValueError, match='document_page_budget_exceeded'):
+        store_extraction(database, identity, path, max_pages=1)
+    with database.session() as session:
+        document = session.get(Document, identity)
+        assert document.state == 'registered'
+        assert document.extraction is None
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: {
+        'sha256': snapshot,
+        'pages': [{'page': 1, 'text': 'One page within the budget'}],
+    })
+    assert store_extraction(database, identity, path, max_pages=1)['pages'] == 1
+
+
 def test_reject_changed_bytes_during_extraction(database, source, evidence_user, tmp_path, monkeypatch):
     path = tmp_path / 'synthetic.pdf'; path.write_bytes(b'%PDF-synthetic')
     src = source.model_copy(update={'snapshot_sha256': hashlib.sha256(path.read_bytes()).hexdigest()})

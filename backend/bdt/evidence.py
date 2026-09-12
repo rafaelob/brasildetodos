@@ -158,6 +158,8 @@ def _file_sha256(path: Path) -> str:
 def store_extraction(database, document_id: str, path: Path, *, max_pages: int = 100) -> dict:
     """Operator-only extraction; hashes verify bytes, not legal authenticity."""
     from .documents import inspect_pdf
+    if type(max_pages) is not int or not 1 <= max_pages <= 1000:
+        raise ValueError('invalid_document_page_budget')
     with database.session() as session:
         doc = session.get(Document, document_id)
         if not doc:
@@ -192,6 +194,8 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         raise ValueError('document_changed_during_extraction')
     extraction.pop('filename', None)
     validated_receipt = receipt(extraction)
+    if validated_receipt['pages'] > max_pages:
+        raise ValueError('document_page_budget_exceeded')
     with database.session() as session:
         changed = session.execute(update(Document).where(
             Document.id == document_id, Document.state == 'registered').values(
