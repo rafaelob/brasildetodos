@@ -67,7 +67,8 @@ def originals(folder: Path, *, archived=False) -> dict[str, bytes]:
 
 def derive(folder: Path, content: dict[str, bytes]) -> dict[str, bytes]:
     from bdt.documents import candidates, inspect_pdf
-    evidence = json.loads(content['result.json'])
+    from bdt.json_codec import decode
+    evidence = decode(content['result.json'])
     if (evidence.get('fixture') != 'synthetic-scanned-Portuguese' or
             evidence.get('official_corpus_evaluated') is not False or
             evidence.get('revision') != SOURCE['revision'] or
@@ -112,8 +113,9 @@ def manifest(files: dict[str, bytes]) -> dict:
 
 
 def verify(folder: Path) -> dict:
+    from bdt.json_codec import decode
     content = originals(folder, archived=True)
-    recorded = json.loads(read_regular(folder / 'manifest.json'))
+    recorded = decode(read_regular(folder / 'manifest.json'))
     derived = {name: read_regular(folder / name) for name in ('native-extraction.json', 'recognized-text.txt')}
     if recorded != manifest(content | derived):
         raise ValueError('corpus_manifest_mismatch')

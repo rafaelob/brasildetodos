@@ -77,6 +77,17 @@ def test_tampered_output_not_accepted_or_replaced(archiver,corpus,tmp_path,file)
     assert p.read_bytes()==saved
 
 
+def test_manifest_with_duplicate_key_is_rejected(archiver,corpus,tmp_path):
+    target=tmp_path/'out';archiver.archive(corpus,target)
+    path=target/'manifest.json';text=path.read_text(encoding='utf-8')
+    marker='  "production_import_allowed": false,'
+    assert marker in text
+    path.write_text(text.replace(marker,
+        '  "production_import_allowed": true,\n  "production_import_allowed": false,',1),encoding='utf-8')
+    with pytest.raises(ValueError,match='duplicate_json_key'):
+        archiver.verify(target)
+
+
 def test_destination_collision_is_never_overwritten(archiver,corpus,tmp_path):
     target=tmp_path/'out';target.mkdir();(target/'keep').write_text('existing')
     with pytest.raises(ValueError):archiver.archive(corpus,target)

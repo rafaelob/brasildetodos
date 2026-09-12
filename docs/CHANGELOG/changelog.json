@@ -583,6 +583,19 @@
         "No erro, a lease exata permanece no documento e nenhum evento ocr_lease_recovered é gravado, mantendo o caso visível para intervenção.",
         "Regressão da Issue #4: a recuperação aceitou uma segunda página booleana antes da correção e passou a recusá-la antes da transição."
       ]
+    },
+    {
+      "version": "2026.09.12.42",
+      "date": "2026-09-12",
+      "title": "Manifesto de evidência OCR recusa JSON ambíguo",
+      "user_impact": [
+        "Um pacote reprodutível de evidência OCR deixa de ser validado quando seu manifesto atribui dois valores conflitantes à mesma chave."
+      ],
+      "technical": [
+        "O verificador e a derivação do corpus usam o decodificador JSON estrito compartilhado para o manifesto gerado e o resultado de origem.",
+        "A recusa de chaves duplicadas acontece antes da comparação do manifesto e da revalidação da extração.",
+        "Regressão da Issue #4: duas declarações opostas de production_import_allowed foram aceitas antes da correção; depois, 16 testes do arquivador passaram, com 2 cenários de symlink indisponíveis neste Windows."
+      ]
     }
   ]
 }
