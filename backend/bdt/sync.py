@@ -204,19 +204,34 @@ def collected_rows(folder: Path, report: dict):
     if (report.get('status') != 'complete' or not isinstance(entries, list)
             or not entries or len(entries) > plan.max_pages):
         raise ValueError('invalid_collection_page_manifest')
+    report_records = report.get('records')
+    report_expected_records = report.get('expected_records')
+    if (type(report_records) is not int or report_records < 0
+            or report_expected_records is not None
+            and (type(report_expected_records) is not int or report_expected_records < 0)):
+        raise ValueError('invalid_collection_numeric_manifest')
     identities, total = set(), 0
     expected_pages, expected_records, actual_terminal = None, None, None
     for index, entry in enumerate(entries):
         filename = f'page-{index:06}.json'
-        if (not isinstance(entry, dict) or entry.get('index') != index
+        if not isinstance(entry, dict):
+            raise ValueError('collection_page_reference_mismatch')
+        entry_index = entry.get('index')
+        entry_bytes = entry.get('bytes')
+        entry_records = entry.get('records')
+        if (type(entry_index) is not int or entry_index < 0
+                or type(entry_bytes) is not int or entry_bytes < 0
+                or type(entry_records) is not int or entry_records < 0):
+            raise ValueError('invalid_collection_numeric_manifest')
+        if (entry_index != index
                 or entry.get('file') != filename or entry.get('url') != page_url(plan, index)):
             raise ValueError('collection_page_reference_mismatch')
         # Paths are generated, not accepted from an untrusted manifest.
         path = folder / filename
-        if path.is_symlink() or not path.is_file() or type(entry.get('bytes')) is not int:
+        if path.is_symlink() or not path.is_file():
             raise ValueError('collection_page_not_regular_or_too_large')
         actual_bytes = path.stat().st_size
-        if actual_bytes != entry['bytes']:
+        if actual_bytes != entry_bytes:
             raise ValueError('page_changed_after_collection')
         if actual_bytes > plan.max_bytes_per_page:
             raise ValueError('collection_page_not_regular_or_too_large')
@@ -244,7 +259,7 @@ def collected_rows(folder: Path, report: dict):
                     expected_records = value
         if rows and expected_pages is not None and expected_pages < index + 1:
             raise ValueError('collection_page_totals_invalid')
-        if len(rows) != entry.get('records'):
+        if len(rows) != entry_records:
             raise ValueError('collection_page_record_count_mismatch')
         for row in rows:
             identity = row.get(plan.identity) if isinstance(row, dict) else None
@@ -262,7 +277,7 @@ def collected_rows(folder: Path, report: dict):
         elif index + 1 == len(entries):
             raise ValueError('collection_terminal_reconciliation_failure')
         yield from rows
-    if (report.get('records') != total or report.get('expected_records') != expected_records
+    if (report_records != total or report_expected_records != expected_records
             or report.get('terminal') != actual_terminal):
         raise ValueError('collection_terminal_reconciliation_failure')
 

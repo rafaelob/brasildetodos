@@ -167,6 +167,31 @@ def test_collection_manifest_tampering_never_publishes_places(database, tmp_path
         assert session.scalar(select(func.count()).select_from(Place)) == 0
 
 
+@pytest.mark.parametrize('mutate', [
+    pytest.param(lambda report: report.update(records=True), id='total-records'),
+    pytest.param(lambda report: report['pages'][0].update(records=True), id='page-records'),
+    pytest.param(lambda report: report['pages'][0].update(index=False), id='page-index'),
+])
+def test_collection_manifest_rejects_boolean_numeric_receipts(database, tmp_path, mutate):
+    row = {'codigo_cnes': 123, 'nome_fantasia': 'Unidade sintética', 'codigo_municipio': '123456',
+           'estabelecimento_faz_atendimento_ambulatorial_sus': 'SIM'}
+    folder = tmp_path / 'boolean-manifest'
+    report = collect(plan(), folder, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    mutate(report)
+    (folder / 'collection.json').write_text(json.dumps(report), encoding='utf-8')
+
+    with pytest.raises(ValueError, match='invalid_collection_numeric_manifest'):
+        import_collection(database, folder, 'cnes')
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(Place)) == 0
+
+    valid = tmp_path / 'integer-manifest'
+    collect(plan(), valid, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    assert import_collection(database, valid, 'cnes')['counts']['inserted'] == 1
+
+
 def test_empty_collection_does_not_replace_database(database,tmp_path):
     collect(plan(),tmp_path,loader=loader_for([payload()]))
     with pytest.raises(ValueError,match='empty_collection'):

@@ -308,6 +308,19 @@
         "O controle positivo preserva tanto uma página comum quanto a evidência vazia HTTP 204 com valores inteiros.",
         "Regressão da Issue #2: os dois booleanos foram aceitos antes da correção; depois, 129 testes de coleta, importação e resposta sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.21",
+      "date": "2026-09-12",
+      "title": "Manifesto nacional recusa contagens booleanas",
+      "user_impact": [
+        "Uma coleta de estabelecimentos ou escolas deixa de publicar registros quando seu manifesto usa verdadeiro ou falso no lugar de índices e contagens."
+      ],
+      "technical": [
+        "O leitor genérico exige inteiros não negativos de tipo exato no total global e nos campos index, bytes e records de cada página; expected_records continua aceitando ausência quando a fonte não declara total.",
+        "A validação ocorre antes de entregar qualquer linha ao importador, e uma coleta válida com inteiros permanece publicável.",
+        "Regressão da Issue #2: as três adulterações publicaram um local antes da correção; depois, os 42 testes do contrato genérico de coleta passaram."
+      ]
     }
   ]
 }
