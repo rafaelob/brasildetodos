@@ -334,6 +334,19 @@
         "O importador de recursos reutiliza a autoridade comum e preserva Decimal para valores monetários exatos.",
         "Regressão da Issue #2: duas chaves status conflitantes publicaram um local antes da correção; depois, 133 testes de coleta, importação e resposta sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.23",
+      "date": "2026-09-12",
+      "title": "Evidência HTTP exige código inteiro",
+      "user_impact": [
+        "Uma coleta de locais deixa de ser publicada quando declara um número decimal no lugar do código HTTP da página."
+      ],
+      "technical": [
+        "O importador genérico exige status_code inteiro exato e igual a 200 antes de decodificar ou publicar a página.",
+        "O recibo legítimo com status 200 inteiro permanece publicável como controle positivo.",
+        "Regressão da Issue #2: status_code 200.0 publicou um local antes da correção; depois, os 44 testes do contrato genérico de coleta passaram."
+      ]
     }
   ]
 }

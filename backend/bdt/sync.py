@@ -239,8 +239,9 @@ def collected_rows(folder: Path, report: dict):
         raw = path.read_bytes()
         if hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
             raise ValueError('page_changed_after_collection')
-        if entry.get('status_code', 200) != 200:
-            raise ValueError('collection_page_integrity_failure')
+        status_code = entry.get('status_code', 200)
+        if type(status_code) is not int or status_code != 200:
+            raise ValueError('collection_page_http_status_invalid')
         payload = decode(raw)
         rows = payload.get(plan.root) if isinstance(payload, dict) else None
         if not isinstance(rows, list):

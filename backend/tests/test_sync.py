@@ -219,6 +219,28 @@ def test_collection_manifest_rejects_duplicate_json_keys(database, tmp_path):
     assert import_collection(database, valid, 'cnes')['counts']['inserted'] == 1
 
 
+def test_collection_manifest_rejects_non_integer_http_status(database, tmp_path):
+    row = {'codigo_cnes': 123, 'nome_fantasia': 'Unidade sintética', 'codigo_municipio': '123456',
+           'estabelecimento_faz_atendimento_ambulatorial_sus': 'SIM'}
+    folder = tmp_path / 'float-status'
+    report = collect(plan(), folder, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    report['pages'][0]['status_code'] = 200.0
+    (folder / 'collection.json').write_text(json.dumps(report), encoding='utf-8')
+
+    with pytest.raises(ValueError, match='collection_page_http_status_invalid'):
+        import_collection(database, folder, 'cnes')
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(Place)) == 0
+
+    valid = tmp_path / 'integer-status'
+    valid_report = collect(plan(), valid, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    valid_report['pages'][0]['status_code'] = 200
+    (valid / 'collection.json').write_text(json.dumps(valid_report), encoding='utf-8')
+    assert import_collection(database, valid, 'cnes')['counts']['inserted'] == 1
+
+
 def test_empty_collection_does_not_replace_database(database,tmp_path):
     collect(plan(),tmp_path,loader=loader_for([payload()]))
     with pytest.raises(ValueError,match='empty_collection'):
