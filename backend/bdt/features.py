@@ -81,7 +81,10 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
     def document_register(body: DocumentInput, request: Request, user=Depends(reviewer)):
         rate_limit(request, 'evidence_write', 100)
         with database.session() as session:
-            row = register_document(session, body, user['id'])
+            try:
+                row = register_document(session, body, user['id'])
+            except ValueError as error:
+                raise HTTPException(409, str(error)) from None
             return {'id': row.id, 'state': row.state, 'source': row.source, 'title': row.title}
 
     @app.get('/api/workbench/documents/{document_id}/pages/{page}')

@@ -256,6 +256,19 @@
         "A coleta válida com totais inteiros permanece importável como controle positivo.",
         "Regressão da Issue #2: True satisfez uma contagem igual a 1 antes da correção; depois, 127 testes de coleta, importação e resposta sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.17",
+      "date": "2026-09-12",
+      "title": "Cadastro documental recusa metadados conflitantes",
+      "user_impact": [
+        "O mesmo original documental deixa de ser tratado como repetição válida quando chega com título ou fonte divergentes."
+      ],
+      "technical": [
+        "A identidade por dataset, registro e SHA-256 agora exige correspondência exata do título e da fonte armazenada antes de reutilizar o documento.",
+        "A API retorna document_registration_conflict com HTTP 409 e mantém a repetição exata idempotente.",
+        "Regressão da Issue #4: os metadados conflitantes receberam HTTP 201 antes da correção; depois, 65 testes de features, evidência e OCR passaram, com 2 cenários de symlink indisponíveis neste Windows."
+      ]
     }
   ]
 }

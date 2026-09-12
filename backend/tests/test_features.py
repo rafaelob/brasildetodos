@@ -100,6 +100,23 @@ def test_document_register_metadata_and_pages_private(client, source, database):
     assert client.get(f'/api/workbench/documents/{identity}/pages/1').status_code == 401
 
 
+def test_document_registration_rejects_conflicting_metadata_for_same_snapshot(client, source):
+    login(client)
+    original = document(source)
+    identity = client.post('/api/workbench/documents', headers=HEAD, json=original).json()['id']
+    repeated = client.post('/api/workbench/documents', headers=HEAD, json=original)
+    assert repeated.status_code == 201 and repeated.json()['id'] == identity
+
+    conflicts = [
+        original | {'title': 'Different synthetic evidence document'},
+        document(source.model_copy(update={'url': source.url + '/different'})),
+    ]
+    for conflicting in conflicts:
+        response = client.post('/api/workbench/documents', headers=HEAD, json=conflicting)
+        assert response.status_code == 409
+        assert response.json() == {'detail': 'document_registration_conflict'}
+
+
 def test_exact_excerpt_is_required_and_never_guess_link(client, database, source):
     body = prepare_link(client, database, source)
     for changes, code in [({'place_id':'test:missing'},404), ({'resource_id':'pncp:missing'},404),

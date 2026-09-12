@@ -134,10 +134,13 @@ def audit(session, user_id: str, entity: str, identity: str, action: str, **deta
 
 def register_document(session, body: DocumentInput, author_id: str) -> Document:
     identity = digest([body.source.dataset, body.source.record_id, body.source.snapshot_sha256])
+    source = body.source.model_dump(mode='json')
     existing = session.get(Document, identity)
     if existing:
+        if existing.title != body.title or existing.source != source:
+            raise ValueError('document_registration_conflict')
         return existing
-    row = Document(id=identity, title=body.title, source=body.source.model_dump(mode='json'), author_id=author_id)
+    row = Document(id=identity, title=body.title, source=source, author_id=author_id)
     session.add(row)
     session.flush()
     audit(session, author_id, 'document', identity, 'registered')
