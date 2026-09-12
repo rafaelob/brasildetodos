@@ -145,12 +145,13 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
             check_database(connection)
         with target.open('r+b') as stream:
             os.fsync(stream.fileno())
+        result = {'status': 'restored_new_database', 'contains_private_data': True,
+            'sessions_revoked': True, 'source_backup_sha256': manifest['sha256'],
+            'restored_sha256': sha256(target), 'restored_at': now(),
+            'requires_post_backup_deletion_reconciliation': True}
         # Atomic exclusive publication. No overwrite even with competing restores.
         os.link(target, destination)
-        return {'status': 'restored_new_database', 'contains_private_data': True,
-            'sessions_revoked': True, 'source_backup_sha256': manifest['sha256'],
-            'restored_sha256': sha256(destination), 'restored_at': now(),
-            'requires_post_backup_deletion_reconciliation': True}
+        return result
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 

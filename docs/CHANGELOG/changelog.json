@@ -463,6 +463,19 @@
         "verify_backup usa o decodificador JSON estrito compartilhado, que recusa chaves duplicadas e números não finitos antes da validação do formato.",
         "Regressão da Issue #5: duas chaves format conflitantes foram aceitas antes da correção; depois, 22 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.33",
+      "date": "2026-09-12",
+      "title": "Restauração só publica depois da verificação final",
+      "user_impact": [
+        "Uma restauração que falha ao conferir o banco final não deixa um arquivo de destino que pareça instalado."
+      ],
+      "technical": [
+        "O hash restaurado e o recibo são calculados sobre o arquivo de staging antes da publicação exclusiva por hardlink.",
+        "A falha anterior acontecia depois da criação do destino; agora o staging é removido e o caminho final continua ausente.",
+        "Regressão da Issue #5: a falha sintética de hash deixou restored.db antes da correção; depois, 23 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }

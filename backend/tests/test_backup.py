@@ -71,6 +71,21 @@ def test_failed_integrity_never_installs(dbfile,tmp_path):
     assert not (tmp_path/'invalid.db').exists()
 
 
+def test_restore_hash_failure_never_publishes_destination(dbfile,tmp_path,monkeypatch):
+    import bdt.backup as backup
+    folder=tmp_path/'backup';create_backup(dbfile,folder);target=tmp_path/'restored.db'
+    real_sha256=backup.sha256;calls=0
+    def fail_second_hash(path):
+        nonlocal calls
+        calls+=1
+        if calls==2:
+            raise OSError('synthetic_hash_failure')
+        return real_sha256(path)
+    monkeypatch.setattr(backup,'sha256',fail_second_hash)
+    with pytest.raises(OSError,match='synthetic_hash_failure'):restore_backup(folder,target)
+    assert not target.exists()
+
+
 def test_missing_source_does_not_create_database(tmp_path):
     path=tmp_path/'missing.db'
     with pytest.raises(ValueError):create_backup(path,tmp_path/'backup')
