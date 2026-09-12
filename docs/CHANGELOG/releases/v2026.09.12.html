@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Brasil de Todos — Versão 2026.09.12</title>
+  <style>:root {
+  color-scheme: light dark;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-alt: #eef2f6;
+  --ink: #17202a;
+  --muted: #566574;
+  --accent: #155eef;
+  --border: #cbd5e1;
+  --focus: #f59e0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101418;
+    --surface: #182027;
+    --surface-alt: #202b35;
+    --ink: #edf2f7;
+    --muted: #b8c4cf;
+    --accent: #8bb8ff;
+    --border: #41505e;
+    --focus: #fbbf24;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--bg);
+  font: 1rem/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+a { color: var(--accent); }
+a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.skip-link {
+  position: absolute; left: 1rem; top: -5rem; padding: .5rem .75rem;
+  background: var(--surface); color: var(--ink); border: 2px solid var(--focus);
+}
+.skip-link:focus { top: 1rem; z-index: 2; }
+.shell { width: min(100% - 2rem, 72rem); margin: 0 auto; }
+header.page-header { padding: 3rem 0 2rem; }
+.eyebrow { color: var(--muted); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3, h4, h5 { line-height: 1.2; }
+h1 { max-width: 50rem; margin: .25rem 0 1rem; font-size: clamp(2rem, 6vw, 4rem); }
+h2 { margin-top: 0; }
+.intro { max-width: 48rem; color: var(--muted); }
+.weeks { display: grid; gap: 1rem; }
+.week, .release-card, .snapshot {
+  background: var(--surface); border: 1px solid var(--border); border-radius: .75rem;
+}
+.week { padding: clamp(1rem, 3vw, 1.5rem); }
+.week > h3 { margin-top: 0; }
+.empty-week { color: var(--muted); font-style: italic; }
+.release-card { margin-top: 1rem; padding: 1rem; }
+.release-card:first-of-type { margin-top: 0; }
+.release-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; }
+.release-version { font-weight: 700; }
+.release-title { margin: .25rem 0 1rem; }
+.impact, .technical { padding: .75rem 1rem; margin-top: .75rem; background: var(--surface-alt); border-radius: .5rem; }
+.impact h5, .technical h5 { margin: 0 0 .4rem; }
+ul { padding-left: 1.4rem; }
+.snapshot { padding: clamp(1rem, 4vw, 2rem); }
+footer { padding: 3rem 0 2rem; color: var(--muted); font-size: .9rem; }
+@media (min-width: 48rem) { .release-card { padding: 1.25rem; } }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #fff; --surface-alt: #f3f4f6; --ink: #000; --muted: #333; --border: #aaa; }
+  .skip-link, footer { display: none; }
+  .shell { width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  .release-card, .week, .snapshot { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="page-header shell">
+    <p class="eyebrow">Changelog público · Semana ISO 2026-W37</p>
+    <h1>Brasil de Todos</h1>
+  </header>
+  <main id="conteudo" class="shell">
+    <article class="snapshot" data-version="2026.09.12" data-week="2026-W37">
+      <div class="release-meta">
+        <span class="release-version">Versão 2026.09.12</span>
+        <time datetime="2026-09-12">2026-09-12</time>
+      </div>
+      <h2 class="release-title">Histórico de moderação preservado na retirada autoral</h2>
+      <section class="impact" aria-labelledby="snapshot-impact">
+        <h3 id="snapshot-impact">Impacto para quem usa</h3>
+        <ul><li>A retirada de uma contribuição pelo autor não substitui mais uma retratação aplicada por moderador. O histórico continua distinguindo retirada voluntária de ação de moderação.</li></ul>
+      </section>
+      <section class="technical" aria-labelledby="snapshot-technical">
+        <h3 id="snapshot-technical">Detalhes técnicos</h3>
+        <ul><li>POST /api/observations/{id}/withdraw usa uma transição condicional: pending, approved e rejected podem virar withdrawn; withdrawn continua idempotente; retracted e estados desconhecidos retornam conflito.</li><li>A atualização compara o estado observado antes de gravar, para que uma revisão ou retratação concorrente não seja sobrescrita pela retirada.</li><li>Regressão da Issue #5: 72 testes das superfícies de features, contestação, fotos e grupos passaram.</li></ul>
+      </section>
+    </article>
+  </main>
+  <footer class="shell"><a href="../index.html">Voltar ao changelog completo</a></footer>
+</body>
+</html>

@@ -39,6 +39,19 @@
         "CNEFE 16 UFs restantes via BDT_CNEFE_OPERATOR_DOWNLOAD=1 (ftp.ibge.gov.br continua fora de HOSTS). 27/27 ZIPs em data/cnefe_cache (gitignored). national_catalog_certified false.",
         "Produção pública permanece fora desta entrega."
       ]
+    },
+    {
+      "version": "2026.09.12",
+      "date": "2026-09-12",
+      "title": "Histórico de moderação preservado na retirada autoral",
+      "user_impact": [
+        "A retirada de uma contribuição pelo autor não substitui mais uma retratação aplicada por moderador. O histórico continua distinguindo retirada voluntária de ação de moderação."
+      ],
+      "technical": [
+        "POST /api/observations/{id}/withdraw usa uma transição condicional: pending, approved e rejected podem virar withdrawn; withdrawn continua idempotente; retracted e estados desconhecidos retornam conflito.",
+        "A atualização compara o estado observado antes de gravar, para que uma revisão ou retratação concorrente não seja sobrescrita pela retirada.",
+        "Regressão da Issue #5: 72 testes das superfícies de features, contestação, fotos e grupos passaram."
+      ]
     }
   ]
 }

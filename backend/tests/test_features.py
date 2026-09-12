@@ -173,6 +173,25 @@ def test_published_observation_can_be_retracted(client):
     assert client.get('/api/places/test:school').json()['observations'] == []
 
 
+def test_author_withdrawal_cannot_overwrite_moderation_retraction(client, database):
+    login(client, 'reader'); identity = observe(client)
+    login(client, 'reviewer')
+    assert client.post(f'/api/review/{identity}', headers=HEAD,
+                       json={'decision':'approved','note':'Reviewed synthetic observation.'}).status_code == 200
+    assert client.post(f'/api/moderation/observations/{identity}/retract', headers=HEAD,
+                       json={'note':'Publication retracted after additional contextual review.'}).status_code == 200
+    login(client, 'reader')
+    response = client.post(f'/api/observations/{identity}/withdraw', headers=HEAD)
+    assert response.status_code == 409
+    assert response.json() == {'detail': 'observation_not_withdrawable'}
+    with database.session() as session:
+        assert session.get(Observation, identity).status == 'retracted'
+        actions = [row.action for row in session.scalars(
+            select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))]
+        assert actions[-1] == 'retracted'
+        assert 'author_withdrawal' not in actions
+
+
 def test_export_and_account_deactivation(client, database):
     assert client.get('/api/account/export').status_code == 401
     login(client, 'reader'); identity = observe(client)

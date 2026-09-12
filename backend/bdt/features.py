@@ -159,11 +159,24 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             row = session.get(Observation, observation_id)
             if not row or row.author_id != user['id']:
                 raise HTTPException(404, 'observation_not_found')
-            if row.status != 'withdrawn':
-                session.execute(update(Observation).where(Observation.id == observation_id, Observation.author_id == user['id'])
-                    .values(status='withdrawn'))
-                photos.erase_observation(session, observation_id)
-                audit(session, user['id'], 'observation', observation_id, 'author_withdrawal')
+            if row.status == 'withdrawn':
+                return {'id': observation_id, 'status': 'withdrawn'}
+            previous_status = row.status
+            if previous_status not in {'pending', 'approved', 'rejected'}:
+                raise HTTPException(409, 'observation_not_withdrawable')
+            result = session.execute(update(Observation).where(
+                Observation.id == observation_id,
+                Observation.author_id == user['id'],
+                Observation.status == previous_status,
+            ).values(status='withdrawn'))
+            if result.rowcount != 1:
+                session.expire(row)
+                session.refresh(row)
+                if row.status == 'withdrawn':
+                    return {'id': observation_id, 'status': 'withdrawn'}
+                raise HTTPException(409, 'observation_not_withdrawable')
+            photos.erase_observation(session, observation_id)
+            audit(session, user['id'], 'observation', observation_id, 'author_withdrawal')
             return {'id': observation_id, 'status': 'withdrawn'}
 
     @app.post('/api/moderation/observations/{observation_id}/retract')
