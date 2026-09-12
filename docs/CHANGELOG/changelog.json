@@ -360,6 +360,19 @@
         "Dois campos com o mesmo código continuam produzindo o vínculo municipal revisado.",
         "Regressão da Issue #3: dois códigos válidos e divergentes foram publicados antes da correção; depois, 96 testes do normalizador e do coletor Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.25",
+      "date": "2026-09-12",
+      "title": "Recursos exigem código HTTP inteiro",
+      "user_impact": [
+        "Uma página de contratos, planos ou obras deixa de ser importada quando declara um número decimal no lugar do código HTTP."
+      ],
+      "technical": [
+        "O verificador de recursos exige status_code inteiro exato antes de tratar os contratos HTTP 200 e 204.",
+        "O recibo legítimo com status 200 inteiro permanece importável como controle positivo.",
+        "Regressão da Issue #2: status_code 200.0 criou um recurso antes da correção; depois, 92 testes de importação, intake e resposta sem conteúdo passaram."
+      ]
     }
   ]
 }

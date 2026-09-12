@@ -150,13 +150,16 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
         raw = path.read_bytes()
         if len(raw) != entry_bytes or hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
             raise ValueError('resource_page_integrity_failure')
-        if entry.get('status_code') == 204:
+        status_code = entry.get('status_code', 200)
+        if type(status_code) is not int:
+            raise ValueError('invalid_resource_http_status')
+        if status_code == 204:
             if (plan.dataset != 'pncp_contracts' or index != 0 or len(entries) != 1
                     or raw != b'' or entry_records != 0 or report_records != 0
                     or expected_records != 0 or report.get('terminal') != 'http_204_no_content'):
                 raise ValueError('invalid_resource_no_content_evidence')
             return
-        if entry.get('status_code', 200) != 200:
+        if status_code != 200:
             raise ValueError('invalid_resource_http_status')
         payload = decode(raw)
         if not isinstance(payload, dict) or not isinstance(payload.get(plan.root), list):

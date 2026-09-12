@@ -303,6 +303,25 @@ def test_collection_manifest_rejects_boolean_page_receipt_numbers(database, tmp_
         assert import_resources(database, valid)['read'] == 0
 
 
+def test_collection_manifest_rejects_non_integer_http_status(database, tmp_path):
+    folder = tmp_path / 'float-status'
+    report = save_collection(folder, [contract()])
+    report['pages'][0]['status_code'] = 200.0
+    atomic_json(folder / 'collection.json', report)
+
+    with pytest.raises(ValueError, match='invalid_resource_http_status'):
+        import_resources(database, folder)
+    with database.session() as session:
+        initialize_extensions(database)
+        assert session.scalar(select(func.count()).select_from(Resource)) == 0
+
+    valid = tmp_path / 'integer-status'
+    valid_report = save_collection(valid, [contract()])
+    valid_report['pages'][0]['status_code'] = 200
+    atomic_json(valid / 'collection.json', valid_report)
+    assert import_resources(database, valid)['created'] == 1
+
+
 def test_query_window_enforced_per_row(database,tmp_path):
     folder=tmp_path/'bad';save_collection(folder,[contract(dataPublicacaoPncp='2026-08-01T00:00:00')])
     with pytest.raises(ValueError,match='requested_dates'):import_resources(database,folder)
