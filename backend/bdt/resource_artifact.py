@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from .evidence import ResourceInput
+from .json_codec import decode
 from .resource_export import public_resource
 from .resource_profiles import PROFILES
 from .domain import now
@@ -33,7 +34,7 @@ def verify_resource_artifact(folder: Path) -> dict:
         report_bytes = stream.read(4 * 1024 * 1024 + 1)
     if len(report_bytes) > 4 * 1024 * 1024:
         raise ValueError('resource_artifact_report_budget')
-    report = json.loads(report_bytes)
+    report = decode(report_bytes)
     if not isinstance(report, dict) or report.get('status') != 'passed':
         raise ValueError('resource_artifact_incomplete_report')
     expected = report.get('resources')
@@ -56,7 +57,7 @@ def verify_resource_artifact(folder: Path) -> dict:
             if bytes_read > MAX_BYTES:
                 raise ValueError('resource_artifact_byte_budget')
             digest.update(line)
-            raw = json.loads(line)
+            raw = decode(line)
             item = ResourceInput.model_validate(raw)
             if item.id in ids:
                 raise ValueError('resource_artifact_duplicate_identity')

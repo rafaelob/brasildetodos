@@ -41,6 +41,21 @@ def test_declared_report_is_reconciled_not_trusted(tmp_path,source,key,value):
     with pytest.raises(ValueError):verify_resource_artifact(tmp_path)
 
 
+@pytest.mark.parametrize('surface',['report','record'])
+def test_resource_artifact_rejects_duplicate_json_keys(tmp_path,source,surface):
+    report=write(tmp_path,source)
+    assert verify_resource_artifact(tmp_path)['status']=='passed'
+    if surface=='report':
+        path=tmp_path/'report.json';raw=path.read_bytes()
+        path.write_bytes(raw.replace(b'"status":',b'"status":"failed","status":',1))
+    else:
+        path=tmp_path/'resources.jsonl';data=path.read_bytes()
+        data=data.replace(b'"id":',b'"id":"other","id":',1);path.write_bytes(data)
+        report['resources_sha256']=hashlib.sha256(data).hexdigest()
+        (tmp_path/'report.json').write_text(json.dumps(report))
+    with pytest.raises(ValueError,match='duplicate_json_key'):verify_resource_artifact(tmp_path)
+
+
 def test_duplicate_id_even_with_consistent_count_and_hash_is_rejected(tmp_path,source):
     report=write(tmp_path,source);data=(tmp_path/'resources.jsonl').read_bytes()*2
     (tmp_path/'resources.jsonl').write_bytes(data)

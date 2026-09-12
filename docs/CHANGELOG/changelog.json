@@ -502,6 +502,19 @@
         "Um JSONL adulterado continua sendo recusado mesmo quando seu tamanho e SHA-256 são recalculados no manifesto.",
         "Regressão da Issue #2: as duas superfícies aceitaram chaves duplicadas antes da correção; depois, 47 testes do release público passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.36",
+      "date": "2026-09-12",
+      "title": "Artefato de recursos recusa JSON ambíguo",
+      "user_impact": [
+        "Uma evidência de contratos, planos ou obras deixa de ser aceita quando o relatório ou um recurso repete uma chave conflitante."
+      ],
+      "technical": [
+        "verify_resource_artifact usa o decodificador JSON estrito compartilhado no report.json e em cada linha de resources.jsonl.",
+        "Um registro adulterado continua recusado mesmo quando o relatório recebe seu novo tamanho e SHA-256.",
+        "Regressão da Issue #3: as duas superfícies aceitaram chaves duplicadas antes da correção; depois, 19 testes do artefato e do fluxo de intake passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }
