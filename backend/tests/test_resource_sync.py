@@ -257,6 +257,25 @@ def test_collection_manifest_rejects_duplicate_json_keys(database, tmp_path):
         assert session.scalar(select(func.count()).select_from(Resource)) == 0
 
 
+def test_collection_manifest_rejects_boolean_record_totals(database, tmp_path):
+    mutations = [
+        lambda report: report.update(records=True),
+        lambda report: report.update(expected_records=True),
+        lambda report: report['pages'][0].update(records=True),
+    ]
+    for index, mutate in enumerate(mutations):
+        folder = tmp_path / f'boolean-total-{index}'
+        report = save_collection(folder, [contract()])
+        mutate(report)
+        atomic_json(folder / 'collection.json', report)
+        with pytest.raises(ValueError, match='invalid_resource_record_totals'):
+            import_resources(database, folder)
+
+    valid = tmp_path / 'integer-totals'
+    save_collection(valid, [contract()])
+    assert import_resources(database, valid)['created'] == 1
+
+
 def test_query_window_enforced_per_row(database,tmp_path):
     folder=tmp_path/'bad';save_collection(folder,[contract(dataPublicacaoPncp='2026-08-01T00:00:00')])
     with pytest.raises(ValueError,match='requested_dates'):import_resources(database,folder)

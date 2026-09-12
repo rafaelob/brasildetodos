@@ -243,6 +243,19 @@
         "A validação ocorre antes de criar ou atualizar recursos no catálogo.",
         "Regressão da Issue #2: duas chaves status conflitantes foram aceitas antes da correção; depois, 126 testes de coleta, importação e resposta sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.16",
+      "date": "2026-09-12",
+      "title": "Totais booleanos não certificam uma coleta",
+      "user_impact": [
+        "Uma coleta deixa de ser importada quando usa verdadeiro ou falso no lugar das contagens de registros do manifesto."
+      ],
+      "technical": [
+        "records, expected_records e a contagem de cada página exigem inteiros não negativos de tipo exato antes da reconciliação terminal.",
+        "A coleta válida com totais inteiros permanece importável como controle positivo.",
+        "Regressão da Issue #2: True satisfez uma contagem igual a 1 antes da correção; depois, 127 testes de coleta, importação e resposta sem conteúdo passaram."
+      ]
     }
   ]
 }

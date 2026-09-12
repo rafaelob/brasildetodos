@@ -140,8 +140,15 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
     entries = report.get('pages')
     if not isinstance(entries, list) or not entries or len(entries) > plan.max_pages:
         raise ValueError('invalid_resource_page_manifest')
+    report_records = report.get('records')
+    expected_records = report.get('expected_records')
+    if any(type(value) is not int or value < 0 for value in (report_records, expected_records)):
+        raise ValueError('invalid_resource_record_totals')
     seen, total, declared_pages, declared_records = set(), 0, None, None
     for index, entry in enumerate(entries):
+        entry_records = entry.get('records')
+        if type(entry_records) is not int or entry_records < 0:
+            raise ValueError('invalid_resource_record_totals')
         filename = f'page-{index:06}.json'
         if entry.get('index') != index or entry.get('file') != filename or entry.get('url') != page_url(plan, index):
             raise ValueError('resource_page_reference_mismatch')
@@ -153,8 +160,8 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
             raise ValueError('resource_page_integrity_failure')
         if entry.get('status_code') == 204:
             if (plan.dataset != 'pncp_contracts' or index != 0 or len(entries) != 1
-                    or raw != b'' or entry.get('records') != 0 or report.get('records') != 0
-                    or report.get('expected_records') != 0 or report.get('terminal') != 'http_204_no_content'):
+                    or raw != b'' or entry_records != 0 or report_records != 0
+                    or expected_records != 0 or report.get('terminal') != 'http_204_no_content'):
                 raise ValueError('invalid_resource_no_content_evidence')
             return
         if entry.get('status_code', 200) != 200:
@@ -171,7 +178,7 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
         if declared_pages is not None and (pages != declared_pages or records != declared_records):
             raise ValueError('changing_resource_page_totals')
         declared_pages, declared_records = pages, records
-        if len(rows) != entry.get('records'):
+        if len(rows) != entry_records:
             raise ValueError('resource_page_row_count_mismatch')
         for row in rows:
             if not isinstance(row, dict):
@@ -194,8 +201,8 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
                 on_invalid(error, plan.dataset, identity, entry['sha256'])
                 continue
             yield body
-    if (len(entries) != max(declared_pages, 1) or total != declared_records or total != report.get('records')
-            or report.get('expected_records') != declared_records):
+    if (len(entries) != max(declared_pages, 1) or total != declared_records or total != report_records
+            or expected_records != declared_records):
         raise ValueError('resource_terminal_reconciliation_failure')
     if report.get('terminal') not in {'empty_page', 'declared_total_pages'}:
         raise ValueError('missing_resource_terminal_evidence')
