@@ -515,6 +515,19 @@
         "Um registro adulterado continua recusado mesmo quando o relatório recebe seu novo tamanho e SHA-256.",
         "Regressão da Issue #3: as duas superfícies aceitaram chaves duplicadas antes da correção; depois, 19 testes do artefato e do fluxo de intake passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.37",
+      "date": "2026-09-12",
+      "title": "Preflight de recursos recusa manifesto ambíguo",
+      "user_impact": [
+        "Uma coleta de contratos, planos ou obras não recebe diagnóstico válido quando seu manifesto repete uma chave conflitante."
+      ],
+      "technical": [
+        "validate_collection usa o decodificador JSON estrito compartilhado antes de revisar o plano e validar os recursos.",
+        "A recusa ocorre antes de publicar qualquer registro ou criar histórico de ingestão.",
+        "Regressão da Issue #3: um status conflitante produziu preflight valid antes da correção; depois, 28 testes do preflight passaram."
+      ]
     }
   ]
 }

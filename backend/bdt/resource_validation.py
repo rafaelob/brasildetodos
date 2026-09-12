@@ -1,8 +1,8 @@
 """Complete-query preflight with minimized bounded diagnostics and no DB writes."""
-import json
 from collections import Counter
 from pathlib import Path
 from sqlalchemy import select
+from .json_codec import decode
 from .resource_diagnostics import public_validation
 from .resource_sync import _reviewed_plan, verified_resources
 from .storage import Municipality
@@ -11,7 +11,7 @@ from .storage import Municipality
 def validate_collection(database, folder: Path, *, max_diagnostics: int = 20):
     if type(max_diagnostics) is not int or not 0 <= max_diagnostics <= 100:
         raise ValueError('invalid_diagnostic_limit')
-    report=json.loads((folder/'collection.json').read_bytes())
+    report=decode((folder/'collection.json').read_bytes())
     plan=_reviewed_plan(report)
     diagnostics=[];invalid=0;by_rule=Counter()
     with database.session() as session:

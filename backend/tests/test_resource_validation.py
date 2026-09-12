@@ -41,6 +41,14 @@ def test_successful_preflight_does_not_replace_import(database,tmp_path):
     assert import_resources(database,root)['created']==1
 
 
+def test_ambiguous_manifest_aborts_preflight(database,tmp_path):
+    root=tmp_path/'records';save_collection(root,[contract()])
+    assert validate_collection(database,root)['status']=='valid'
+    path=root/'collection.json';raw=path.read_bytes()
+    path.write_bytes(raw.replace(b'"status":',b'"status":"failed","status":',1))
+    with pytest.raises(ValueError,match='duplicate_json_key'):validate_collection(database,root)
+
+
 def test_profile_scope_mismatch_is_diagnosed_not_accepted(database,tmp_path):
     root=tmp_path/'records';save_collection(root,[contract(dataPublicacaoPncp='2026-09-05T12:00:00')])
     result=validate_collection(database,root)
