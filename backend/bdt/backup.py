@@ -132,9 +132,13 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
     destination.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix='.bdt-private-restore-', dir=destination.parent))
     try:
-        target = staging/'database.sqlite'
-        with closing(readonly(folder/'database.sqlite')) as connection:
+        source = folder/'database.sqlite'; target = staging/'database.sqlite'
+        if sha256(source) != manifest['sha256']:
+            raise ValueError('backup_changed_during_restore')
+        with closing(readonly(source)) as connection:
             copy_online(connection, target, timeout_seconds)
+        if sha256(source) != manifest['sha256']:
+            raise ValueError('backup_changed_during_restore')
         with closing(sqlite3.connect(target)) as connection:
             connection.execute('PRAGMA foreign_keys=ON')
             with connection:

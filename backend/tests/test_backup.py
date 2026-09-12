@@ -86,6 +86,21 @@ def test_restore_hash_failure_never_publishes_destination(dbfile,tmp_path,monkey
     assert not target.exists()
 
 
+def test_restore_rechecks_backup_after_verification(dbfile,tmp_path,monkeypatch):
+    import bdt.backup as backup
+    folder=tmp_path/'backup';create_backup(dbfile,folder);target=tmp_path/'restored.db'
+    real_verify=backup.verify_backup
+    def verify_then_change(folder):
+        manifest=real_verify(folder)
+        with closing(sqlite3.connect(folder/'database.sqlite')) as connection:
+            connection.execute("UPDATE places SET name='Changed after verification' WHERE id='test:school'")
+            connection.commit()
+        return manifest
+    monkeypatch.setattr(backup,'verify_backup',verify_then_change)
+    with pytest.raises(ValueError,match='backup_changed_during_restore'):restore_backup(folder,target)
+    assert not target.exists()
+
+
 def test_missing_source_does_not_create_database(tmp_path):
     path=tmp_path/'missing.db'
     with pytest.raises(ValueError):create_backup(path,tmp_path/'backup')

@@ -476,6 +476,19 @@
         "A falha anterior acontecia depois da criação do destino; agora o staging é removido e o caminho final continua ausente.",
         "Regressão da Issue #5: a falha sintética de hash deixou restored.db antes da correção; depois, 23 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.34",
+      "date": "2026-09-12",
+      "title": "Restauração detecta mudança tardia no backup",
+      "user_impact": [
+        "A restauração é recusada quando o banco do backup muda depois da verificação inicial, mantendo o destino ausente."
+      ],
+      "technical": [
+        "O arquivo selado é conferido novamente contra o SHA-256 do manifesto antes e depois da cópia online para o staging.",
+        "A comparação não exige identidade binária entre bancos SQLite logicamente equivalentes regravados pela API de backup.",
+        "Regressão da Issue #5: uma alteração entre verify e copy foi restaurada antes da correção; depois, 24 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }
