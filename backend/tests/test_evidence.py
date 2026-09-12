@@ -155,6 +155,37 @@ def test_invalid_new_extraction_never_commits(database, source, evidence_user, t
     assert store_extraction(database, identity, path)['pages'] == 1
 
 
+def test_original_changed_during_native_extraction_never_commits(database, source, evidence_user, tmp_path, monkeypatch):
+    path = tmp_path / 'synthetic.pdf'
+    original = b'%PDF-synthetic-immutable-original'
+    path.write_bytes(original)
+    snapshot = hashlib.sha256(original).hexdigest()
+    with database.session() as session:
+        identity = register_document(session, DocumentInput(
+            title='Synthetic immutable original',
+            source=source.model_copy(update={'snapshot_sha256': snapshot}),
+        ), evidence_user).id
+
+    def mutating_parser(parser_path, **kwargs):
+        parser_path.write_bytes(original + b'-changed')
+        return {'sha256': snapshot, 'pages': [{'page': 1, 'text': 'Apparently valid extraction'}]}
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', mutating_parser)
+    with pytest.raises(ValueError, match='document_changed_during_extraction'):
+        store_extraction(database, identity, path)
+    with database.session() as session:
+        document = session.get(Document, identity)
+        assert document.state == 'registered'
+        assert document.extraction is None
+
+    path.write_bytes(original)
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: {
+        'sha256': snapshot,
+        'pages': [{'page': 1, 'text': 'Valid native extraction'}],
+    })
+    assert store_extraction(database, identity, path)['pages'] == 1
+
+
 def test_reject_changed_bytes_during_extraction(database, source, evidence_user, tmp_path, monkeypatch):
     path = tmp_path / 'synthetic.pdf'; path.write_bytes(b'%PDF-synthetic')
     src = source.model_copy(update={'snapshot_sha256': hashlib.sha256(path.read_bytes()).hexdigest()})

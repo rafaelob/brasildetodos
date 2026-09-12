@@ -386,6 +386,19 @@
         "A saída inválida mantém state=registered e extraction nula; uma saída válida subsequente ainda conclui a extração.",
         "Regressão da Issue #4: o erro deixava o documento extraído antes da correção; depois, 61 testes de evidência, features, OCR e extração passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.27",
+      "date": "2026-09-12",
+      "title": "Original documental é conferido depois da extração",
+      "user_impact": [
+        "Uma extração deixa de ser registrada quando o arquivo original muda durante o processamento."
+      ],
+      "technical": [
+        "store_extraction calcula o SHA-256 do original antes e depois do parser e exige correspondência com o snapshot registrado nas duas leituras.",
+        "A verificação não confia apenas no hash informado pelo extrator; uma mudança mantém o documento registrado e sem pacote de extração.",
+        "Regressão da Issue #4: um parser que alterava o arquivo e devolvia o SHA antigo concluiu antes da correção; depois, 25 testes de evidência e features passaram."
+      ]
     }
   ]
 }

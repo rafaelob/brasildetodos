@@ -147,6 +147,14 @@ def register_document(session, body: DocumentInput, author_id: str) -> Document:
     return row
 
 
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def store_extraction(database, document_id: str, path: Path, *, max_pages: int = 100) -> dict:
     """Operator-only extraction; hashes verify bytes, not legal authenticity."""
     from .documents import inspect_pdf
@@ -156,11 +164,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
             raise ValueError('document_not_found')
         expected = doc.source['snapshot_sha256']
         author_id = doc.author_id
-    h = hashlib.sha256()
-    with path.open('rb') as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
-            h.update(chunk)
-    if h.hexdigest() != expected:
+    if _file_sha256(path) != expected:
         raise ValueError('document_hash_mismatch')
 
     def receipt(extraction):
@@ -184,7 +188,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         if doc.state != 'registered' or doc.extraction is not None:
             raise ValueError('document_extraction_state_conflict')
     extraction = inspect_pdf(path, max_pages=max_pages)
-    if extraction['sha256'] != expected:
+    if extraction['sha256'] != expected or _file_sha256(path) != expected:
         raise ValueError('document_changed_during_extraction')
     extraction.pop('filename', None)
     validated_receipt = receipt(extraction)
