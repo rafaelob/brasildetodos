@@ -15,6 +15,7 @@ import time
 from contextlib import closing
 from pathlib import Path
 from .domain import now
+from .json_codec import decode
 
 FORMAT = 'brasildetodos-private-sqlite-backup-v1'
 MAX_BYTES = 32 * 1024**3
@@ -102,7 +103,7 @@ def verify_backup(folder: Path) -> dict:
     folder = Path(folder); manifest_path = folder/'manifest.json'; database = folder/'database.sqlite'
     if folder.is_symlink() or manifest_path.is_symlink() or not manifest_path.is_file() or manifest_path.stat().st_size > 16384:
         raise ValueError('invalid_backup_manifest')
-    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest = decode(manifest_path.read_bytes())
     if (not isinstance(manifest, dict) or manifest.get('format') != FORMAT
             or type(manifest.get('schema_version')) is not int or manifest.get('schema_version') != 1
             or manifest.get('contains_private_data') is not True or manifest.get('encrypted') is not False

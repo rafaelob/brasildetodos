@@ -451,6 +451,18 @@
         "Valores booleanos não podem mais se passar pela versão numérica do formato.",
         "Regressão da Issue #5: três manifestos contraditórios passaram antes da correção; depois, 55 testes de backup e grupos passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.32",
+      "date": "2026-09-12",
+      "title": "Manifesto de backup recusa JSON ambíguo",
+      "user_impact": [
+        "Um backup privado deixa de ser aceito quando seu manifesto repete uma chave com valores conflitantes."
+      ],
+      "technical": [
+        "verify_backup usa o decodificador JSON estrito compartilhado, que recusa chaves duplicadas e números não finitos antes da validação do formato.",
+        "Regressão da Issue #5: duas chaves format conflitantes foram aceitas antes da correção; depois, 22 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }

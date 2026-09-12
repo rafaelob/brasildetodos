@@ -83,6 +83,13 @@ def test_bounded_runtime(dbfile,tmp_path,value):
     with pytest.raises(ValueError):restore_backup(tmp_path/'backup',tmp_path/'restored.db',value)
 
 
+def test_manifest_rejects_duplicate_json_keys(dbfile,tmp_path):
+    folder=tmp_path/'backup';create_backup(dbfile,folder)
+    path=folder/'manifest.json';raw=path.read_text()
+    path.write_text(raw.replace('"format":','"format": "other",\n  "format":',1))
+    with pytest.raises(ValueError,match='duplicate_json_key'):verify_backup(folder)
+
+
 @pytest.mark.parametrize('mutation',[
     lambda m:m.update(format='other'),lambda m:m.update(schema_version=999),
     lambda m:m.update(schema_version=True),lambda m:m.update(encrypted=True),
