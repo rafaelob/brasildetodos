@@ -165,6 +165,19 @@
         "A falha de integridade já existente continua usando page_changed_after_collection para preservar o diagnóstico operacional.",
         "Regressão da Issue #2: seis adulterações do manifesto foram publicadas antes da correção; depois, 119 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.10",
+      "date": "2026-09-12",
+      "title": "Revisão confirma o trecho na extração corrente",
+      "user_impact": [
+        "Um vínculo documental deixa de ser publicado quando o trecho proposto não existe mais na versão corrente da extração."
+      ],
+      "technical": [
+        "A decisão reviewed revalida documento, página e excerto na mesma sessão antes do compare-and-swap que publica o vínculo.",
+        "Uma extração alterada preserva o vínculo como candidate, sem revisão no histórico e sem entrada na leitura pública.",
+        "Regressão da Issue #4: a API publicou o trecho obsoleto antes da correção; depois, 56 testes de features, evidência, OCR e extração passaram."
+      ]
     }
   ]
 }

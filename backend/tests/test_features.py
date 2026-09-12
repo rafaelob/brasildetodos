@@ -140,6 +140,26 @@ def test_link_review_publication_and_retraction(client, database, source):
         assert [x.action for x in session.scalars(select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))] == ['proposed', 'reviewed', 'retracted']
 
 
+def test_link_review_revalidates_excerpt_against_current_extraction(client, database, source):
+    body = prepare_link(client, database, source)
+    identity = client.post('/api/workbench/links', headers=HEAD, json=body).json()['id']
+    with database.session() as session:
+        document = session.get(Document, body['document_id'])
+        document.extraction = {'pages': [{'page': 1, 'text': 'A replacement extraction without the proposed excerpt.',
+                                          'words': [], 'candidates': []}]}
+
+    login(client, 'reviewer')
+    response = client.post(f'/api/workbench/links/{identity}/review', headers=HEAD, json=decision())
+    assert response.status_code == 422
+    assert response.json() == {'detail': 'excerpt_not_found'}
+    assert client.get('/api/place-links/test:school').json() == []
+    with database.session() as session:
+        link = session.get(Link, identity)
+        assert link.status == 'candidate' and link.revision == 1
+        assert [event.action for event in session.scalars(
+            select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))] == ['proposed']
+
+
 def test_rejected_link_does_not_publish(client, database, source):
     body = prepare_link(client, database, source)
     identity = client.post('/api/workbench/links', headers=HEAD, json=body).json()['id']

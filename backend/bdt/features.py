@@ -131,8 +131,16 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             allowed = (row.status == 'candidate' and body.decision in {'reviewed', 'rejected'}) or (row.status == 'reviewed' and body.decision == 'retracted')
             if not allowed or row.revision != body.expected_revision:
                 raise HTTPException(409, 'review_conflict')
-            if body.decision == 'reviewed' and not body.public_excerpt_checked:
-                raise HTTPException(422, 'public_excerpt_review_required')
+            if body.decision == 'reviewed':
+                if not body.public_excerpt_checked:
+                    raise HTTPException(422, 'public_excerpt_review_required')
+                document = session.get(Document, row.document_id)
+                if not document:
+                    raise HTTPException(409, 'linked_document_missing')
+                try:
+                    validate_excerpt(document, row.page, row.excerpt)
+                except ValueError as error:
+                    raise HTTPException(422, str(error)) from None
             result = session.execute(update(Link).where(Link.id == link_id, Link.revision == body.expected_revision,
                 Link.status == row.status).values(status=body.decision, reviewer_id=user['id'], reviewed_at=now(),
                 review_note=body.note, revision=body.expected_revision + 1))
