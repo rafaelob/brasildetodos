@@ -65,7 +65,8 @@ def process_ocr(database, document_id: str, path: Path, *, operator: str, pages:
     try:
         for number in pages:
             text = engine(path, number, language=language, timeout=timeout)
-            if not isinstance(text, str) or not text.strip() or len(text) > 200_000:
+            if (not isinstance(text, str) or not text.strip() or len(text) > 200_000
+                    or not any(character.isprintable() and not character.isspace() for character in text)):
                 raise ValueError('ocr_text_missing_or_budget')
             page = selected[number]
             page['ocr_candidate_text'] = text
