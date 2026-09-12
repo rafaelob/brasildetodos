@@ -528,6 +528,19 @@
         "A recusa ocorre antes de publicar qualquer registro ou criar histórico de ingestão.",
         "Regressão da Issue #3: um status conflitante produziu preflight valid antes da correção; depois, 28 testes do preflight passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.38",
+      "date": "2026-09-12",
+      "title": "Importador oficial recusa registros JSON ambíguos",
+      "user_impact": [
+        "Arquivos de municípios, unidades, escolas ou finanças deixam de ser importados quando um registro repete uma chave conflitante."
+      ],
+      "technical": [
+        "json_records usa o decodificador JSON estrito compartilhado, mantendo suporte a BOM e conversão decimal exata.",
+        "A recusa acontece antes de iniciar qualquer transação de ingestão no banco.",
+        "Regressão da Issue #2: um registro com dois id foi aceito antes da correção; depois, 30 testes da ingestão passaram."
+      ]
     }
   ]
 }

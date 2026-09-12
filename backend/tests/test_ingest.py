@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import func, select
 from bdt.domain import now
-from bdt.ingest import HOSTS, cnes_record, csv_records, file_source, import_finance, import_ibge, import_places, inep_record, municipality_lookup, pncp_contracts, safe_download, transferegov_rows
+from bdt.ingest import HOSTS, cnes_record, csv_records, file_source, import_finance, import_ibge, import_places, inep_record, json_records, municipality_lookup, pncp_contracts, safe_download, transferegov_rows
 from bdt.storage import Change, Finance, Ingestion, Place, upsert_place
 
 
@@ -38,6 +38,12 @@ def test_source_is_hashed_from_bytes(tmp_path):
     p=tmp_path/'x.csv';p.write_bytes(b'abc')
     result=file_source(p,'test','https://example.org/x','2025')
     assert result.snapshot_sha256=='ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+
+def test_json_file_refuses_ambiguous_records(tmp_path):
+    path=tmp_path/'records.json';path.write_bytes(b'[{"id":"valid"}]')
+    assert json_records(path)==[{'id':'valid'}]
+    path.write_bytes(b'[{"id":"wrong","id":"valid"}]')
+    with pytest.raises(ValueError,match='duplicate_json_key'):json_records(path)
 
 def test_place_idempotency_and_meaningful_changes(database,place):
     with database.session() as s:assert upsert_place(s,place)=='inserted'

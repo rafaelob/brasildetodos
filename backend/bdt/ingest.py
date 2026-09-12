@@ -17,6 +17,7 @@ from uuid import uuid4
 import httpx
 from sqlalchemy import select
 from .domain import MoneyEvent, PlaceInput, Source, brl, decimal_cents, digest, now
+from .json_codec import decode
 from .storage import Database, Finance, Ingestion, Municipality, Place, upsert_place
 
 IBGE_URL = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
@@ -80,7 +81,7 @@ def file_source(path: Path, dataset: str, url: str, reference_date: str | None) 
     return Source(dataset=dataset, url=url, record_id=path.name, reference_date=reference_date, collected_at=now(), snapshot_sha256=sha.hexdigest())
 
 def json_records(path: Path, root: str | None = None) -> list:
-    content = json.loads(path.read_text(encoding="utf-8-sig"), parse_float=Decimal)
+    content = decode(path.read_bytes(), parse_float=Decimal)
     if root:
         content = content[root]
     if not isinstance(content, list):
