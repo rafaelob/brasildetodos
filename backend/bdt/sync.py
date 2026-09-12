@@ -200,13 +200,71 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
 
 def collected_rows(folder: Path, report: dict):
     plan = PagePlan.model_validate(report['plan'])
-    for entry in report['pages']:
+    entries = report.get('pages')
+    if (report.get('status') != 'complete' or not isinstance(entries, list)
+            or not entries or len(entries) > plan.max_pages):
+        raise ValueError('invalid_collection_page_manifest')
+    identities, total = set(), 0
+    expected_pages, expected_records, actual_terminal = None, None, None
+    for index, entry in enumerate(entries):
+        filename = f'page-{index:06}.json'
+        if (not isinstance(entry, dict) or entry.get('index') != index
+                or entry.get('file') != filename or entry.get('url') != page_url(plan, index)):
+            raise ValueError('collection_page_reference_mismatch')
         # Paths are generated, not accepted from an untrusted manifest.
-        path = folder / f"page-{entry['index']:06}.json"
-        if file_hash(path) != entry['sha256']:
+        path = folder / filename
+        if path.is_symlink() or not path.is_file() or type(entry.get('bytes')) is not int:
+            raise ValueError('collection_page_not_regular_or_too_large')
+        actual_bytes = path.stat().st_size
+        if actual_bytes != entry['bytes']:
             raise ValueError('page_changed_after_collection')
-        payload = json.loads(path.read_text(encoding='utf-8-sig'))
-        yield from payload[plan.root]
+        if actual_bytes > plan.max_bytes_per_page:
+            raise ValueError('collection_page_not_regular_or_too_large')
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != entry.get('sha256'):
+            raise ValueError('page_changed_after_collection')
+        if entry.get('status_code', 200) != 200:
+            raise ValueError('collection_page_integrity_failure')
+        payload = json.loads(raw.decode('utf-8-sig'))
+        rows = payload.get(plan.root) if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            raise ValueError('collection_page_schema_changed')
+        if plan.response_page_field and payload.get(plan.response_page_field) != plan.start + index * plan.step:
+            raise ValueError('collection_response_page_mismatch')
+        for field, previous in ((plan.total_pages_field, expected_pages),
+                                (plan.total_records_field, expected_records)):
+            if field:
+                value = payload.get(field)
+                if (type(value) is not int or value < 0
+                        or previous is not None and value != previous):
+                    raise ValueError('collection_page_totals_invalid')
+                if field == plan.total_pages_field:
+                    expected_pages = value
+                if field == plan.total_records_field:
+                    expected_records = value
+        if rows and expected_pages is not None and expected_pages < index + 1:
+            raise ValueError('collection_page_totals_invalid')
+        if len(rows) != entry.get('records'):
+            raise ValueError('collection_page_record_count_mismatch')
+        for row in rows:
+            identity = row.get(plan.identity) if isinstance(row, dict) else None
+            if (isinstance(identity, bool) or not isinstance(identity, (str, int))
+                    or str(identity) == '' or str(identity) in identities):
+                raise ValueError('collection_identity_mismatch')
+            identities.add(str(identity))
+        total += len(rows)
+        terminal = not rows or expected_pages is not None and index + 1 >= expected_pages
+        if terminal:
+            if (index + 1 != len(entries) or expected_records is not None and total != expected_records
+                    or expected_pages is not None and index + 1 < expected_pages):
+                raise ValueError('collection_terminal_reconciliation_failure')
+            actual_terminal = 'empty_page' if not rows else 'declared_total_pages'
+        elif index + 1 == len(entries):
+            raise ValueError('collection_terminal_reconciliation_failure')
+        yield from rows
+    if (report.get('records') != total or report.get('expected_records') != expected_records
+            or report.get('terminal') != actual_terminal):
+        raise ValueError('collection_terminal_reconciliation_failure')
 
 
 def import_collection(database, folder: Path, adapter: Literal['cnes', 'inep']) -> dict:

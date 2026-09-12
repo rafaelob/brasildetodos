@@ -152,6 +152,19 @@
         "O coletor compara a URL exata solicitada e o tamanho real no disco com os metadados devolvidos pelo downloader, inclusive no caminho de retomada.",
         "Regressão da Issue #2: os dois recibos divergentes foram aceitos antes da correção; depois, 113 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.9",
+      "date": "2026-09-12",
+      "title": "Importação reconcilia o manifesto de páginas",
+      "user_impact": [
+        "Uma coleta não pode mais ser publicada como completa depois que seu manifesto perde uma página ou diverge das páginas preservadas."
+      ],
+      "technical": [
+        "A leitura de uma coleta completa reconcilia sequência, arquivo, URL, bytes, hash, contagem por página, identidades, totais declarados e condição terminal antes de concluir a transação de importação.",
+        "A falha de integridade já existente continua usando page_changed_after_collection para preservar o diagnóstico operacional.",
+        "Regressão da Issue #2: seis adulterações do manifesto foram publicadas antes da correção; depois, 119 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
+      ]
     }
   ]
 }

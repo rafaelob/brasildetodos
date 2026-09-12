@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 import httpx
 import pytest
+from sqlalchemy import func, select
 from bdt.sync import PagePlan, collect, collected_rows, download_retry, import_collection, page_url
+from bdt.storage import Place
 
 
 def plan(**changes):
@@ -141,6 +143,28 @@ def test_collection_import_and_post_collection_integrity(database,tmp_path):
         list(collected_rows(tmp_path,report))
     with pytest.raises(ValueError):
         import_collection(database,tmp_path,'cnes')
+
+
+@pytest.mark.parametrize('mutate', [
+    lambda report: report.update(records=2),
+    lambda report: report['pages'][0].update(records=0),
+    lambda report: report['pages'][0].update(file='../other.json'),
+    lambda report: report['pages'][0].update(url='https://example.org/wrong-page'),
+    lambda report: report.update(terminal='because_it_looked_complete'),
+    lambda report: report['pages'].pop(),
+])
+def test_collection_manifest_tampering_never_publishes_places(database, tmp_path, mutate):
+    row = {'codigo_cnes': 123, 'nome_fantasia': 'Unidade sintética', 'codigo_municipio': '123456',
+           'estabelecimento_faz_atendimento_ambulatorial_sus': 'SIM'}
+    report = collect(plan(), tmp_path, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    mutate(report)
+    (tmp_path / 'collection.json').write_text(json.dumps(report))
+
+    with pytest.raises(ValueError):
+        import_collection(database, tmp_path, 'cnes')
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(Place)) == 0
 
 
 def test_empty_collection_does_not_replace_database(database,tmp_path):
