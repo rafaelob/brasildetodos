@@ -9,6 +9,7 @@ import sys
 
 import pytest
 from sqlalchemy.exc import IntegrityError
+from bdt.catalog_release import TABLES, remember_source
 from bdt.domain import PlaceInput, digest
 from bdt.storage import upsert_place
 from test_public_data_bundle import bundler, bundle_input
@@ -34,6 +35,11 @@ def update_school_member(school, name, data):
     entry = manifest['files'][name.removeprefix('public-catalog/')]
     entry['sha256'] = hashlib.sha256(data).hexdigest()
     entry['bytes'] = len(data)
+    sources = {}
+    for table in TABLES:
+        for line in school[1]['public-catalog/' + table.name + '.jsonl'].splitlines():
+            remember_source(sources, table, json.loads(line))
+    manifest['sources'] = list(sources.values())
     school[1]['public-catalog/manifest.json'] = encode(manifest).encode()
 
 

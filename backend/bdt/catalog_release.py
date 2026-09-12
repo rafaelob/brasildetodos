@@ -33,6 +33,8 @@ MAX_RECORDS = 5_000_000
 EXCLUDED = ['accounts', 'sessions', 'rate_limits', 'citizen_observations',
             'moderation_audit', 'document_originals', 'document_extractions', 'reviewer_identities',
             'document_links', 'recovery_codes', 'evidence_photos', 'photo_content']
+SOURCE_ID_FIELDS = ('dataset', 'url', 'snapshot_sha256', 'reference_date')
+SOURCE_FIELDS = SOURCE_ID_FIELDS + ('collected_at',)
 
 
 def canonical(value) -> bytes:
@@ -124,6 +126,17 @@ def public_row_source(table, row):
     return row['after']['source']
 
 
+def remember_source(sources: dict, table, row) -> None:
+    source = public_row_source(table, row)
+    source_key = digest({key: source.get(key) for key in SOURCE_ID_FIELDS})
+    sources[source_key] = {key: source.get(key) for key in SOURCE_FIELDS}
+
+
+def check_sources(manifest: dict, sources: dict) -> None:
+    if manifest.get('sources') != list(sources.values()):
+        raise ValueError('catalog_source_manifest_mismatch')
+
+
 def export_catalog(database: Database, destination: Path, revision: str = 'development') -> dict:
     """No source-table mutation. Refuse existing destination and partial output."""
     destination = Path(destination)
@@ -158,9 +171,7 @@ def export_catalog(database: Database, destination: Path, revision: str = 'devel
                             if size > MAX_FILE_BYTES or total_bytes > MAX_TOTAL_BYTES or count > MAX_RECORDS:
                                 raise ValueError('catalog_export_budget')
                             stream.write(line); h.update(line)
-                            source = public_row_source(table, row)
-                            source_key = digest({k: source.get(k) for k in ('dataset', 'url', 'snapshot_sha256', 'reference_date')})
-                            sources[source_key] = {k: source.get(k) for k in ('dataset', 'url', 'snapshot_sha256', 'reference_date', 'collected_at')}
+                            remember_source(sources, table, row)
                             if table is Place.__table__:
                                 counts[(row['dataset'], row['state'], row['catalogue_eligible'], row['latitude'] is not None)] += 1
                     stream.flush(); os.fsync(stream.fileno())
@@ -253,11 +264,13 @@ def count_partition(counts, table, row):
 
 def verify_catalog(folder: Path) -> dict:
     folder = Path(folder); manifest = load_manifest(folder)
-    counts = Counter()
+    counts, sources = Counter(), {}
     for table in TABLES:
         for row in records(folder, table, manifest):
             count_partition(counts, table, row)
+            remember_source(sources, table, row)
     check_partitions(manifest, counts)
+    check_sources(manifest, sources)
     return manifest
 
 
@@ -272,18 +285,20 @@ def install_catalog(folder: Path, destination: Path) -> dict:
     database = Database('sqlite:///' + str((work/'catalog.db').resolve()))
     try:
         database.initialize(); initialize_extensions(database)
-        counts = Counter()
+        counts, sources = Counter(), {}
         with database.engine.begin() as connection:
             for table in TABLES:
                 batch = []
                 for row in records(folder, table, manifest):
                     count_partition(counts, table, row)
+                    remember_source(sources, table, row)
                     batch.append(row)
                     if len(batch) == 500:
                         connection.execute(table.insert(), batch); batch.clear()
                 if batch:
                     connection.execute(table.insert(), batch)
             check_partitions(manifest, counts)
+            check_sources(manifest, sources)
             # Relationship consistency is checked in the same transaction.
             mismatch = connection.execute(select(Place.id).join(Municipality, Place.municipality_id == Municipality.id)
                 .where(Place.state != Municipality.state).limit(1)).first()

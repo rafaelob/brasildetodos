@@ -245,6 +245,22 @@ def test_counts_cannot_be_inflated_in_manifest(full,tmp_path):
     assert not (tmp_path/'bad.db').exists()
 
 
+def test_manifest_sources_must_match_record_provenance(full, tmp_path):
+    folder = tmp_path / 'release'
+    export_catalog(full, folder)
+    path = folder / 'manifest.json'
+    manifest = json.loads(path.read_text(encoding='utf-8'))
+    manifest['sources'] = []
+    path.write_bytes(canonical(manifest))
+
+    with pytest.raises(ValueError, match='catalog_source_manifest_mismatch'):
+        verify_catalog(folder)
+    target = tmp_path / 'must-not-publish.db'
+    with pytest.raises(ValueError, match='catalog_source_manifest_mismatch'):
+        install_catalog(folder, target)
+    assert not target.exists()
+
+
 def test_unsupported_database_version(full,tmp_path):
     from bdt.storage import SchemaVersion
     with full.session() as session:session.get(SchemaVersion,1).version=999

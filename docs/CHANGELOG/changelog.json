@@ -115,6 +115,19 @@
         "A conversão preserva zero, inteiros e representações numéricas integrais, sem truncar frações.",
         "Regressão da Issue #3: os seis casos inválidos falharam antes da correção e passaram após a validação no normalizador."
       ]
+    },
+    {
+      "version": "2026.09.12.6",
+      "date": "2026-09-12",
+      "title": "Manifesto do catálogo confere a proveniência dos registros",
+      "user_impact": [
+        "Um pacote portátil do catálogo deixa de ser aceito quando o manifesto omite ou inventa as fontes presentes nos próprios registros."
+      ],
+      "technical": [
+        "O verificador recompõe a lista de fontes a partir dos JSONL já validados e exige correspondência exata com manifest.sources.",
+        "A mesma reconciliação ocorre na transação de instalação; uma divergência impede a publicação do novo banco de destino.",
+        "Regressão da Issue #2: o manifesto sem fontes passou antes da correção; depois, 64 testes do release público e da instalação nacional passaram, com 2 cenários de symlink não executáveis sem Developer Mode no Windows."
+      ]
     }
   ]
 }
