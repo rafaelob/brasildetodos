@@ -204,7 +204,7 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
 def import_resources(database, folder: Path) -> dict:
     manifest = folder / 'collection.json'
     raw_manifest = manifest.read_bytes()
-    report = json.loads(raw_manifest)
+    report = decode(raw_manifest)
     plan = _reviewed_plan(report)
     initialize_resource_versions(database)
     result = {'read': 0, 'created': 0, 'updated': 0, 'unchanged': 0, 'unresolved_municipality': 0,

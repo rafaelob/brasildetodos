@@ -230,6 +230,19 @@
         "A divergência falha com conflicting_project_territory; o vínculo compatível continua sendo publicado.",
         "Regressão da Issue #3: o conflito foi aceito antes da correção; depois, 91 testes do normalizador e do coletor Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.15",
+      "date": "2026-09-12",
+      "title": "Manifesto de coleta recusa JSON ambíguo",
+      "user_impact": [
+        "Uma coleta deixa de ser importada quando seu manifesto contém a mesma chave JSON mais de uma vez."
+      ],
+      "technical": [
+        "collection.json passa pelo mesmo decodificador estrito das páginas, que recusa chaves duplicadas e números JSON não finitos.",
+        "A validação ocorre antes de criar ou atualizar recursos no catálogo.",
+        "Regressão da Issue #2: duas chaves status conflitantes foram aceitas antes da correção; depois, 126 testes de coleta, importação e resposta sem conteúdo passaram."
+      ]
     }
   ]
 }

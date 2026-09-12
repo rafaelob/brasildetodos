@@ -237,6 +237,26 @@ def test_collection_tampering_never_publishes_records(database,tmp_path,mutate):
         assert session.scalar(select(func.count()).select_from(Resource))==0
 
 
+def test_collection_manifest_rejects_duplicate_json_keys(database, tmp_path):
+    folder = tmp_path / 'ambiguous-manifest'
+    save_collection(folder, [contract()])
+    path = folder / 'collection.json'
+    original = path.read_text(encoding='utf-8')
+    ambiguous = original.replace(
+        '  "status": "complete",',
+        '  "status": "failed",\n  "status": "complete",',
+        1,
+    )
+    assert ambiguous != original
+    path.write_text(ambiguous, encoding='utf-8')
+
+    with pytest.raises(ValueError, match='duplicate_json_key'):
+        import_resources(database, folder)
+    with database.session() as session:
+        initialize_extensions(database)
+        assert session.scalar(select(func.count()).select_from(Resource)) == 0
+
+
 def test_query_window_enforced_per_row(database,tmp_path):
     folder=tmp_path/'bad';save_collection(folder,[contract(dataPublicacaoPncp='2026-08-01T00:00:00')])
     with pytest.raises(ValueError,match='requested_dates'):import_resources(database,folder)
