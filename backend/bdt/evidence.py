@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 from pydantic import Field, model_validator
-from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Text, select
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Text, select, update
 from .domain import Source, StrictModel, digest, now
 from .storage import Base
 
@@ -152,21 +152,44 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         if not doc:
             raise ValueError('document_not_found')
         expected = doc.source['snapshot_sha256']
+        author_id = doc.author_id
     h = hashlib.sha256()
     with path.open('rb') as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b''):
             h.update(chunk)
     if h.hexdigest() != expected:
         raise ValueError('document_hash_mismatch')
+
+    def receipt(extraction):
+        if (not isinstance(extraction, dict) or extraction.get('sha256') != expected
+                or not isinstance(extraction.get('pages'), list)):
+            raise ValueError('stored_document_extraction_invalid')
+        return {'document_id': document_id, 'pages': len(extraction['pages']),
+                'state': 'extracted', 'public': False}
+
+    with database.session() as session:
+        doc = session.get(Document, document_id)
+        if doc.state == 'extracted':
+            return receipt(doc.extraction)
+        if doc.state != 'registered' or doc.extraction is not None:
+            raise ValueError('document_extraction_state_conflict')
     extraction = inspect_pdf(path, max_pages=max_pages)
     if extraction['sha256'] != expected:
         raise ValueError('document_changed_during_extraction')
     extraction.pop('filename', None)
     with database.session() as session:
-        doc = session.get(Document, document_id)
-        doc.extraction, doc.state = extraction, 'extracted'
-        audit(session, doc.author_id, 'document', doc.id, 'native_extracted', pages=len(extraction['pages']))
-    return {'document_id': document_id, 'pages': len(extraction['pages']), 'state': 'extracted', 'public': False}
+        changed = session.execute(update(Document).where(
+            Document.id == document_id, Document.state == 'registered').values(
+                extraction=extraction, state='extracted'))
+        if changed.rowcount != 1:
+            current = session.get(Document, document_id)
+            if current is not None:
+                session.refresh(current)
+            if current is not None and current.state == 'extracted':
+                return receipt(current.extraction)
+            raise ValueError('document_extraction_state_conflict')
+        audit(session, author_id, 'document', document_id, 'native_extracted', pages=len(extraction['pages']))
+    return receipt(extraction)
 
 
 def validate_excerpt(document: Document, page: int, excerpt: str):

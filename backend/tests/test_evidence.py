@@ -1,4 +1,5 @@
 import hashlib
+from copy import deepcopy
 import pytest
 from reportlab.pdfgen import canvas
 from sqlalchemy import select
@@ -80,6 +81,23 @@ def test_extract_native_preserves_original_and_remains_private(database, source,
     path.write_bytes(original + b'\nchanged')
     with pytest.raises(ValueError, match='document_hash_mismatch'):
         store_extraction(database, identity, path)
+
+
+def test_repeated_extraction_reuses_exact_stored_package(database, source, evidence_user, tmp_path, monkeypatch):
+    path = tmp_path / 'synthetic.pdf'
+    pdf = canvas.Canvas(str(path)); pdf.drawString(50, 700, 'CONVENIO 977950/2025 - synthetic test only.'); pdf.save()
+    original = path.read_bytes()
+    with database.session() as session:
+        identity = register_document(session, DocumentInput(title='Synthetic document', source=source.model_copy(update={
+            'snapshot_sha256': hashlib.sha256(original).hexdigest()})), evidence_user).id
+    first = store_extraction(database, identity, path)
+    with database.session() as session:
+        stored = deepcopy(session.get(Document, identity).extraction)
+
+    monkeypatch.setattr('bdt.documents.inspect_pdf', lambda *args, **kwargs: pytest.fail('stored extraction must be reused'))
+    assert store_extraction(database, identity, path) == first
+    with database.session() as session:
+        assert session.get(Document, identity).extraction == stored
 
 
 def test_reject_changed_bytes_during_extraction(database, source, evidence_user, tmp_path, monkeypatch):

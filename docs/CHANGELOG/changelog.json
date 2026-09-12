@@ -178,6 +178,19 @@
         "Uma extração alterada preserva o vínculo como candidate, sem revisão no histórico e sem entrada na leitura pública.",
         "Regressão da Issue #4: a API publicou o trecho obsoleto antes da correção; depois, 56 testes de features, evidência, OCR e extração passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.11",
+      "date": "2026-09-12",
+      "title": "Extração documental repetida preserva o pacote existente",
+      "user_impact": [
+        "Repetir a ingestão do mesmo documento deixa de reprocessar ou substituir silenciosamente a extração já registrada."
+      ],
+      "technical": [
+        "Depois de conferir novamente o SHA-256 do original, store_extraction devolve o pacote imutável existente sem chamar o parser.",
+        "A primeira gravação usa compare-and-swap sobre o estado registered; concorrentes reutilizam o vencedor ou falham sem sobrescrever evidência.",
+        "Regressão da Issue #4: o parser foi chamado novamente antes da correção; depois, 70 testes de evidência, comandos de operador, OCR e features passaram, com 2 cenários de symlink indisponíveis sem Developer Mode no Windows."
+      ]
     }
   ]
 }
