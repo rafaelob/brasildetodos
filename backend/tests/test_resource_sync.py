@@ -319,3 +319,18 @@ def test_obrasgov_physical_execution_and_geometries():
     assert res.attributes['territorial_basis'] == 'state_only_municipality_unresolved'
 
 
+@pytest.mark.parametrize('value', [True, -0.01, 100.01, 'NaN', 'Infinity', 'not-a-number'])
+def test_obrasgov_rejects_invalid_physical_execution_percentage(value):
+    with pytest.raises(ValueError, match='invalid_physical_execution_percentage'):
+        normalize_resource(WORK, project(perc_execucao_fisica=value), source(WORK), {})
+
+
+def test_obrasgov_preserves_zero_physical_execution_percentage():
+    result = normalize_resource(
+        WORK,
+        project(perc_execucao_fisica=0, percentual_execucao=75),
+        source(WORK),
+        {},
+    )
+
+    assert result.attributes['physical_execution_percentage'] == 0.0

@@ -6,6 +6,7 @@ are never converted to disbursements. Unknown fields are not copied publicly.
 """
 from __future__ import annotations
 
+import math
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -217,12 +218,29 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         attributes.update(territorial_basis=territorial_basis, state=state,
             declared_status=text(row['situacao'], field='situacao'), planned_starts_on=date_value(row.get('dt_inicial_prevista')),
             planned_ends_on=date_value(row.get('dt_final_prevista')), planned_investments=entries)
-        exec_perc = row.get('perc_execucao_fisica') or row.get('percentual_execucao') or row.get('execucao_fisica') or row.get('percentual_execucao_fisica')
+        exec_perc = next(
+            (
+                row[field]
+                for field in (
+                    'perc_execucao_fisica',
+                    'percentual_execucao',
+                    'execucao_fisica',
+                    'percentual_execucao_fisica',
+                )
+                if row.get(field) is not None
+            ),
+            None,
+        )
         if exec_perc is not None:
+            if isinstance(exec_perc, bool):
+                raise ValueError('invalid_physical_execution_percentage')
             try:
-                attributes['physical_execution_percentage'] = float(exec_perc)
+                parsed_exec_perc = float(exec_perc)
             except (ValueError, TypeError):
-                pass
+                raise ValueError('invalid_physical_execution_percentage') from None
+            if not math.isfinite(parsed_exec_perc) or not 0 <= parsed_exec_perc <= 100:
+                raise ValueError('invalid_physical_execution_percentage')
+            attributes['physical_execution_percentage'] = parsed_exec_perc
         exec_date = date_value(row.get('dt_medicao') or row.get('dt_ultima_medicao') or row.get('dt_atualizacao_execucao'))
         if exec_date:
             attributes['last_measurement_on'] = exec_date

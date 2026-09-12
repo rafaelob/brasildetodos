@@ -89,6 +89,19 @@
         "A recusa preserva o estado aprovado, o revisor independente anterior, a leitura pública e o histórico sem evento de retratação.",
         "Regressão da Issue #5: o teste responsável e 142 testes das superfícies de moderação, API e cenários adversariais passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.4",
+      "date": "2026-09-12",
+      "title": "Execução física do Obrasgov validada antes da publicação",
+      "user_impact": [
+        "O catálogo deixa de publicar percentuais de execução física impossíveis ou ilegíveis vindos do Obrasgov e preserva corretamente uma medição válida de 0%."
+      ],
+      "technical": [
+        "A normalização aceita somente números finitos entre 0 e 100 e recusa booleanos, texto não numérico e valores fora do intervalo com invalid_physical_execution_percentage.",
+        "A escolha entre os quatro campos conhecidos usa presença e mantém a precedência do campo primário quando o valor é zero.",
+        "Regressão da Issue #3: os dois falsificadores ficaram vermelhos antes das correções e os 66 testes de sincronização de recursos passaram."
+      ]
     }
   ]
 }
