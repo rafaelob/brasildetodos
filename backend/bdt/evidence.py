@@ -173,7 +173,7 @@ def store_extraction(database, document_id: str, path: Path, *, max_pages: int =
         if not isinstance(extraction, dict) or extraction.get('sha256') != expected:
             raise ValueError('stored_document_extraction_invalid')
         pages = extraction.get('pages')
-        if not isinstance(pages, list):
+        if not isinstance(pages, list) or not pages:
             raise ValueError('stored_document_extraction_invalid')
         for expected_page, page in enumerate(pages, 1):
             if (not isinstance(page, dict) or type(page.get('page')) is not int

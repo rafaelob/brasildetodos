@@ -412,6 +412,19 @@
         "O controle não depende de o parser respeitar o argumento; a saída excedente mantém o documento registrado e sem extração.",
         "Regressão da Issue #4: duas páginas foram persistidas sob orçamento 1 antes da correção; depois, 26 testes de evidência e features passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.29",
+      "date": "2026-09-12",
+      "title": "Extração vazia não encerra o documento",
+      "user_impact": [
+        "Um documento permanece disponível para nova tentativa quando o extrator não produz nenhuma página."
+      ],
+      "technical": [
+        "O recibo estrutural exige uma lista não vazia de páginas antes de permitir state=extracted.",
+        "A mesma regra protege a primeira gravação e a reutilização idempotente; uma página válida continua concluindo o fluxo.",
+        "Regressão da Issue #4: pages vazio marcou o documento como extraído antes da correção; depois, 27 testes de evidência e features passaram."
+      ]
     }
   ]
 }
