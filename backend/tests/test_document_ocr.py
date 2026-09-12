@@ -184,6 +184,21 @@ def test_recover_exact_abandoned_lease(database,document,capsys):
     with database.session() as session:assert session.get(Document,identity).state=='extracted'
 
 
+def test_recovery_keeps_lease_when_stored_extraction_is_invalid(database,document):
+    identity,_=document;lease='ocr_'+'a'*12
+    with database.session() as session:
+        row=session.get(Document,identity)
+        extraction=copy.deepcopy(row.extraction)
+        extraction['pages'][1]['page']=True
+        row.extraction=extraction
+        row.state=lease
+    with pytest.raises(ValueError,match='stored_document_extraction_invalid'):
+        recover_lease(database,identity,operator='ocr_operator',expected_lease=lease)
+    with database.session() as session:
+        assert session.get(Document,identity).state==lease
+        assert not session.scalar(select(Audit).where(Audit.action=='ocr_lease_recovered'))
+
+
 @pytest.mark.parametrize('tail',[[],['--path','test.pdf'],['--recover-lease','ocr_'+'a'*12,'--pages','2']])
 def test_cli_requires_exclusive_explicit_mode(tail):
     with pytest.raises(SystemExit):main(['--database','sqlite://','--document','x','--operator','x',*tail])

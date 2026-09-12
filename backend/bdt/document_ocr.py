@@ -99,6 +99,11 @@ def recover_lease(database, document_id: str, *, operator: str, expected_lease: 
     initialize_extensions(database)
     with database.session() as session:
         actor = _reviewer(session, operator)
+        document = session.get(Document, document_id)
+        if not document or document.state != expected_lease:
+            raise ValueError('ocr_lease_not_current')
+        expected_sha256 = document.source.get('snapshot_sha256') if isinstance(document.source, dict) else ''
+        validated_extraction_pages(document.extraction, expected_sha256)
         changed = session.execute(update(Document).where(Document.id == document_id, Document.state == expected_lease)
                                   .values(state='extracted'))
         if changed.rowcount != 1:
