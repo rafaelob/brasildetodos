@@ -192,6 +192,33 @@ def test_collection_manifest_rejects_boolean_numeric_receipts(database, tmp_path
     assert import_collection(database, valid, 'cnes')['counts']['inserted'] == 1
 
 
+def test_collection_manifest_rejects_duplicate_json_keys(database, tmp_path):
+    row = {'codigo_cnes': 123, 'nome_fantasia': 'Unidade sintética', 'codigo_municipio': '123456',
+           'estabelecimento_faz_atendimento_ambulatorial_sus': 'SIM'}
+    folder = tmp_path / 'ambiguous-manifest'
+    collect(plan(), folder, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    path = folder / 'collection.json'
+    original = path.read_text(encoding='utf-8')
+    ambiguous = original.replace(
+        '  "status": "complete",',
+        '  "status": "failed",\n  "status": "complete",',
+        1,
+    )
+    assert ambiguous != original
+    path.write_text(ambiguous, encoding='utf-8')
+
+    with pytest.raises(ValueError, match='duplicate_json_key'):
+        import_collection(database, folder, 'cnes')
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(Place)) == 0
+
+    valid = tmp_path / 'unambiguous-manifest'
+    collect(plan(), valid, loader=loader_for([
+        {'estabelecimentos': [row]}, payload()]))
+    assert import_collection(database, valid, 'cnes')['counts']['inserted'] == 1
+
+
 def test_empty_collection_does_not_replace_database(database,tmp_path):
     collect(plan(),tmp_path,loader=loader_for([payload()]))
     with pytest.raises(ValueError,match='empty_collection'):

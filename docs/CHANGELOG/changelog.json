@@ -321,6 +321,19 @@
         "A validação ocorre antes de entregar qualquer linha ao importador, e uma coleta válida com inteiros permanece publicável.",
         "Regressão da Issue #2: as três adulterações publicaram um local antes da correção; depois, os 42 testes do contrato genérico de coleta passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.22",
+      "date": "2026-09-12",
+      "title": "Coletas recusam JSON com chaves duplicadas",
+      "user_impact": [
+        "Uma coleta deixa de ser publicada quando seu manifesto ou uma página atribui dois valores à mesma chave JSON."
+      ],
+      "technical": [
+        "O coletor genérico, sua retomada e o importador passam pelo mesmo decodificador estrito que recusa chaves duplicadas e números não finitos.",
+        "O importador de recursos reutiliza a autoridade comum e preserva Decimal para valores monetários exatos.",
+        "Regressão da Issue #2: duas chaves status conflitantes publicaram um local antes da correção; depois, 133 testes de coleta, importação e resposta sem conteúdo passaram."
+      ]
     }
   ]
 }

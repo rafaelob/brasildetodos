@@ -15,6 +15,7 @@ from sqlalchemy import Column, ForeignKey, Integer, JSON, String, UniqueConstrai
 from sqlalchemy.exc import IntegrityError
 from .domain import Source, digest, now
 from .evidence import Resource, initialize_extensions
+from .json_codec import decode as _decode_json
 from .resource_profiles import PROFILES, collection_plan, normalize_resource
 from .resource_diagnostics import ResourceTextError
 from .storage import Base, Database, Ingestion, Municipality
@@ -38,22 +39,8 @@ def initialize_resource_versions(database):
     ResourceRevision.__table__.create(database.engine, checkfirst=True)
 
 
-def _pairs(pairs):
-    result = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError('duplicate_json_key')
-        result[key] = value
-    return result
-
-
-def _constant(_):
-    raise ValueError('non_finite_json_number')
-
-
 def decode(raw: bytes):
-    return json.loads(raw.decode('utf-8-sig'), parse_float=Decimal,
-                      object_pairs_hook=_pairs, parse_constant=_constant)
+    return _decode_json(raw, parse_float=Decimal)
 
 
 def semantic(payload):

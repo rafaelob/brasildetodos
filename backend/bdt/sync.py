@@ -15,6 +15,7 @@ import httpx
 from pydantic import Field, model_validator
 from .domain import Source, StrictModel, digest, now
 from .ingest import HOSTS, import_places, safe_download
+from .json_codec import decode
 
 
 class PagePlan(StrictModel):
@@ -99,7 +100,7 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
     folder.mkdir(parents=True, exist_ok=True)
     checkpoint = folder / 'collection.json'
     fingerprint = digest(plan.model_dump())
-    old = json.loads(checkpoint.read_text()) if checkpoint.exists() else None
+    old = decode(checkpoint.read_bytes()) if checkpoint.exists() else None
     if old and old.get('plan_sha256') != fingerprint:
         raise ValueError('resume_profile_changed_use_new_collection')
     report = {'dataset': plan.dataset, 'plan_sha256': fingerprint, 'plan': plan.model_dump(),
@@ -141,7 +142,7 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                 return report
             if metadata.get('status_code', 200) != 200:
                 raise ValueError('unexpected_page_http_status')
-            payload = json.loads(path.read_text(encoding='utf-8-sig'))
+            payload = decode(path.read_bytes())
             rows = payload.get(plan.root) if isinstance(payload, dict) else None
             if not isinstance(rows, list):
                 raise ValueError('response_schema_changed')
@@ -240,7 +241,7 @@ def collected_rows(folder: Path, report: dict):
             raise ValueError('page_changed_after_collection')
         if entry.get('status_code', 200) != 200:
             raise ValueError('collection_page_integrity_failure')
-        payload = json.loads(raw.decode('utf-8-sig'))
+        payload = decode(raw)
         rows = payload.get(plan.root) if isinstance(payload, dict) else None
         if not isinstance(rows, list):
             raise ValueError('collection_page_schema_changed')
@@ -284,7 +285,7 @@ def collected_rows(folder: Path, report: dict):
 
 def import_collection(database, folder: Path, adapter: Literal['cnes', 'inep']) -> dict:
     checkpoint = folder / 'collection.json'
-    report = json.loads(checkpoint.read_text())
+    report = decode(checkpoint.read_bytes())
     plan = PagePlan.model_validate(report['plan'])
     if report.get('status') != 'complete' or report.get('plan_sha256') != digest(plan.model_dump()):
         raise ValueError('incomplete_collection_cannot_be_published')
