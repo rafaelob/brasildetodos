@@ -114,6 +114,20 @@ def test_bad_downloader_hash_is_rejected(tmp_path):
         collect(plan(),tmp_path,loader=bad)
 
 
+@pytest.mark.parametrize(('field', 'error'), [
+    ('url', 'download_url_mismatch'), ('bytes', 'download_size_mismatch')])
+def test_downloader_receipt_must_match_request_and_file(tmp_path, field, error):
+    def bad(url, path, budget):
+        content = json.dumps(payload()).encode()
+        path.write_bytes(content)
+        metadata = {'url': url, 'sha256': hashlib.sha256(content).hexdigest(),
+                    'bytes': len(content), 'collected_at': '2026-09-05T12:00:00+00:00'}
+        metadata[field] = url + '&receipt=wrong' if field == 'url' else len(content) + 1
+        return metadata
+    with pytest.raises(ValueError, match=error):
+        collect(plan(), tmp_path, loader=bad)
+
+
 def test_collection_import_and_post_collection_integrity(database,tmp_path):
     row={'codigo_cnes':123,'nome_fantasia':'Unidade sintética','codigo_municipio':'123456',
         'estabelecimento_faz_atendimento_ambulatorial_sus':'SIM'}

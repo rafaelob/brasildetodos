@@ -140,6 +140,18 @@
         "PagePlan valida os nomes opcionais de página atual, total de páginas e total de registros junto do campo raiz da resposta, recusando vazios e duplicatas antes de qualquer requisição.",
         "Regressão da Issue #2: as três configurações inválidas passaram antes da correção; depois, 111 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.8",
+      "date": "2026-09-12",
+      "title": "Recibo de página confere URL e tamanho baixados",
+      "user_impact": [
+        "Uma página deixa de entrar na coleta quando o recibo do download aponta outra URL ou declara um tamanho diferente do arquivo recebido."
+      ],
+      "technical": [
+        "O coletor compara a URL exata solicitada e o tamanho real no disco com os metadados devolvidos pelo downloader, inclusive no caminho de retomada.",
+        "Regressão da Issue #2: os dois recibos divergentes foram aceitos antes da correção; depois, 113 testes dos contratos de coleta geral, recursos e respostas sem conteúdo passaram."
+      ]
     }
   ]
 }

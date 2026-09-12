@@ -122,6 +122,10 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                 metadata = loader(url, path, plan.max_bytes_per_page)
                 if file_hash(path) != metadata['sha256']:
                     raise ValueError('download_hash_mismatch')
+            if metadata.get('url') != url:
+                raise ValueError('download_url_mismatch')
+            if type(metadata.get('bytes')) is not int or metadata['bytes'] != path.stat().st_size:
+                raise ValueError('download_size_mismatch')
             if metadata.get('status_code') == 204:
                 if (plan.dataset != 'pncp_contracts' or index != 0 or report['records'] != 0
                         or urlsplit(plan.url).hostname != 'pncp.gov.br'
