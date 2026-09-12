@@ -99,6 +99,12 @@ def test_declared_pages_and_counts_are_reconciled(tmp_path):
     assert report['records']==report['expected_records']==3
 
 
+def test_nonempty_page_cannot_claim_zero_total_pages(tmp_path):
+    with pytest.raises(ValueError, match='declared_total_pages_before_current_page'):
+        collect(plan(total_pages_field='pages'), tmp_path, loader=loader_for([payload(1, pages=0)]))
+    assert json.loads((tmp_path/'collection.json').read_text())['status']=='failed'
+
+
 def test_bad_downloader_hash_is_rejected(tmp_path):
     def bad(url,path,budget):
         path.write_text('{}');return {'sha256':'0'*64}

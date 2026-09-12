@@ -145,6 +145,8 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                         expected_pages = value
                     if field == plan.total_records_field:
                         expected_records = value
+            if rows and expected_pages is not None and expected_pages < index + 1:
+                raise ValueError('declared_total_pages_before_current_page')
             if rows and metadata['sha256'] in hashes:
                 raise ValueError('repeated_page')
             hashes.add(metadata['sha256'])

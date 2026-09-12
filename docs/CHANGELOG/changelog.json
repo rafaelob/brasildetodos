@@ -64,6 +64,18 @@
         "A desativação converte contribuições pendentes, aprovadas e rejeitadas para withdrawn, mas preserva o estado retracted; o corpo e a nota de revisão continuam apagados conforme o contrato de privacidade.",
         "Regressão da Issue #5: 73 testes das superfícies de features, contestação, fotos e grupos passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.2",
+      "date": "2026-09-12",
+      "title": "Paginação oficial incoerente não certifica uma coleta",
+      "user_impact": [
+        "Uma fonte que declara zero páginas e, ao mesmo tempo, entrega registros deixa de ser aceita como coleta completa. A inconsistência permanece visível como falha de ingestão."
+      ],
+      "technical": [
+        "O coletor recusa total_pages menor que o número da página não vazia já observada, antes de registrar a condição terminal declared_total_pages.",
+        "Regressão da Issue #2: o teste responsável e os 28 testes do contrato de coleta paginada passaram."
+      ]
     }
   ]
 }
