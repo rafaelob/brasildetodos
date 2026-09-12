@@ -489,6 +489,19 @@
         "A comparação não exige identidade binária entre bancos SQLite logicamente equivalentes regravados pela API de backup.",
         "Regressão da Issue #5: uma alteração entre verify e copy foi restaurada antes da correção; depois, 24 testes de backup passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.35",
+      "date": "2026-09-12",
+      "title": "Catálogo público recusa JSON ambíguo",
+      "user_impact": [
+        "Um pacote do catálogo deixa de ser aceito quando o manifesto ou um registro repete uma chave com valores conflitantes."
+      ],
+      "technical": [
+        "load_manifest e records usam o decodificador JSON estrito compartilhado antes das validações de formato, schema, hash e contagem.",
+        "Um JSONL adulterado continua sendo recusado mesmo quando seu tamanho e SHA-256 são recalculados no manifesto.",
+        "Regressão da Issue #2: as duas superfícies aceitaram chaves duplicadas antes da correção; depois, 47 testes do release público passaram, com um cenário de symlink indisponível sem Developer Mode no Windows."
+      ]
     }
   ]
 }

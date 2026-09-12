@@ -158,6 +158,22 @@ def test_manifest_is_untrusted(full,tmp_path,mutation):
     with pytest.raises(ValueError):verify_catalog(folder)
 
 
+@pytest.mark.parametrize('surface',['manifest','record'])
+def test_catalog_rejects_duplicate_json_keys(full,tmp_path,surface):
+    folder=tmp_path/'release';export_catalog(full,folder)
+    assert verify_catalog(folder)['format']=='brasildetodos-public-catalog-v1'
+    if surface=='manifest':
+        path=folder/'manifest.json';raw=path.read_bytes()
+        path.write_bytes(raw.replace(b'"format":',b'"format":"other","format":',1))
+    else:
+        path=folder/'places.jsonl';data=path.read_bytes()
+        data=data.replace(b'"id":',b'"id":"other","id":',1);path.write_bytes(data)
+        manifest_path=folder/'manifest.json';manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+        manifest['files']['places.jsonl'].update(bytes=len(data),sha256=hashlib.sha256(data).hexdigest())
+        manifest_path.write_bytes(canonical(manifest))
+    with pytest.raises(ValueError,match='duplicate_json_key'):verify_catalog(folder)
+
+
 def test_record_counts_are_checked(full,tmp_path):
     folder=tmp_path/'release'; export_catalog(full,folder)
     path=folder/'manifest.json'; manifest=json.loads(path.read_text(encoding='utf-8')); manifest['files']['places.jsonl']['records']=0; path.write_bytes(canonical(manifest))

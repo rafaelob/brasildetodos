@@ -20,6 +20,7 @@ from typing import Iterator
 from sqlalchemy import inspect, select
 from .domain import MoneyEvent, PlaceInput, Source, digest, fold, now
 from .evidence import Resource, ResourceInput, initialize_extensions
+from .json_codec import decode
 from .storage import Change, Database, Finance, Municipality, Place, SchemaVersion
 
 FORMAT = 'brasildetodos-public-catalog-v1'
@@ -202,7 +203,7 @@ def load_manifest(folder: Path) -> dict:
     path = folder/'manifest.json'
     if folder.is_symlink() or path.is_symlink() or not path.is_file() or path.stat().st_size > 8*1024*1024:
         raise ValueError('invalid_catalog_manifest')
-    manifest = json.loads(path.read_text(encoding='utf-8'))
+    manifest = decode(path.read_bytes())
     if (not isinstance(manifest, dict) or manifest.get('format') != FORMAT
             or not isinstance(manifest.get('files'), dict) or set(manifest['files']) != set(FILES)):
         raise ValueError('unsupported_catalog_format')
@@ -245,7 +246,7 @@ def records(folder: Path, table, manifest: dict) -> Iterator[dict]:
             count += 1; size += len(line); h.update(line)
             if count > expected['records'] or size > expected['bytes']:
                 raise ValueError('catalog_count_mismatch')
-            yield validate_record(table, json.loads(line))
+            yield validate_record(table, decode(line))
     if count != expected['records'] or size != expected['bytes'] or h.hexdigest() != expected['sha256']:
         raise ValueError('catalog_integrity_mismatch')
 
