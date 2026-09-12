@@ -211,7 +211,8 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             if not check_password(body.password, row.password_hash):
                 raise HTTPException(403, 'reauthentication_failed')
             for observation in session.scalars(select(Observation).where(Observation.author_id == row.id)):
-                observation.status = 'withdrawn'
+                if observation.status != 'retracted':
+                    observation.status = 'withdrawn'
                 observation.payload = {'place_id': observation.place_id, 'mode': 'field',
                     'observed_on': observation.payload.get('observed_on'), 'body': '', 'consent': False, 'erased': True}
                 observation.review_note = None

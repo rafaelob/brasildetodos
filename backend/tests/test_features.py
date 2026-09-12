@@ -214,3 +214,24 @@ def test_export_and_account_deactivation(client, database):
         assert not list(session.scalars(select(LoginSession).where(LoginSession.user_id == author.id)))
     login(client, 'other')
     assert len(client.get('/api/account/export').json()['observations']) == 1
+
+
+def test_account_deactivation_preserves_moderation_retraction(client, database):
+    login(client, 'reader'); identity = observe(client)
+    login(client, 'reviewer')
+    assert client.post(f'/api/review/{identity}', headers=HEAD,
+                       json={'decision':'approved','note':'Reviewed synthetic observation.'}).status_code == 200
+    assert client.post(f'/api/moderation/observations/{identity}/retract', headers=HEAD,
+                       json={'note':'Publication retracted after additional contextual review.'}).status_code == 200
+    login(client, 'reader')
+    response = client.post('/api/account/delete', headers=HEAD,
+                           json={'password': PASSWORD, 'confirmed': True})
+    assert response.status_code == 200
+    assert client.get('/api/places/test:school').json()['observations'] == []
+    with database.session() as session:
+        row = session.get(Observation, identity)
+        assert row.status == 'retracted'
+        assert row.payload['body'] == '' and row.payload['erased'] is True
+        actions = [event.action for event in session.scalars(
+            select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))]
+        assert actions[-1] == 'retracted'

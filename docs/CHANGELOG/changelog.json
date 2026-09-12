@@ -52,6 +52,18 @@
         "A atualização compara o estado observado antes de gravar, para que uma revisão ou retratação concorrente não seja sobrescrita pela retirada.",
         "Regressão da Issue #5: 72 testes das superfícies de features, contestação, fotos e grupos passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.1",
+      "date": "2026-09-12",
+      "title": "Retratação preservada durante a desativação da conta",
+      "user_impact": [
+        "Ao desativar a conta, o conteúdo autoral continua apagado e fora da leitura pública, enquanto uma retratação aplicada por moderador permanece identificada como ação de moderação."
+      ],
+      "technical": [
+        "A desativação converte contribuições pendentes, aprovadas e rejeitadas para withdrawn, mas preserva o estado retracted; o corpo e a nota de revisão continuam apagados conforme o contrato de privacidade.",
+        "Regressão da Issue #5: 73 testes das superfícies de features, contestação, fotos e grupos passaram."
+      ]
     }
   ]
 }
