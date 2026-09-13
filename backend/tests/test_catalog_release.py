@@ -170,7 +170,7 @@ def test_manifest_cannot_claim_a_weaker_privacy_boundary(full, tmp_path):
         verify_catalog(folder)
 
 
-LEGACY_PUBLIC_DATA_REVISION = 'ad9942cc12030653b59a760380bd275537faebf8'
+LEGACY_PUBLIC_DATA_REVISION = 'af48c3eac9a8e2ee3ce45407b43bdd0324e3f0ea'
 LEGACY_PUBLIC_DATA_EXCLUDED = [
     'accounts', 'sessions', 'rate_limits', 'citizen_observations',
     'moderation_audit', 'document_originals', 'document_extractions',

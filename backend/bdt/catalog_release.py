@@ -35,7 +35,7 @@ EXCLUDED = ['accounts', 'sessions', 'rate_limits', 'citizen_observations',
             'moderation_audit', 'document_originals', 'document_extractions', 'reviewer_identities',
             'document_links', 'recovery_codes', 'evidence_photos', 'photo_content']
 LEGACY_EXCLUDED_BY_REVISION = {
-    'ad9942cc12030653b59a760380bd275537faebf8': (
+    'af48c3eac9a8e2ee3ce45407b43bdd0324e3f0ea': (
         'accounts', 'sessions', 'rate_limits', 'citizen_observations',
         'moderation_audit', 'document_originals', 'document_extractions',
         'reviewer_identities', 'document_links',
