@@ -84,3 +84,13 @@ def test_procurement_document_candidates():
     lei = next(x for x in found if x['field'] == 'legal_basis')
     assert lei['value'] == '14.133/2021'
 
+
+def test_malformed_brazilian_currency_is_not_a_candidate():
+    text = (
+        'VALOR GLOBAL: R$ 1.2.3,45. '
+        'VALOR ESTIMADO: R$ 12.34,56. '
+        'VALOR TOTAL: R$ 1.234,567. '
+        'CONTRATO N. 45/2024.'
+    )
+
+    assert {item['field'] for item in candidates(text)} == {'contract_reference'}

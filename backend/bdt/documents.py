@@ -9,6 +9,9 @@ from pathlib import Path
 from .domain import brl
 
 
+_BRL_AMOUNT = r"(R\$\s*(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]+),[0-9]{2})(?![0-9,]|\.[0-9])"
+
+
 def candidates(text: str) -> list[dict]:
     output = []
     patterns = {
@@ -18,8 +21,8 @@ def candidates(text: str) -> list[dict]:
         "amendment_reference": r"TERMO\s+ADITIVO\s*(?:N[°ºO.]?\s*)?([0-9]{1,4}/[0-9]{4})",
         "process_reference": r"PROCESSO\s*(?:ADMINISTRATIVO)?\s*(?:N[°ºO.]?\s*)?([0-9]{3,7}/[0-9]{4}|[0-9]{5}\.[0-9]{6}/[0-9]{4}-[0-9]{2})",
         "cnpj_reference": r"(?:CNPJ(?:\s*N[°ºO.]?)?\s*:?\s*)?([0-9]{2}\.[0-9]{3}\.[0-9]{3}/[0-9]{4}-[0-9]{2})",
-        "estimated_cents": r"VALOR\s+ESTIMADO\s*:?\s*(R\$\s*[0-9.]+,[0-9]{2})",
-        "global_value": r"VALOR\s+(?:GLOBAL|TOTAL|HOMOLOGADO)\s*:?\s*(R\$\s*[0-9.]+,[0-9]{2})",
+        "estimated_cents": rf"VALOR\s+ESTIMADO\s*:?\s*{_BRL_AMOUNT}",
+        "global_value": rf"VALOR\s+(?:GLOBAL|TOTAL|HOMOLOGADO)\s*:?\s*{_BRL_AMOUNT}",
         "planned_capacity": r"AT[ÉE]\s+([0-9]+)\s+CRIAN[ÇC]AS",
         "legal_basis": r"LEI\s+(?:FEDERAL\s+)?(?:N[°ºO.]?\s*)?([0-9]{1,2}\.[0-9]{3}(?:/[0-9]{2,4})?|[0-9]{4,5}/[0-9]{2,4})",
     }

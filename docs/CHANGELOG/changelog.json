@@ -867,6 +867,18 @@
         "A fronteira histórica é aceita somente para a revisão exata 96aa4bf80cc13402f0d35d47a8deabcae6d30db3 do artefato escolar oficial; revisões desconhecidas continuam recusadas.",
         "O artefato de 23.807.757 bytes foi relido com SHA-256 483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7; 103 testes de catálogo, educação e navegador passaram, com 3 skips de plataforma e um warning preexistente."
       ]
+    },
+    {
+      "version": "2026.09.13.12",
+      "date": "2026-09-13",
+      "title": "Valor monetário malformado não interrompe a extração documental",
+      "user_impact": [
+        "Um valor com pontos fora do agrupamento brasileiro deixa de interromper a análise da página; os demais candidatos documentais válidos continuam disponíveis para revisão."
+      ],
+      "technical": [
+        "Os padrões de valor estimado, global, total e homologado só encaminham ao conversor quantias com centavos e agrupamento brasileiro válido.",
+        "Regressão da Issue #4: três quantias malformadas antes levantavam ValueError e impediam até a extração de um contrato válido na mesma página; os 10 testes do extrator e 45 testes das superfícies de evidência e OCR passaram."
+      ]
     }
   ]
 }
