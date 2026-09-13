@@ -407,6 +407,7 @@ class TestAntiSelfReviewBypass:
                 doc = session.get(Document, doc_id)
                 doc.state = "extracted"
                 doc.extraction = {
+                    "sha256": source.snapshot_sha256,
                     "pages": [{"page": 1, "text": "Contract matches test:school facility address.", "words": [], "candidates": []}]
                 }
 

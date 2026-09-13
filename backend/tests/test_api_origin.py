@@ -221,6 +221,7 @@ def test_self_review_link_strictly_blocked(database, stored, source, monkeypatch
             doc_row = session.get(Document, doc_id)
             doc_row.state = "extracted"
             doc_row.extraction = {
+                "sha256": source.snapshot_sha256,
                 "pages": [
                     {
                         "page": 1,
