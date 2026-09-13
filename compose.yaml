@@ -1,3 +1,5 @@
+name: brasildetodos
+
 services:
   app:
     build: .
@@ -22,5 +24,58 @@ services:
     security_opt: ["no-new-privileges:true"]
     mem_limit: 1g
     restart: unless-stopped
+  postgres-test:
+    profiles: ["test"]
+    image: postgres:16-bookworm@sha256:bb3e1a57e5407e0a5280b4211980a5e537f4abd234a87014ac979849a78dd825
+    environment:
+      POSTGRES_USER: bdt_test_admin
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdt_ci -d bdt_ci"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data
+      - /var/run/postgresql
+      - /tmp
+    volumes:
+      - ./ops/postgres-test-init.sql:/docker-entrypoint-initdb.d/10-bdt-ci.sql:ro
+    networks: [postgres-test]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    pids_limit: 128
+    restart: "no"
+  postgres-proof:
+    profiles: ["test"]
+    build: .
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    environment:
+      BDT_COMPOSE_TEST: "1"
+      BDT_EPHEMERAL_TEST: "1"
+      BDT_RUNTIME_TEST_DATABASE_URL: postgresql+psycopg://bdt_ci@postgres-test:5432/bdt_ci
+      BDT_RUNTIME_TEST_OUTPUT: /evidence
+      BDT_DATA_DIR: /tmp/bdt-data
+      PYTHONDONTWRITEBYTECODE: "1"
+    command: ["python", "-m", "pytest", "-p", "no:cacheprovider", "-q", "tests/runtime/test_postgres_runtime.py"]
+    working_dir: /workspace
+    volumes:
+      - ./ops/postgres_smoke.py:/workspace/ops/postgres_smoke.py:ro
+      - ./tests/runtime/test_postgres_runtime.py:/workspace/tests/runtime/test_postgres_runtime.py:ro
+      - ./test-results/runtime:/evidence
+    networks: [postgres-test]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 128
+    restart: "no"
+networks:
+  postgres-test:
+    internal: true
 volumes:
   bdt-data:

@@ -3,7 +3,7 @@
 
 ## O que não é produção
 
-`compose.yaml` / `docker-compose.yml` publicam só `127.0.0.1:${BDT_PORT:-8008}` → porta 8000 no container. `BDT_ENV=development`, `BDT_DATABASE_URL=sqlite:////app/data/bdt.db`, volume `bdt-data`. Loopback `:8008` e esse SQLite são instância **local**. A imagem cria `/app/data` vazio; `create_all` monta o esquema sem registros oficiais nem bootstrap sintético. Dados que o operador gravar no volume continuam locais — persistência não é catálogo nacional. Não alargar o bind do anfitrião para `0.0.0.0`.
+`compose.yaml` é a fonte do runtime local; `docker-compose.yml` apenas a inclui para compatibilidade. O serviço `app` publica só `127.0.0.1:${BDT_PORT:-8008}` → porta 8000 no container. `BDT_ENV=development`, `BDT_DATABASE_URL=sqlite:////app/data/bdt.db`, volume `bdt-data`. Loopback `:8008` e esse SQLite são instância **local**. A imagem cria `/app/data` vazio; `create_all` monta o esquema sem registros oficiais nem bootstrap sintético. Dados que o operador gravar no volume continuam locais — persistência não é catálogo nacional. Não alargar o bind do anfitrião para `0.0.0.0`.
 
 Compose, localhost, SQLite vazio ou local, `TEST_READY.md` e os 214 testes E2E **não** são aceite nacional nem certificação de produção. Publicação, testes verdes, ingestão nacional e deploy público são resultados distintos; este repositório não executa o último.
 
@@ -15,7 +15,22 @@ Ler README. `.env.example` é referência; CLI/uvicorn leem variáveis do proces
 
 Para um serviço público autorizado: BDT_ENV=production; BDT_PUBLIC_ORIGIN=https://DOMINIO; BDT_ALLOWED_HOSTS=DOMINIO,127.0.0.1; BDT_REVISION=SHA completo do commit implantado. BDT_ALLOW_REGISTRATION=0 até operação responsável. Mesma origem para web/API. Não servir sem TLS com cookies de produção.
 
-Use PostgreSQL e instalação `.[postgres]` para replicação/concorrência; BDT_DATABASE_URL=postgresql+psycopg://... via gerenciador de segredos. A conexão não deve ser impressa nos logs. O suporte relacional é implementado, mas a suíte atual só foi executada em SQLite. PostGIS, migrações e teste multi-replica são gates posteriores.
+Use PostgreSQL e instalação `.[postgres]` para replicação/concorrência; BDT_DATABASE_URL=postgresql+psycopg://... via gerenciador de segredos. A conexão não deve ser impressa nos logs. O perfil Compose `test` prova o esquema e a jornada de moderação em um PostgreSQL efêmero; ele não cobre durabilidade, PostGIS, migrações de versões anteriores nem múltiplas réplicas, que continuam como gates posteriores.
+
+## Prova PostgreSQL local
+
+```bash
+mkdir -p test-results/runtime
+docker compose --profile test run --rm --build postgres-proof
+docker compose --profile test rm --stop --force postgres-test
+```
+
+O banco do perfil fica em `tmpfs`, não publica porta, conecta a aplicação com papel sem privilégios
+administrativos e usa somente dados sintéticos. A prova exige
+schema vazio, executa a inicialização duas vezes, inspeciona chaves estrangeiras, unicidade e índice,
+confirma rollback após violação de constraint e percorre contribuição → moderação → leitura pública.
+O recibo fica em `test-results/runtime/postgres.json`. Indisponibilidade do serviço falha a prova;
+não existe fallback para SQLite. Consulte o [registro de configuração](configuration.md).
 
 ## Processamento
 

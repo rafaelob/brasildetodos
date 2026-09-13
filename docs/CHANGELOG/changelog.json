@@ -648,6 +648,32 @@
         "A recusa national_partition_set_incomplete inclui expected, observed e missing em JSON e preserva o destino sem criar arquivo parcial.",
         "Regressão da Issue #2: a partição inep-schools-2025/BA pôde ser deslocada sem alterar as contagens globais antes da correção; depois, 25 testes das superfícies de instalação e integridade nacional passaram, com um cenário de symlink indisponível neste Windows."
       ]
+    },
+    {
+      "version": "2026.09.12.47",
+      "date": "2026-09-12",
+      "title": "PostgreSQL real entra na prova local reproduzível",
+      "user_impact": [
+        "Quem prepara a operação pode validar contribuição, moderação e leitura em PostgreSQL real por um único perfil Compose, sem publicar a porta do banco nem tocar dados reais."
+      ],
+      "technical": [
+        "O perfil test cria PostgreSQL 16 em tmpfs e executa o runner travado da aplicação; indisponibilidade falha sem fallback para SQLite.",
+        "A prova repete a inicialização, inspeciona chaves estrangeiras, unicidade e índice, confirma rollback após violação de constraint e percorre a API até a leitura pública.",
+        "O workflow Runtime integration passou a consumir a mesma configuração de compose.yaml, removendo a segunda definição de serviço PostgreSQL."
+      ]
+    },
+    {
+      "version": "2026.09.12.48",
+      "date": "2026-09-12",
+      "title": "Prova PostgreSQL usa papel restrito",
+      "user_impact": [
+        "A validação local acessa o banco pelo mesmo limite esperado da aplicação: um papel sem poderes administrativos, dentro de uma rede interna e efêmera."
+      ],
+      "technical": [
+        "O bootstrap cria bdt_ci com NOSUPERUSER, NOCREATEDB, NOCREATEROLE e NOREPLICATION; nenhum valor de credencial é versionado.",
+        "O teste consulta pg_roles pela própria conexão e falha quando o papel corrente é superusuário.",
+        "A repetição integral do perfil Compose passou com 12 verificações no recibo PostgreSQL."
+      ]
     }
   ]
 }

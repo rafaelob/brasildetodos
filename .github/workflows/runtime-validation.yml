@@ -7,8 +7,12 @@ on:
       - backend/**
       - web/**
       - Dockerfile
+      - compose.yaml
+      - docker-compose.yml
       - pyproject.toml
+      - ops/postgres-test-init.sql
       - ops/postgres_smoke.py
+      - tests/runtime/test_postgres_runtime.py
       - .github/workflows/runtime-validation.yml
 permissions:
   contents: read
@@ -18,33 +22,18 @@ concurrency:
 jobs:
   postgres:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:16-bookworm
-        env:
-          POSTGRES_USER: bdt_ci
-          POSTGRES_PASSWORD: ephemeral-test-only
-          POSTGRES_DB: bdt_ci
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U bdt_ci -d bdt_ci"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: '.python-version'
-      - name: Verify exact Python runtime and configuration
-        run: python ops/check_toolchain.py --runtime python
-      - run: python ops/install_locked.py --editable
-      - name: Verify PostgreSQL behavior and portable public catalogs
-        env:
-          BDT_EPHEMERAL_TEST: '1'
-          BDT_RUNTIME_TEST_DATABASE_URL: postgresql+psycopg://bdt_ci:ephemeral-test-only@127.0.0.1:5432/bdt_ci
-        run: python ops/postgres_smoke.py
+      - name: Verify PostgreSQL behavior through the canonical Compose profile
+        run: |
+          install -d -m 0777 test-results/runtime
+          docker compose --profile test run --rm postgres-proof
+      - name: Stop the ephemeral PostgreSQL service
+        if: always()
+        run: docker compose --profile test rm --stop --force postgres-test
       - uses: actions/upload-artifact@v4
         if: always()
         with:

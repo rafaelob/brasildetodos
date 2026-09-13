@@ -36,8 +36,13 @@ Comandos locais:
 
 ```bash
 python -m pytest backend/tests/test_backup.py backend/tests/test_catalog_release.py
-# ops/postgres_smoke.py requer PostgreSQL LOCAL efêmero, nome bdt_ci,
-# BDT_EPHEMERAL_TEST=1 e BDT_RUNTIME_TEST_DATABASE_URL definidos apenas no ambiente de teste.
+mkdir -p test-results/runtime
+docker compose --profile test run --rm --build postgres-proof
+docker compose --profile test rm --stop --force postgres-test
 ```
+
+O perfil é a fonte da configuração de teste: PostgreSQL efêmero, banco `bdt_ci`, papel de aplicação
+sem privilégios administrativos, sem porta publicada e sem fallback para SQLite. O comando produz
+`test-results/runtime/postgres.json`.
 
 Antes de operar publicamente continuam necessários: configuração real de HTTPS/origem, armazenamento persistente, credenciais próprias, revisão de dependências, retenção e autorização de publicação dos dados. Teste em container não equivale a deploy; um catálogo válido não equivale a cobertura nacional certificada.
