@@ -12,7 +12,7 @@ on:
       - backend/bdt/**
       - data/releases/public-data-20260906-v1.json
       - tests/corpus/ocr-reviewed/**
-      - web/src/**
+      - web/**
 permissions:
   contents: read
 concurrency:

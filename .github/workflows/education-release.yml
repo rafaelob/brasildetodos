@@ -7,7 +7,9 @@ on:
       - .github/workflows/education-release.yml
       - ops/education_release.py
       - ops/browser_public_catalog.py
+      - backend/bdt/**
       - data/releases/education-2025-20260907-v1.json
+      - web/**
 permissions:
   contents: write
   actions: read

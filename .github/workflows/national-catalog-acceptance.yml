@@ -8,10 +8,12 @@ on:
       - ops/install_national_catalog.py
       - ops/national_catalog_acceptance.py
       - ops/browser_national_catalog.py
+      - backend/bdt/**
       - backend/tests/test_national_installation.py
       - backend/tests/test_national_acceptance.py
       - backend/tests/test_national_integrity.py
       - data/releases/*.json
+      - web/**
 permissions:
   contents: read
 concurrency:
