@@ -1,4 +1,5 @@
 """Compiled UI against a real API, using explicitly synthetic isolated records."""
+import copy
 import json
 import os
 import secrets
@@ -14,6 +15,7 @@ from reportlab.pdfgen import canvas
 from bdt.api import password_hash
 from bdt.document_job import ingest_document
 from bdt.domain import PlaceInput, Source, now
+from bdt.evidence import Document
 from bdt.storage import Database, Municipality, User, upsert_place
 
 URL='http://127.0.0.1:8036'
@@ -38,6 +40,11 @@ def main():
         excerpt='Contract SYNTHETIC-2025 serves test:document-browser.'
         pdf.drawString(40,700,excerpt);pdf.save()
         registered=ingest_document(db,document,operator='editor',title='Synthetic evidence document',dataset='synthetic-document',url='https://example.org/synthetic-document.pdf',reference_date='2025')
+        with db.session() as session:
+            row=session.get(Document,registered['document_id'])
+            extraction=copy.deepcopy(row.extraction)
+            extraction['pages'][0].update(route='ocr_candidate',ocr_candidate_text='OCR synthetic candidate text.')
+            row.extraction=extraction
         db.engine.dispose()
         env=os.environ|{'BDT_DATABASE_URL':db_url,'BDT_PUBLIC_ORIGIN':URL,'BDT_STATIC_DIR':str(Path('web/dist').resolve()),'BDT_DATA_DIR':temp,'BDT_ALLOW_REGISTRATION':'0'}
         with (out/'server.log').open('w') as log:
@@ -88,6 +95,7 @@ def main():
                     page.get_by_label('Documento selecionado',exact=True).select_option(registered['document_id'])
                     page.get_by_role('button',name='Abrir texto extraído',exact=True).click()
                     expect(page.locator('pre.extracted-text')).to_contain_text(excerpt)
+                    expect(page.locator('.route-badge')).to_have_text('OCR Executado')
                     page.get_by_label('Identificador do lugar',exact=True).fill(place.id)
                     page.get_by_label('Identificador do instrumento ou contratação',exact=True).last.fill('pncp:synthetic/2025')
                     page.get_by_label('Trecho literal da página',exact=True).fill(excerpt)

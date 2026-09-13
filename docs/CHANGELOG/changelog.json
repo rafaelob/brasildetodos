@@ -879,6 +879,18 @@
         "Os padrões de valor estimado, global, total e homologado só encaminham ao conversor quantias com centavos e agrupamento brasileiro válido.",
         "Regressão da Issue #4: três quantias malformadas antes levantavam ValueError e impediam até a extração de um contrato válido na mesma página; os 10 testes do extrator e 45 testes das superfícies de evidência e OCR passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.13",
+      "date": "2026-09-13",
+      "title": "Revisão documental distingue OCR já executado",
+      "user_impact": [
+        "Uma página que já recebeu OCR passa a mostrar “OCR Executado” na revisão documental, em vez de continuar aparecendo como candidata a processamento."
+      ],
+      "technical": [
+        "A interface preserva separadamente a rota de inspeção e a presença de texto OCR retornada pela API; a presença do resultado tem prioridade no rótulo visível e é limpa ao trocar de documento ou página.",
+        "Regressão da Issue #4: a jornada Chromium contra API e SQLite reais recebeu o texto OCR, observou antes “Candidata a OCR” e agora confirma “OCR Executado”; os 242 testes web e o build Vite passaram."
+      ]
     }
   ]
 }
