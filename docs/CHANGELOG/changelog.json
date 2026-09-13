@@ -687,6 +687,19 @@
         "A jornada de navegador acompanha os controles flutuantes atuais e valida opt-in, worker empacotado, WebGL, 2D/3D, falhas de dados e estilo nos viewports 320, 390 e 1440.",
         "A prova usa lugares e mapa-base sintéticos e mantém cobertura nacional e mapa externo explicitamente não verificados."
       ]
+    },
+    {
+      "version": "2026.09.12.50",
+      "date": "2026-09-12",
+      "title": "Título da cobertura corrigido em espanhol",
+      "user_impact": [
+        "A página de dados e cobertura passa a exibir “Conozca los datos disponibles” integralmente em espanhol."
+      ],
+      "technical": [
+        "A tradução deixa de misturar a palavra portuguesa disponíveis no título espanhol.",
+        "A jornada compilada validou favoritos, histórico, paginação, filtros públicos e recuperação de falha em português, inglês e espanhol nos viewports 320, 390 e 1440.",
+        "Os nove cenários usaram dados sintéticos isolados, preservaram campos privados fora da tela e terminaram sem erro JavaScript."
+      ]
     }
   ]
 }
