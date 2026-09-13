@@ -9,7 +9,7 @@ import tempfile
 import time
 from pathlib import Path
 import httpx
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import Error as PlaywrightError, sync_playwright, expect
 from reportlab.pdfgen import canvas
 from bdt.api import password_hash
 from bdt.document_job import ingest_document
@@ -23,6 +23,7 @@ def main():
     out=Path('test-results/browser-extended');out.mkdir(parents=True,exist_ok=True)
     result={'synthetic_test_only':True,'checks':[],'real_government_ocr_tested':False}
     password=secrets.token_urlsafe(24)
+    recovered_password=secrets.token_urlsafe(24)
     with tempfile.TemporaryDirectory(prefix='bdt-document-browser-',ignore_cleanup_errors=True) as temp:
         db_url='sqlite:///'+str(Path(temp)/'test.db');db=Database(db_url);db.initialize()
         src=Source(dataset='synthetic-browser',url='https://example.org/synthetic-document',record_id='synthetic',
@@ -56,11 +57,11 @@ def main():
                     page=browser.new_page(viewport={'width':1440,'height':1000})
                     errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
                     page.goto(URL,wait_until='domcontentloaded')
-                    def login(name):
+                    def login(name, login_password=password):
                         page.get_by_role('button',name='Participar',exact=True).click()
                         form=page.locator('form').filter(has=page.get_by_role('button',name='Entrar',exact=True))
                         form.get_by_label('Nome de usuário',exact=True).fill(name)
-                        form.get_by_label('Senha (mínimo 12 caracteres)',exact=True).fill(password)
+                        form.get_by_label('Senha (mínimo 12 caracteres)',exact=True).fill(login_password)
                         form.get_by_role('button',name='Entrar',exact=True).click()
                         page.get_by_role('button',name=name,exact=True).wait_for()
                     def logout(name):
@@ -121,6 +122,34 @@ def main():
                     page.get_by_role('checkbox').check();page.get_by_role('button',name='Enviar para revisão',exact=True).click()
                     expect(page.get_by_role('status')).to_contain_text('Sua contribuição foi salva')
                     page.get_by_role('button',name='citizen',exact=True).click()
+                    recovery_form=page.locator('form').filter(has=page.get_by_role('button',name='Gerar código de recuperação',exact=True))
+                    current_password=recovery_form.get_by_label('Senha atual',exact=True)
+                    current_password.fill(password)
+                    recovery_form.get_by_role('button',name='Gerar código de recuperação',exact=True).click()
+                    page.get_by_text('Copie o código agora. Ele não será mostrado de novo.',exact=True).wait_for()
+                    expect(current_password).to_have_value('')
+                    recovery_code=page.locator('p.callout code').inner_text()
+                    logout('citizen')
+                    consume_form=page.locator('form').filter(has=page.get_by_role('button',name='Redefinir senha com código',exact=True))
+                    consume_form.get_by_label('Nome de usuário',exact=True).fill('citizen')
+                    consume_form.get_by_label('Código de recuperação',exact=True).fill(recovery_code)
+                    consume_form.get_by_label('Nova senha (mínimo 12 caracteres)',exact=True).fill(recovered_password)
+                    consume_form.get_by_label('Confirme a nova senha',exact=True).fill(recovered_password)
+                    consume_form.get_by_role('button',name='Redefinir senha com código',exact=True).click()
+                    expect(page.get_by_role('status')).to_contain_text('Senha redefinida')
+                    for secret_field in ('Código de recuperação','Nova senha (mínimo 12 caracteres)','Confirme a nova senha'):
+                        expect(consume_form.get_by_label(secret_field,exact=True)).to_have_value('')
+                    login('citizen',recovered_password)
+                    recovery_form.get_by_label('Senha atual',exact=True).fill(recovered_password)
+                    recovery_form.get_by_role('button',name='Gerar código de recuperação',exact=True).click()
+                    page.get_by_text('Copie o código agora. Ele não será mostrado de novo.',exact=True).wait_for()
+                    revoke_form=page.locator('form').filter(has=page.get_by_role('button',name='Revogar códigos',exact=True))
+                    revoke_password=revoke_form.get_by_label('Senha atual',exact=True)
+                    revoke_password.fill(recovered_password)
+                    revoke_form.get_by_role('button',name='Revogar códigos',exact=True).click()
+                    expect(revoke_password).to_have_value('')
+                    expect(page.get_by_text('Copie o código agora. Ele não será mostrado de novo.',exact=True)).to_have_count(0)
+                    result['checks'].append('account recovery generation, consumption and revocation clear submitted secrets')
                     with page.expect_download() as downloaded:
                         page.get_by_role('button',name='Exportar meus dados',exact=True).click()
                     exported=json.loads(Path(downloaded.value.path()).read_text())
@@ -128,7 +157,7 @@ def main():
                     page.get_by_role('button',name='Retirar contribuição',exact=True).click()
                     page.get_by_text('Contribuição retirada pelo autor',exact=True).wait_for()
                     page.locator('summary',has_text='Desativar minha conta').click()
-                    page.get_by_label('Confirme sua senha',exact=True).fill(password)
+                    page.get_by_label('Confirme sua senha',exact=True).fill(recovered_password)
                     page.get_by_label('Entendi o que será removido e o que será mantido.',exact=True).check()
                     page.get_by_role('button',name='Desativar e remover minhas observações',exact=True).click()
                     page.get_by_role('button',name='Participar',exact=True).wait_for()
@@ -137,7 +166,11 @@ def main():
                     browser.close()
                     browser=None
             finally:
-                if browser is not None and browser.is_connected():browser.close()
+                if browser is not None:
+                    try:
+                        if browser.is_connected():browser.close()
+                    except PlaywrightError:
+                        pass
                 if process.poll() is None:
                     process.terminate()
                     try:process.wait(timeout=10)

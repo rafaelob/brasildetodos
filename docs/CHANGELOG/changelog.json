@@ -817,6 +817,19 @@
         "Campo ausente, booleano ou número diferente produz obrasgov_projects_schema_changed antes do batch.",
         "Regressão da Issue #3: os três falsificadores e os 24 testes do batch Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.8",
+      "date": "2026-09-13",
+      "title": "Recuperação limpa os segredos enviados",
+      "user_impact": [
+        "Depois de gerar, usar ou revogar um código de recuperação, senhas e códigos deixam de permanecer preenchidos no formulário."
+      ],
+      "technical": [
+        "Cada fluxo captura o formulário antes da chamada assíncrona e o limpa somente após a resposta bem-sucedida.",
+        "A geração e a revogação removem a senha atual; o consumo remove código, nova senha e confirmação sem criar sessão automática.",
+        "Regressão da Issue #5: uma jornada Chromium com API e SQLite reais percorreu geração, logout, consumo, novo login, nova geração e revogação antes de exportar dados, retirar a contribuição e desativar a conta."
+      ]
     }
   ]
 }
