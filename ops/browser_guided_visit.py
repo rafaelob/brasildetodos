@@ -35,12 +35,13 @@ def seed(db):
 def main():
     out=Path('test-results/browser-guided');out.mkdir(parents=True,exist_ok=True)
     report={'synthetic_test_only':True,'public_deployment':False,'status':'started','checks':[]}
-    with tempfile.TemporaryDirectory(prefix='bdt-guided-browser-') as temp:
+    with tempfile.TemporaryDirectory(prefix='bdt-guided-browser-', ignore_cleanup_errors=True) as temp:
         url='sqlite:///'+str(Path(temp)/'test.db');db=Database(url);db.initialize();seed(db)
         origin='http://127.0.0.1:8054'
         env=os.environ|{'BDT_DATABASE_URL':url,'BDT_PUBLIC_ORIGIN':origin,'BDT_STATIC_DIR':str(Path('web/dist').resolve()),'BDT_DATA_DIR':temp,'BDT_ALLOW_REGISTRATION':'0'}
         with (out/'server.log').open('w') as log:
             server=subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8054'],env=env,stdout=log,stderr=log)
+            browser=None
             try:
                 for _ in range(60):
                     try:
@@ -49,7 +50,9 @@ def main():
                     time.sleep(.25)
                 else:raise RuntimeError('guided_api_not_ready')
                 with sync_playwright() as pw:
-                    browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True)
+                    executable=next((shutil.which(name) for name in ('google-chrome','chromium','chrome','msedge')
+                                     if shutil.which(name)),None)
+                    browser=pw.chromium.launch(executable_path=executable,headless=True)
                     for width in (320,390,1440):
                         for index,(locale,labels) in enumerate(TEXT.items()):
                             kind=('school','health','work')[index];identifier='guided:'+kind
@@ -62,7 +65,7 @@ def main():
                             try:
                                 page.goto(origin,wait_until='domcontentloaded')
                                 page.get_by_role('button',name='Synthetic '+kind,exact=True).click()
-                                page.get_by_role('button',name=labels['community'],exact=True).click()
+                                page.get_by_role('tab',name=labels['community'],exact=True).click()
                                 page.get_by_role('button',name=labels['open'],exact=True).click()
                                 form=page.locator('.guided-visit form')
                                 expect(form.locator('.visit-question')).to_have_count(4)
@@ -88,7 +91,7 @@ def main():
                                 finally:reviewer.close()
                                 page.reload(wait_until='domcontentloaded')
                                 page.get_by_role('button',name='Synthetic '+kind,exact=True).click()
-                                page.get_by_role('button',name=labels['community'],exact=True).click()
+                                page.get_by_role('tab',name=labels['community'],exact=True).click()
                                 result=page.locator('.observations>article').filter(has_text='bdt.'+kind+'.field.v1').first
                                 expect(result.locator('.observation-body')).to_contain_text('bdt.'+kind+'.field.v1')
                                 result.get_by_text(labels['download'],exact=True).click()
@@ -106,13 +109,21 @@ def main():
                             except Exception:
                                 page.screenshot(path=str(out/f'failure-{locale}-{width}.png'),full_page=True);raise
                             finally:context.close()
-                    browser.close();report['status']='passed'
+                    browser.close();browser=None;report['status']='passed'
             finally:
-                server.terminate()
-                try:server.wait(timeout=10)
-                except subprocess.TimeoutExpired:server.kill();server.wait()
+                if server.poll() is None:
+                    server.terminate()
+                    try:server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:server.kill();server.wait(timeout=10)
                 db.engine.dispose()
                 (out/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temp);break
+        except FileNotFoundError:break
+        except PermissionError:
+            if attempt==19:raise
+            time.sleep(.1)
     print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()
