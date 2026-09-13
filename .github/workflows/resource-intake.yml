@@ -8,22 +8,10 @@ on:
         required: true
       territory_run_id:
         description: Same-repository run with verified territory snapshot
-        default: '34005677349'
         required: true
       territory_artifact_id:
         description: Exact retained territory artifact ID
-        default: '9981020925'
         required: true
-  push:
-    branches: [main]
-    paths:
-      - backend/bdt/resource_profiles.py
-      - backend/bdt/resource_sync.py
-      - backend/bdt/resource_validation.py
-      - backend/bdt/resource_diagnostics.py
-      - backend/bdt/evidence.py
-      - ops/resource_intake.py
-      - .github/workflows/resource-intake.yml
 permissions:
   contents: read
   actions: read
@@ -45,8 +33,8 @@ jobs:
         run: python ops/check_toolchain.py --runtime python
       - uses: actions/download-artifact@v4
         with:
-          artifact-ids: ${{ inputs.territory_artifact_id || '9981020925' }}
-          run-id: ${{ inputs.territory_run_id || '34005677349' }}
+          artifact-ids: ${{ inputs.territory_artifact_id }}
+          run-id: ${{ inputs.territory_run_id }}
           github-token: ${{ github.token }}
           path: verified-territory
           merge-multiple: true
@@ -62,5 +50,5 @@ jobs:
           name: official-resource-intake-evidence
           retention-days: 7
           path: test-results/resource-intake/public/
-# Artifacts expire; replace IDs with a retained same-repository snapshot for later
-# runs. No raw supplier records, database of users, or production credentials.
+# Artifacts expire; each deliberate run must select an exact, readable snapshot
+# from this repository. No raw supplier records, user database, or credentials.

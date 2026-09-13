@@ -739,6 +739,19 @@
         "A validação ocorre antes da leitura e da instalação do catálogo, mantendo contas, sessões, documentos privados e identidades de revisão fora do pacote.",
         "Regressão da Issue #2: um manifesto com excluded vazio era aceito antes da correção; depois, 48 testes de release e 25 testes de instalação e integridade nacional passaram, com dois cenários de symlink indisponíveis neste Windows."
       ]
+    },
+    {
+      "version": "2026.09.13.2",
+      "date": "2026-09-13",
+      "title": "Intake oficial exige um snapshot territorial explícito",
+      "user_impact": [
+        "Alterações no código deixam de iniciar automaticamente uma importação condenada por IDs fixos de artefatos temporários; o operador escolhe o snapshot exato em cada execução."
+      ],
+      "technical": [
+        "O workflow resource-intake agora é iniciado somente por workflow_dispatch e exige territory_run_id e territory_artifact_id sem valores padrão.",
+        "O download usa exclusivamente o par fornecido no dispatch; não há fallback para um artefato expirado.",
+        "Regressão da Issue #3: o falsificador detectou o gatilho push e os IDs fixos antes da correção; o intake real já havia sido validado separadamente com um par explícito."
+      ]
     }
   ]
 }
