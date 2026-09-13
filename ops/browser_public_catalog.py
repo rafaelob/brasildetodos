@@ -35,6 +35,37 @@ LABELS = {
    'no_geo':'Ubicación en el mapa no confirmada'},
 }
 
+DATASET_LABELS = {
+ 'cnes': {'pt-BR':'CNES · Estabelecimentos de Saúde','en':'CNES · Health Facilities',
+          'es':'CNES · Centros de Salud'},
+ 'inep': {'pt-BR':'INEP · Censo Escolar','en':'INEP · School Census',
+          'es':'INEP · Censo Escolar'},
+ 'transferegov': {'pt-BR':'Transferegov · Repasses Federais','en':'Transferegov · Federal Transfers',
+                  'es':'Transferegov · Transferencias Federales'},
+ 'pncp': {'pt-BR':'PNCP · Contratos Públicos','en':'PNCP · Public Contracts',
+          'es':'PNCP · Contratos Públicos'},
+ 'obrasgov': {'pt-BR':'Obrasgov.br · Investimentos & Infraestrutura','en':'Obrasgov.br · Public Works & Investments',
+              'es':'Obrasgov.br · Inversiones y Obras Públicas'},
+ 'ibge': {'pt-BR':'IBGE · Base Territorial Oficial','en':'IBGE · Official Territorial Base',
+          'es':'IBGE · Base Territorial Oficial'},
+}
+
+
+def dataset_label(dataset, locale):
+    """Return the localized public label expected from the compiled UI."""
+    lower=str(dataset).lower()
+    for prefix, labels in DATASET_LABELS.items():
+        if lower.startswith(prefix):
+            return labels[locale]
+    humanized=re.sub(r'[-_]',' ',str(dataset))
+    return re.sub(r'\b\w',lambda match:match.group(0).upper(),humanized)
+
+
+def browser_executable():
+    """Find Chromium on Linux CI and standard Windows browser installations."""
+    return next((path for name in ('google-chrome','chromium','chrome','msedge')
+                 if (path:=shutil.which(name))),None)
+
 
 def file_sha(path):
     h=hashlib.sha256()
@@ -125,7 +156,7 @@ def main(argv=None):
                     time.sleep(.25)
                 else:raise RuntimeError('public_catalog_api_not_ready')
                 with sync_playwright() as pw:
-                    browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True)
+                    browser=pw.chromium.launch(executable_path=browser_executable(),headless=True)
                     try:
                         for width in (320,390,1440):
                             for locale,labels in LABELS.items():
@@ -155,8 +186,9 @@ def main(argv=None):
                                         if item['latitude'] is None:expect(card.get_by_text(labels['no_geo'],exact=True)).to_be_visible()
                                         card.get_by_role('button',name=item['name'],exact=True).click()
                                         expect(page.get_by_role('heading',name=item['name'],exact=True)).to_be_visible()
-                                        expect(page.locator('.source strong')).to_have_text(item['source']['dataset'])
-                                        page.locator('.tabs').get_by_role('button',name=labels['source'],exact=True).click()
+                                        expect(page.locator('.source strong')).to_have_text(
+                                            dataset_label(item['source']['dataset'],locale))
+                                        page.locator('.tabs').get_by_role('tab',name=labels['source'],exact=True).click()
                                         expect(page.locator('.detail')).to_contain_text(item['id'])
                                         with page.expect_download() as pending:
                                             page.get_by_role('button',name=labels['export'],exact=True).click()

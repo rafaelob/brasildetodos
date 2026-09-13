@@ -843,6 +843,18 @@
         "A lista atual permanece a autoridade para novos manifestos e exige correspondência integral.",
         "O workflow do release publicado agora também dispara quando qualquer módulo backend usado pela verificação ou pela jornada real muda; a regressão focada da Issue #2 passou com 111 testes, 3 skips de plataforma e um warning preexistente."
       ]
+    },
+    {
+      "version": "2026.09.13.10",
+      "date": "2026-09-13",
+      "title": "Aceitação do catálogo confere os rótulos públicos localizados",
+      "user_impact": [
+        "A prova automatizada do catálogo publicado reconhece os nomes de fonte mostrados em português, inglês e espanhol, mantendo a conferência do identificador original no arquivo exportado."
+      ],
+      "technical": [
+        "As jornadas de catálogo único e misto comparam a interface com o rótulo localizado esperado para CNES e INEP; a exportação continua comparada byte a byte com o registro instalado.",
+        "Regressão da Issue #2: o verificador antes esperava o slug técnico cnes-national-bulk na interface e falhava diante do rótulo público CNES · Estabelecimentos de Saúde; 29 testes focados passaram e um cenário de navegador permaneceu skipped por pré-condição de plataforma."
+      ]
     }
   ]
 }

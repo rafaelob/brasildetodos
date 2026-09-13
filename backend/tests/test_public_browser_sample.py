@@ -41,6 +41,32 @@ def test_invalid_dataset_is_rejected(db,dataset):
     with pytest.raises(ValueError,match='dataset_not_selected'):module.choose_samples(db,dataset)
 
 
+@pytest.mark.parametrize(('dataset','locale','expected'),[
+    ('cnes-national-bulk','pt-BR','CNES · Estabelecimentos de Saúde'),
+    ('cnes-national-bulk','en','CNES · Health Facilities'),
+    ('cnes-national-bulk','es','CNES · Centros de Salud'),
+    ('inep-schools-2025','pt-BR','INEP · Censo Escolar'),
+    ('inep-schools-2025','en','INEP · School Census'),
+    ('inep-schools-2025','es','INEP · Censo Escolar'),
+    ('transferegov_special_plans','pt-BR','Transferegov · Repasses Federais'),
+    ('pncp_contracts','pt-BR','PNCP · Contratos Públicos'),
+    ('obrasgov_projects','pt-BR','Obrasgov.br · Investimentos & Infraestrutura'),
+    ('ibge-municipalities','pt-BR','IBGE · Base Territorial Oficial'),
+    ('synthetic-only','pt-BR','Synthetic Only'),
+])
+def test_public_browser_uses_the_localized_dataset_label(dataset,locale,expected):
+    assert module.dataset_label(dataset,locale)==expected
+
+
+@pytest.mark.parametrize(('candidate','expected'),[
+    ('google-chrome','/opt/google/chrome'),
+    ('chrome','C:/Program Files/Google/Chrome/Application/chrome.exe'),
+])
+def test_browser_discovery_accepts_ci_and_windows_chrome(monkeypatch,candidate,expected):
+    monkeypatch.setattr(module.shutil,'which',lambda name:expected if name==candidate else None)
+    assert module.browser_executable()==expected
+
+
 def test_geometry_only_selection_does_not_invent_missing_example(db):
     with db.session() as session:
         for row in session.scalars(select(Place).where(Place.latitude.is_(None))):row.catalogue_eligible=False

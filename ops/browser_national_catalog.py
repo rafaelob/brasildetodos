@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import time
@@ -17,7 +16,7 @@ from urllib.parse import parse_qs, urlsplit
 import httpx
 from sqlalchemy import func, select
 from bdt.storage import Database, Place
-from browser_public_catalog import LABELS, file_sha
+from browser_public_catalog import LABELS, browser_executable, dataset_label, file_sha
 
 CATEGORIES = {'pt-BR': {'health': 'Saúde', 'school': 'Educação'},
               'en': {'health': 'Health', 'school': 'Education'},
@@ -84,7 +83,7 @@ def exercise_new_installation(destination, receipt, static, output):
             else:
                 raise RuntimeError('national_browser_server_not_ready')
             with sync_playwright() as pw:
-                browser = pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'), headless=True)
+                browser = pw.chromium.launch(executable_path=browser_executable(), headless=True)
                 try:
                     for width in (320, 390, 1440):
                         for locale, labels in LABELS.items():
@@ -123,8 +122,9 @@ def exercise_new_installation(destination, receipt, static, output):
                                         expect(card.get_by_text(labels['no_geo'], exact=True)).to_be_visible()
                                     card.get_by_role('button', name=item['name'], exact=True).click()
                                     expect(page.get_by_role('heading', name=item['name'], exact=True)).to_be_visible()
-                                    expect(page.locator('.source strong')).to_have_text(item['source']['dataset'])
-                                    page.locator('.tabs').get_by_role('button', name=labels['source'], exact=True).click()
+                                    expect(page.locator('.source strong')).to_have_text(
+                                        dataset_label(item['source']['dataset'], locale))
+                                    page.locator('.tabs').get_by_role('tab', name=labels['source'], exact=True).click()
                                     expect(page.locator('.detail')).to_contain_text(item['id'])
                                     with page.expect_download() as downloading:
                                         page.get_by_role('button', name=labels['export'], exact=True).click()

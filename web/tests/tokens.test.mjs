@@ -121,12 +121,9 @@ test('honor is never a text color on body or buttons', () => {
   }
 });
 
-test('index.html loads Inter, Source Serif 4 and IBM Plex Mono', () => {
+test('index.html uses the local font stack without contacting a font provider', () => {
   const html = read(indexPath);
-  assert.match(html, /fonts\.googleapis\.com/);
-  assert.match(html, /family=Inter/);
-  assert.match(html, /family=Source\+Serif\+4/);
-  assert.match(html, /family=IBM\+Plex\+Mono/);
+  assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
   assert.match(
     html,
     /<link\s+rel="icon"\s+type="image\/svg\+xml"\s+href="\/favicon\.svg"\s*\/>/
