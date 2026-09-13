@@ -174,6 +174,14 @@ def test_fetch_uses_httpx_without_redirects_or_trust_env(http_guard):
     assert state['calls'][0]['trust_env'] is False
 
 
+def test_project_rows_that_are_not_objects_are_schema_errors(http_guard):
+    install, _state = http_guard
+    install(projects_only_handler({'data': [None]}))
+
+    with pytest.raises(ValueError, match='obrasgov_projects_schema_changed'):
+        fetch_obrasgov_projects(state='RR', page=1, page_size=10)
+
+
 def test_fetch_does_not_follow_redirect_off_allowlist(http_guard):
     install, _state = http_guard
     seen = []

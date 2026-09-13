@@ -778,6 +778,19 @@
         "Uma linha incompatível produz o erro específico da borda e conserva o tratamento existente de qualidade parcial, em vez de certificar uma resposta vazia.",
         "Regressão da Issue #3: as duas bordas aceitavam uma lista contendo null antes da correção; depois, os 19 testes do batch Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.5",
+      "date": "2026-09-13",
+      "title": "Projetos malformados do Obrasgov interrompem a página",
+      "user_impact": [
+        "Uma página com projeto em formato inesperado deixa de reduzir silenciosamente o conjunto de obras importadas."
+      ],
+      "technical": [
+        "A borda de projetos exige que cada item de data seja um objeto antes de entregar a página ao batch.",
+        "Uma linha incompatível produz obrasgov_projects_schema_changed antes de contar, enriquecer ou persistir qualquer projeto da página.",
+        "Regressão da Issue #3: uma lista contendo null passava pela validação de schema antes da correção; depois, os 20 testes do batch Obrasgov passaram."
+      ]
     }
   ]
 }

@@ -125,7 +125,7 @@ def fetch_obrasgov_projects(state: str | None = None, year: int | None = None,
         params['ano_cadastro'] = year
     payload = fetch_api_json('/projeto-investimento', params, timeout=timeout, client=client)
     rows = payload.get('data')
-    if not isinstance(rows, list):
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
         raise ValueError('obrasgov_projects_schema_changed')
     return payload
 
