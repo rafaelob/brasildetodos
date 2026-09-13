@@ -9,6 +9,7 @@ on:
       - ops/verify_published_data.py
       - ops/browser_public_catalog.py
       - backend/tests/test_public_browser_sample.py
+      - backend/bdt/**
       - data/releases/public-data-20260906-v1.json
       - tests/corpus/ocr-reviewed/**
       - web/src/**

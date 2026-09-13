@@ -830,6 +830,19 @@
         "A geração e a revogação removem a senha atual; o consumo remove código, nova senha e confirmação sem criar sessão automática.",
         "Regressão da Issue #5: uma jornada Chromium com API e SQLite reais percorreu geração, logout, consumo, novo login, nova geração e revogação antes de exportar dados, retirar a contribuição e desativar a conta."
       ]
+    },
+    {
+      "version": "2026.09.13.9",
+      "date": "2026-09-13",
+      "title": "Release público histórico volta a ser verificável",
+      "user_impact": [
+        "O catálogo público congelado continua instalável depois que novas superfícies privadas são adicionadas ao aplicativo, sem aceitar manifestos atuais com exclusões incompletas."
+      ],
+      "technical": [
+        "A lista histórica de exclusões é aceita somente junto ao SHA exato do exportador que produziu o release; qualquer outra revisão ou lista mais fraca continua recusada.",
+        "A lista atual permanece a autoridade para novos manifestos e exige correspondência integral.",
+        "O workflow do release publicado agora também dispara quando qualquer módulo backend usado pela verificação ou pela jornada real muda; a regressão focada da Issue #2 passou com 111 testes, 3 skips de plataforma e um warning preexistente."
+      ]
     }
   ]
 }

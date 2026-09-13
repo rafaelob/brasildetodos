@@ -170,6 +170,47 @@ def test_manifest_cannot_claim_a_weaker_privacy_boundary(full, tmp_path):
         verify_catalog(folder)
 
 
+LEGACY_PUBLIC_DATA_REVISION = 'ad9942cc12030653b59a760380bd275537faebf8'
+LEGACY_PUBLIC_DATA_EXCLUDED = [
+    'accounts', 'sessions', 'rate_limits', 'citizen_observations',
+    'moderation_audit', 'document_originals', 'document_extractions',
+    'reviewer_identities', 'document_links',
+]
+
+
+def test_known_legacy_privacy_boundary_is_bound_to_its_exporter_revision(full, tmp_path):
+    folder = tmp_path / 'release'
+    export_catalog(full, folder)
+    path = folder / 'manifest.json'
+    manifest = json.loads(path.read_text(encoding='utf-8'))
+    manifest['revision'] = LEGACY_PUBLIC_DATA_REVISION
+    manifest['excluded'] = LEGACY_PUBLIC_DATA_EXCLUDED
+    path.write_bytes(canonical(manifest))
+
+    verified = verify_catalog(folder)
+
+    assert verified['revision'] == LEGACY_PUBLIC_DATA_REVISION
+    assert verified['excluded'] == LEGACY_PUBLIC_DATA_EXCLUDED
+
+
+@pytest.mark.parametrize('revision,excluded', [
+    ('development', LEGACY_PUBLIC_DATA_EXCLUDED),
+    (LEGACY_PUBLIC_DATA_REVISION, LEGACY_PUBLIC_DATA_EXCLUDED[:-1]),
+])
+def test_legacy_privacy_boundary_rejects_wrong_revision_or_weaker_list(
+        full, tmp_path, revision, excluded):
+    folder = tmp_path / 'release'
+    export_catalog(full, folder)
+    path = folder / 'manifest.json'
+    manifest = json.loads(path.read_text(encoding='utf-8'))
+    manifest['revision'] = revision
+    manifest['excluded'] = excluded
+    path.write_bytes(canonical(manifest))
+
+    with pytest.raises(ValueError, match='invalid_catalog_privacy_boundary'):
+        verify_catalog(folder)
+
+
 @pytest.mark.parametrize('surface',['manifest','record'])
 def test_catalog_rejects_duplicate_json_keys(full,tmp_path,surface):
     folder=tmp_path/'release';export_catalog(full,folder)

@@ -34,6 +34,13 @@ MAX_RECORDS = 5_000_000
 EXCLUDED = ['accounts', 'sessions', 'rate_limits', 'citizen_observations',
             'moderation_audit', 'document_originals', 'document_extractions', 'reviewer_identities',
             'document_links', 'recovery_codes', 'evidence_photos', 'photo_content']
+LEGACY_EXCLUDED_BY_REVISION = {
+    'ad9942cc12030653b59a760380bd275537faebf8': (
+        'accounts', 'sessions', 'rate_limits', 'citizen_observations',
+        'moderation_audit', 'document_originals', 'document_extractions',
+        'reviewer_identities', 'document_links',
+    ),
+}
 SOURCE_ID_FIELDS = ('dataset', 'url', 'snapshot_sha256', 'reference_date')
 SOURCE_FIELDS = SOURCE_ID_FIELDS + ('collected_at',)
 
@@ -209,10 +216,13 @@ def load_manifest(folder: Path) -> dict:
         raise ValueError('unsupported_catalog_format')
     if manifest.get('national_catalog_certified') is not False:
         raise ValueError('unsupported_national_certification')
-    if manifest.get('excluded') != EXCLUDED:
+    excluded = manifest.get('excluded')
+    revision = manifest.get('revision')
+    legacy_excluded = (LEGACY_EXCLUDED_BY_REVISION.get(revision)
+                       if isinstance(revision, str) else None)
+    if excluded != EXCLUDED and (legacy_excluded is None or excluded != list(legacy_excluded)):
         raise ValueError('invalid_catalog_privacy_boundary')
     timestamp(manifest.get('generated_at'))
-    revision = manifest.get('revision')
     if revision != 'development' and (not isinstance(revision, str) or not re.fullmatch(r'[a-f0-9]{40}', revision)):
         raise ValueError('invalid_revision')
     total = 0
