@@ -34,12 +34,16 @@ MAX_RECORDS = 5_000_000
 EXCLUDED = ['accounts', 'sessions', 'rate_limits', 'citizen_observations',
             'moderation_audit', 'document_originals', 'document_extractions', 'reviewer_identities',
             'document_links', 'recovery_codes', 'evidence_photos', 'photo_content']
+_LEGACY_EXCLUDED = (
+    'accounts', 'sessions', 'rate_limits', 'citizen_observations',
+    'moderation_audit', 'document_originals', 'document_extractions',
+    'reviewer_identities', 'document_links',
+)
 LEGACY_EXCLUDED_BY_REVISION = {
-    'af48c3eac9a8e2ee3ce45407b43bdd0324e3f0ea': (
-        'accounts', 'sessions', 'rate_limits', 'citizen_observations',
-        'moderation_audit', 'document_originals', 'document_extractions',
-        'reviewer_identities', 'document_links',
-    ),
+    revision: _LEGACY_EXCLUDED for revision in (
+        'af48c3eac9a8e2ee3ce45407b43bdd0324e3f0ea',
+        '96aa4bf80cc13402f0d35d47a8deabcae6d30db3',
+    )
 }
 SOURCE_ID_FIELDS = ('dataset', 'url', 'snapshot_sha256', 'reference_date')
 SOURCE_FIELDS = SOURCE_ID_FIELDS + ('collected_at',)

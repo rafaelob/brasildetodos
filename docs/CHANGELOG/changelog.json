@@ -855,6 +855,18 @@
         "As jornadas de catálogo único e misto comparam a interface com o rótulo localizado esperado para CNES e INEP; a exportação continua comparada byte a byte com o registro instalado.",
         "Regressão da Issue #2: o verificador antes esperava o slug técnico cnes-national-bulk na interface e falhava diante do rótulo público CNES · Estabelecimentos de Saúde; 29 testes focados passaram e um cenário de navegador permaneceu skipped por pré-condição de plataforma."
       ]
+    },
+    {
+      "version": "2026.09.13.11",
+      "date": "2026-09-13",
+      "title": "Release escolar histórico volta a ser verificável",
+      "user_impact": [
+        "O catálogo escolar congelado continua verificável depois da inclusão de novas superfícies privadas, sem afrouxar a fronteira exigida dos manifestos atuais."
+      ],
+      "technical": [
+        "A fronteira histórica é aceita somente para a revisão exata 96aa4bf80cc13402f0d35d47a8deabcae6d30db3 do artefato escolar oficial; revisões desconhecidas continuam recusadas.",
+        "O artefato de 23.807.757 bytes foi relido com SHA-256 483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7; 103 testes de catálogo, educação e navegador passaram, com 3 skips de plataforma e um warning preexistente."
+      ]
     }
   ]
 }

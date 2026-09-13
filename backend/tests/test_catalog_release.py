@@ -171,6 +171,7 @@ def test_manifest_cannot_claim_a_weaker_privacy_boundary(full, tmp_path):
 
 
 LEGACY_PUBLIC_DATA_REVISION = 'af48c3eac9a8e2ee3ce45407b43bdd0324e3f0ea'
+LEGACY_EDUCATION_REVISION = '96aa4bf80cc13402f0d35d47a8deabcae6d30db3'
 LEGACY_PUBLIC_DATA_EXCLUDED = [
     'accounts', 'sessions', 'rate_limits', 'citizen_observations',
     'moderation_audit', 'document_originals', 'document_extractions',
@@ -178,18 +179,20 @@ LEGACY_PUBLIC_DATA_EXCLUDED = [
 ]
 
 
-def test_known_legacy_privacy_boundary_is_bound_to_its_exporter_revision(full, tmp_path):
+@pytest.mark.parametrize('revision', [LEGACY_PUBLIC_DATA_REVISION, LEGACY_EDUCATION_REVISION])
+def test_known_legacy_privacy_boundary_is_bound_to_its_exporter_revision(
+        full, tmp_path, revision):
     folder = tmp_path / 'release'
     export_catalog(full, folder)
     path = folder / 'manifest.json'
     manifest = json.loads(path.read_text(encoding='utf-8'))
-    manifest['revision'] = LEGACY_PUBLIC_DATA_REVISION
+    manifest['revision'] = revision
     manifest['excluded'] = LEGACY_PUBLIC_DATA_EXCLUDED
     path.write_bytes(canonical(manifest))
 
     verified = verify_catalog(folder)
 
-    assert verified['revision'] == LEGACY_PUBLIC_DATA_REVISION
+    assert verified['revision'] == revision
     assert verified['excluded'] == LEGACY_PUBLIC_DATA_EXCLUDED
 
 
