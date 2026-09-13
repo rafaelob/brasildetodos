@@ -713,6 +713,19 @@
         "A recusa preserva a extração nativa, libera a lease e mantém o pacote privado sem candidato vazio.",
         "Regressão da Issue #4: a saída .-—/ foi aceita antes da correção; depois, 45 testes das superfícies de OCR e evidência passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.52",
+      "date": "2026-09-12",
+      "title": "Identidades equivalentes não mascaram recursos duplicados",
+      "user_impact": [
+        "Uma coleta é recusada integralmente quando duas linhas representam o mesmo plano, contrato ou obra após a normalização do identificador."
+      ],
+      "technical": [
+        "A verificação mantém a unicidade da identidade bruta e também compara o Resource.id canônico produzido pelo perfil revisado.",
+        "A colisão falha antes da publicação e preserva o banco sem recursos parciais.",
+        "Regressão da Issue #3: os identificadores 101 e  101  eram contados como duas linhas e colapsavam silenciosamente em um único recurso; depois, 82 testes do sincronizador passaram."
+      ]
     }
   ]
 }

@@ -131,7 +131,7 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
     expected_records = report.get('expected_records')
     if any(type(value) is not int or value < 0 for value in (report_records, expected_records)):
         raise ValueError('invalid_resource_record_totals')
-    seen, total, declared_pages, declared_records = set(), 0, None, None
+    seen, normalized_seen, total, declared_pages, declared_records = set(), set(), 0, None, None
     for index, entry in enumerate(entries):
         entry_records = entry.get('records')
         if type(entry_records) is not int or entry_records < 0:
@@ -195,6 +195,9 @@ def verified_resources(folder: Path, report: dict, plan: PagePlan, municipalitie
                     raise
                 on_invalid(error, plan.dataset, identity, entry['sha256'])
                 continue
+            if body.id in normalized_seen:
+                raise ValueError('duplicate_or_missing_resource_identity')
+            normalized_seen.add(body.id)
             yield body
     if (len(entries) != max(declared_pages, 1) or total != declared_records or total != report_records
             or expected_records != declared_records):

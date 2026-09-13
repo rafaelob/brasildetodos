@@ -266,6 +266,20 @@ def test_collection_manifest_rejects_duplicate_json_keys(database, tmp_path):
         assert session.scalar(select(func.count()).select_from(Resource)) == 0
 
 
+def test_collection_rejects_identities_that_collide_after_normalization(database, tmp_path):
+    folder = tmp_path / 'normalized-duplicate'
+    save_collection(
+        folder,
+        [action_plan(id_plano_acao=101), action_plan(id_plano_acao=' 101 ')],
+        profile=PLAN,
+    )
+
+    with pytest.raises(ValueError, match='duplicate_or_missing_resource_identity'):
+        import_resources(database, folder)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(Resource)) == 0
+
+
 def test_collection_manifest_rejects_boolean_record_totals(database, tmp_path):
     mutations = [
         lambda report: report.update(records=True),
