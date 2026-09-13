@@ -752,6 +752,19 @@
         "O download usa exclusivamente o par fornecido no dispatch; não há fallback para um artefato expirado.",
         "Regressão da Issue #3: o falsificador detectou o gatilho push e os IDs fixos antes da correção; o intake real já havia sido validado separadamente com um par explícito."
       ]
+    },
+    {
+      "version": "2026.09.13.3",
+      "date": "2026-09-13",
+      "title": "Lista de investimentos inválida interrompe a obra",
+      "user_impact": [
+        "Uma obra deixa de aparecer sem investimentos quando a fonte envia falso, zero, texto ou objeto no lugar da lista declarada."
+      ],
+      "technical": [
+        "O normalizador distingue o valor nulo, que representa ausência da lista, de valores falsy com tipo incompatível.",
+        "Somente uma lista com até cem investimentos continua elegível para normalização; tipos divergentes falham com invalid_project_investments.",
+        "Regressão da Issue #3: quatro formas inválidas viravam silenciosamente uma lista vazia antes da correção e passaram a ser recusadas."
+      ]
     }
   ]
 }

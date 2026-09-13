@@ -224,7 +224,8 @@ def normalize_resource(profile: Profile, row: dict, source: Source, municipaliti
         state = row['uf_principal']
         if state is not None and state not in STATES:
             raise ValueError('invalid_project_state')
-        investments = row['investimentos_previstos'] or []
+        declared_investments = row['investimentos_previstos']
+        investments = [] if declared_investments is None else declared_investments
         if not isinstance(investments, list) or len(investments) > 100:
             raise ValueError('invalid_project_investments')
         entries = []

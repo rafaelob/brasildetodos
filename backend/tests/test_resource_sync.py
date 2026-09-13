@@ -427,6 +427,17 @@ def test_obrasgov_physical_execution_and_geometries():
     assert res.attributes['territorial_basis'] == 'state_only_municipality_unresolved'
 
 
+@pytest.mark.parametrize('invalid_investments', [False, 0, '', {}])
+def test_obrasgov_rejects_falsy_non_list_investments(invalid_investments):
+    with pytest.raises(ValueError, match='invalid_project_investments'):
+        normalize_resource(
+            WORK,
+            project(investimentos_previstos=invalid_investments),
+            source(WORK),
+            {},
+        )
+
+
 def test_obrasgov_rejects_conflicting_project_municipality_state():
     with pytest.raises(ValueError, match='conflicting_project_territory'):
         normalize_resource(
