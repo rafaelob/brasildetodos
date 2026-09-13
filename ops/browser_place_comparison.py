@@ -21,7 +21,7 @@ TEXT={
 def main():
     out=Path('test-results/browser-place-comparison');out.mkdir(parents=True,exist_ok=True)
     report={'synthetic_test_only':True,'public_deployment':False,'status':'started','checks':[]}
-    with tempfile.TemporaryDirectory(prefix='bdt-comparison-browser-') as temp:
+    with tempfile.TemporaryDirectory(prefix='bdt-comparison-browser-', ignore_cleanup_errors=True) as temp:
         dburl='sqlite:///'+str(Path(temp)/'application.db');db=Database(dburl);db.initialize()
         source=Source(dataset='synthetic-comparison',url='https://example.org/test-only',record_id='test',reference_date='2025',collected_at=now(),snapshot_sha256='a'*64)
         ids=[f'compare:{i}' for i in range(4)]
@@ -33,6 +33,7 @@ def main():
         env=os.environ|{'BDT_DATABASE_URL':dburl,'BDT_PUBLIC_ORIGIN':origin,'BDT_STATIC_DIR':str(Path('web/dist').resolve()),'BDT_DATA_DIR':temp,'BDT_ALLOW_REGISTRATION':'0'}
         with (out/'server.log').open('w') as log:
             server=subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8055'],env=env,stdout=log,stderr=log)
+            browser=None
             try:
                 for _ in range(60):
                     try:
@@ -41,7 +42,9 @@ def main():
                     time.sleep(.25)
                 else:raise RuntimeError('comparison_server_unavailable')
                 with sync_playwright() as pw:
-                    browser=pw.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True)
+                    executable=next((shutil.which(name) for name in ('google-chrome','chromium','chrome','msedge')
+                                     if shutil.which(name)),None)
+                    browser=pw.chromium.launch(executable_path=executable,headless=True)
                     for width in (320,390,1440):
                         for locale,labels in TEXT.items():
                             page=browser.new_page(viewport={'width':width,'height':1000});errors=[]
@@ -57,7 +60,7 @@ def main():
                                 panel=page.locator('.place-comparison')
                                 expect(panel.locator('.comparison-place')).to_have_count(3)
                                 expect(panel.get_by_role('heading',name=labels['title'],exact=True)).to_be_focused()
-                                expect(panel.get_by_text('2024',exact=True)).to_be_visible()
+                                expect(panel.get_by_text('Ref. 2024',exact=True)).to_be_visible()
                                 expect(panel.get_by_text('0000-0000',exact=True)).to_be_visible()
                                 expect(panel.locator('.comparison-notice')).to_be_visible()
                                 assert json.loads(page.evaluate('localStorage.getItem("bdt:favorites")'))==ids
@@ -82,12 +85,21 @@ def main():
                             except Exception:
                                 page.screenshot(path=str(out/f'failure-{locale}-{width}.png'),full_page=True);raise
                             finally:page.close()
-                    browser.close();report['status']='passed'
+                    browser.close();browser=None;report['status']='passed'
             finally:
-                server.terminate()
-                try:server.wait(timeout=10)
-                except subprocess.TimeoutExpired:server.kill();server.wait()
+                if server.poll() is None:
+                    server.terminate()
+                    try:server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:server.kill();server.wait(timeout=10)
+                db.engine.dispose()
                 (out/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temp);break
+        except FileNotFoundError:break
+        except PermissionError:
+            if attempt==19:raise
+            time.sleep(.1)
     print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()
