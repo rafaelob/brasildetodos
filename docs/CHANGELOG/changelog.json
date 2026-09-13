@@ -791,6 +791,19 @@
         "Uma linha incompatível produz obrasgov_projects_schema_changed antes de contar, enriquecer ou persistir qualquer projeto da página.",
         "Regressão da Issue #3: uma lista contendo null passava pela validação de schema antes da correção; depois, os 20 testes do batch Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.6",
+      "date": "2026-09-13",
+      "title": "Paginação do Obrasgov recusa término booleano",
+      "user_impact": [
+        "Uma resposta malformada deixa de encerrar a coleta de obras após a primeira página como se o conjunto estivesse completo."
+      ],
+      "technical": [
+        "A borda exige total_pages inteiro e compatível com o número da página solicitada.",
+        "Booleanos, campo ausente e totais anteriores à página observada falham com obrasgov_projects_schema_changed antes do batch.",
+        "Regressão da Issue #3: True era tratado como o inteiro 1 e encerrava a paginação; depois, os 21 testes do batch Obrasgov passaram."
+      ]
     }
   ]
 }
