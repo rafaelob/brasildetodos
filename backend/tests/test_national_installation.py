@@ -75,6 +75,11 @@ def test_combines_catalogs_without_losing_sources_histories_or_resource_precisio
     assert result['without_geometry'] == 2 and result['shared_municipalities'] == 1
     assert result['history_records'] == 3 and result['source_records_rewritten'] is False
     assert result['database_sha256'] == hashlib.sha256(target.read_bytes()).hexdigest()
+    assert result['partition_validation'] == {
+        'expected': result['partitions'],
+        'observed': result['partitions'],
+        'missing': [],
+    }
     checked = national.accept_api(target, result)
     assert checked['kinds_checked'] == ['health', 'school']
     with closing(sqlite3.connect(target)) as connection:
@@ -164,6 +169,41 @@ def test_count_failure_cannot_publish_partially_accepted_database(inputs, tmp_pa
     monkeypatch.setattr(national, 'append_school_catalog', remove_one)
     with pytest.raises(ValueError, match='counts_mismatch'): run(inputs, tmp_path / 'out.db')
     assert not (tmp_path / 'out.db').exists()
+
+
+def test_missing_selected_partition_never_reaches_publication(inputs, tmp_path, monkeypatch):
+    target = tmp_path / 'out.db'
+    original = national.append_school_catalog
+
+    def move_selected_partition(database, *args):
+        shared = original(database, *args)
+        with database.engine.begin() as connection:
+            connection.exec_driver_sql(
+                "UPDATE places SET dataset='synthetic' WHERE kind='school'"
+            )
+        return shared
+
+    monkeypatch.setattr(national, 'append_school_catalog', move_selected_partition)
+    with pytest.raises(
+        ValueError,
+        match=r'national_partition_set_incomplete.*inep-schools-2025.*BA',
+    ) as error:
+        run(inputs, target)
+    assert not target.exists()
+    detail = json.loads(str(error.value).partition(':')[2])
+    assert detail['missing'] == [{
+        'dataset': 'inep-schools-2025',
+        'kind': 'school',
+        'state': 'BA',
+        'records': 2,
+        'without_geometry': 2,
+    }]
+    assert detail['observed'] == [
+        {'dataset': 'synthetic', 'kind': 'health', 'state': 'BA',
+         'records': 1, 'without_geometry': 0},
+        {'dataset': 'synthetic', 'kind': 'school', 'state': 'BA',
+         'records': 2, 'without_geometry': 2},
+    ]
 
 
 def test_selection_count_conflict_is_not_hidden_by_valid_archive(inputs, tmp_path):

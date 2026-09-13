@@ -70,6 +70,26 @@ def append_school_catalog(database, folder, manifest):
     return shared
 
 
+def _installed_partitions(database):
+    with database.session() as session:
+        return [dict(row) for row in session.execute(select(
+            Place.dataset, Place.kind, Place.state, func.count().label('records'),
+            func.sum(case((Place.latitude.is_(None), 1), else_=0)).label('without_geometry')
+        ).group_by(Place.dataset, Place.kind, Place.state)
+         .order_by(Place.dataset, Place.kind, Place.state)).mappings()]
+
+
+def _partition_map(partitions):
+    return {(row['dataset'], row['kind'], row['state']):
+            {'records': int(row['records']), 'without_geometry': int(row['without_geometry'])}
+            for row in partitions}
+
+
+def _partition_rows(partitions):
+    return [{'dataset': key[0], 'kind': key[1], 'state': key[2], **counts}
+            for key, counts in sorted(partitions.items())]
+
+
 def install(health_archive, school_archive, destination, *, health_selection, education_selection):
     """All-or-nothing publication into a path that must not already exist."""
     destination = Path(destination)
@@ -94,6 +114,14 @@ def install(health_archive, school_archive, destination, *, health_selection, ed
                 with database.session() as session:
                     old_history = session.scalar(select(func.count()).select_from(Change))
                     old_missing = session.scalar(select(func.count()).select_from(Place).where(Place.latitude.is_(None)))
+                expected_partitions = _partition_map(_installed_partitions(database))
+                for partition in manifest['partitions']:
+                    key = (partition['dataset'], 'school', partition['state'])
+                    counts = expected_partitions.setdefault(
+                        key, {'records': 0, 'without_geometry': 0})
+                    counts['records'] += partition['records']
+                    if not partition['with_geometry']:
+                        counts['without_geometry'] += partition['records']
                 shared = append_school_catalog(database, inputs / 'public-catalog', manifest)
                 expected = base['counts'] | {'places': base['counts']['places'] + schools['counts']['eligible']}
                 with database.session() as session:
@@ -102,15 +130,24 @@ def install(health_archive, school_archive, destination, *, health_selection, ed
                     history = session.scalar(select(func.count()).select_from(Change))
                     missing = session.scalar(select(func.count()).select_from(Place).where(Place.latitude.is_(None)))
                     by_kind = dict(session.execute(select(Place.kind, func.count()).group_by(Place.kind)).all())
-                    partitions = [dict(row) for row in session.execute(select(
-                        Place.dataset, Place.kind, Place.state, func.count().label('records'),
-                        func.sum(case((Place.latitude.is_(None), 1), else_=0)).label('without_geometry')
-                    ).group_by(Place.dataset, Place.kind, Place.state)
-                     .order_by(Place.dataset, Place.kind, Place.state)).mappings()]
+                partitions = _installed_partitions(database)
                 if (counts != expected or counts['users'] or counts['observations']
                         or history != old_history + manifest['files']['changes.jsonl']['records']
                         or missing != old_missing + schools['counts']['without_geometry']):
                     raise ValueError('national_installed_counts_mismatch')
+                observed_partitions = _partition_map(partitions)
+                missing_partitions = _partition_rows({
+                    key: counts for key, counts in expected_partitions.items()
+                    if observed_partitions.get(key) != counts
+                })
+                if missing_partitions:
+                    detail = {'expected': _partition_rows(expected_partitions),
+                              'observed': _partition_rows(observed_partitions),
+                              'missing': missing_partitions}
+                    raise ValueError('national_partition_set_incomplete:' +
+                                     json.dumps(detail, ensure_ascii=False, sort_keys=True))
+                if observed_partitions != expected_partitions:
+                    raise ValueError('national_partition_set_mismatch')
                 with database.engine.connect() as connection:
                     if connection.exec_driver_sql('PRAGMA integrity_check').scalar() != 'ok':
                         raise ValueError('national_database_integrity_failure')
@@ -134,6 +171,8 @@ def install(health_archive, school_archive, destination, *, health_selection, ed
                     'education_sha256': schools['artifact']['sha256'],
                     'database_sha256': database_hash, 'database_bytes': database_bytes,
                     'counts': counts, 'by_kind': by_kind, 'partitions': partitions,
+                    'partition_validation': {'expected': _partition_rows(expected_partitions),
+                                             'observed': partitions, 'missing': []},
                     'shared_municipalities': shared,
                     'history_records': history, 'without_geometry': missing,
                     'automatic_links_created': 0, 'financial_events_created_from_metadata': 0,

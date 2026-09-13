@@ -635,6 +635,19 @@
         "Hash do original, sequência e inteiro estrito de página passam a ser requisitos do mesmo portão que protege ingestão, OCR e recuperação.",
         "Regressão da Issue #4: page=true satisfez a busca da página 1 antes da correção; depois, 59 testes de evidência, vínculos e OCR passaram."
       ]
+    },
+    {
+      "version": "2026.09.12.46",
+      "date": "2026-09-12",
+      "title": "Publicação nacional exige todas as partições selecionadas",
+      "user_impact": [
+        "Um catálogo nacional deixa de ser publicado quando uma partição de fonte, tipo e UF desaparece entre os pacotes selecionados e a base final."
+      ],
+      "technical": [
+        "O instalador congela o conjunto esperado de partições antes da combinação e o compara com a base SQLite de staging antes da publicação atômica.",
+        "A recusa national_partition_set_incomplete inclui expected, observed e missing em JSON e preserva o destino sem criar arquivo parcial.",
+        "Regressão da Issue #2: a partição inep-schools-2025/BA pôde ser deslocada sem alterar as contagens globais antes da correção; depois, 25 testes das superfícies de instalação e integridade nacional passaram, com um cenário de symlink indisponível neste Windows."
+      ]
     }
   ]
 }
