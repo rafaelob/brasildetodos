@@ -4,6 +4,7 @@ import os
 import secrets
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -22,7 +23,7 @@ def main():
     out=Path('test-results/browser-extended');out.mkdir(parents=True,exist_ok=True)
     result={'synthetic_test_only':True,'checks':[],'real_government_ocr_tested':False}
     password=secrets.token_urlsafe(24)
-    with tempfile.TemporaryDirectory(prefix='bdt-document-browser-') as temp:
+    with tempfile.TemporaryDirectory(prefix='bdt-document-browser-',ignore_cleanup_errors=True) as temp:
         db_url='sqlite:///'+str(Path(temp)/'test.db');db=Database(db_url);db.initialize()
         src=Source(dataset='synthetic-browser',url='https://example.org/synthetic-document',record_id='synthetic',
             collected_at=now(),reference_date='2025',snapshot_sha256='a'*64)
@@ -39,7 +40,8 @@ def main():
         db.engine.dispose()
         env=os.environ|{'BDT_DATABASE_URL':db_url,'BDT_PUBLIC_ORIGIN':URL,'BDT_STATIC_DIR':str(Path('web/dist').resolve()),'BDT_DATA_DIR':temp,'BDT_ALLOW_REGISTRATION':'0'}
         with (out/'server.log').open('w') as log:
-            process=subprocess.Popen(['python','-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8036'],env=env,stdout=log,stderr=log)
+            process=subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8036'],env=env,stdout=log,stderr=log)
+            browser=None
             try:
                 for _ in range(80):
                     try:
@@ -48,15 +50,18 @@ def main():
                     time.sleep(.25)
                 else:raise RuntimeError('API readiness failed')
                 with sync_playwright() as playwright:
-                    browser=playwright.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True,args=['--no-sandbox'])
+                    executable=next((shutil.which(name) for name in ('google-chrome','chromium','chrome','msedge')
+                                     if shutil.which(name)),None)
+                    browser=playwright.chromium.launch(executable_path=executable,headless=True,args=['--no-sandbox'])
                     page=browser.new_page(viewport={'width':1440,'height':1000})
                     errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
                     page.goto(URL,wait_until='domcontentloaded')
                     def login(name):
                         page.get_by_role('button',name='Participar',exact=True).click()
-                        page.get_by_label('Nome de usuário',exact=True).fill(name)
-                        page.get_by_label('Senha (mínimo 12 caracteres)',exact=True).fill(password)
-                        page.get_by_role('button',name='Entrar',exact=True).click()
+                        form=page.locator('form').filter(has=page.get_by_role('button',name='Entrar',exact=True))
+                        form.get_by_label('Nome de usuário',exact=True).fill(name)
+                        form.get_by_label('Senha (mínimo 12 caracteres)',exact=True).fill(password)
+                        form.get_by_role('button',name='Entrar',exact=True).click()
                         page.get_by_role('button',name=name,exact=True).wait_for()
                     def logout(name):
                         page.get_by_role('button',name=name,exact=True).click();page.get_by_role('button',name='Sair',exact=True).click()
@@ -104,13 +109,13 @@ def main():
                     card.get_by_role('checkbox').check()
                     card.get_by_role('button',name='Enviar para revisão',exact=True).click()
                     expect(page.locator('blockquote').filter(has_text=excerpt)).to_have_count(0)
-                    detail();page.get_by_role('button',name='Melhorias e recursos',exact=True).click()
+                    detail();page.get_by_role('tab',name='Melhorias e recursos',exact=True).click()
                     expect(page.locator('blockquote')).to_contain_text(excerpt)
                     assert page.get_by_role('heading',name='Synthetic renovation contract',exact=True).count()==1
                     page.screenshot(path=str(out/'public-reviewed-relationship.png'),full_page=True)
                     result['checks'].append('independent review -> public sourced relationship; no automatic finance allocation')
                     logout('secondreviewer');login('citizen');detail()
-                    page.get_by_role('button',name='Contribuições da comunidade',exact=True).click()
+                    page.get_by_role('tab',name='Contribuições da comunidade',exact=True).click()
                     page.get_by_label('Data da observação',exact=True).fill('2025-01-01')
                     page.get_by_label('O que você observou?',exact=True).fill('Synthetic observation created solely for the privacy browser test.')
                     page.get_by_role('checkbox').check();page.get_by_role('button',name='Enviar para revisão',exact=True).click()
@@ -130,9 +135,23 @@ def main():
                     assert not errors,errors
                     result['checks'].append('own data export -> observation withdrawal -> account deactivation and session invalidation')
                     browser.close()
+                    browser=None
             finally:
-                process.terminate();process.wait(timeout=10)
+                if browser is not None and browser.is_connected():browser.close()
+                if process.poll() is None:
+                    process.terminate()
+                    try:process.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        process.kill();process.wait(timeout=10)
+                db.engine.dispose()
                 (out/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temp);break
+        except FileNotFoundError:break
+        except PermissionError:
+            if attempt==19:raise
+            time.sleep(.1)
     print(json.dumps(result,ensure_ascii=False,indent=2))
 
 
