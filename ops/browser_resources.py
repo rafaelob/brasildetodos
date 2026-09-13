@@ -58,7 +58,7 @@ def seed(database: Database, folder: Path) -> None:
 def main():
     out=Path('test-results/browser-resources');out.mkdir(parents=True,exist_ok=True)
     report={'synthetic_test_only':True, 'checks':[], 'status':'started', 'live_map_verified':False}
-    with tempfile.TemporaryDirectory(prefix='bdt-resource-browser-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='bdt-resource-browser-',ignore_cleanup_errors=True) as temporary:
         root=Path(temporary);url='sqlite:///'+str(root/'test.db')
         database=Database(url);database.initialize()
         try:seed(database,root/'collections')
@@ -69,6 +69,7 @@ def main():
         with (out/'server.log').open('w') as log:
             server=subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory',
                 '--host','127.0.0.1','--port','8038'],env=env,stdout=log,stderr=log)
+            browser=None
             try:
                 for _ in range(60):
                     try:
@@ -77,7 +78,9 @@ def main():
                     time.sleep(.25)
                 else:raise RuntimeError('resource_test_api_unavailable')
                 with sync_playwright() as playwright:
-                    browser=playwright.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True)
+                    executable=next((shutil.which(name) for name in ('google-chrome','chromium','chrome','msedge')
+                                     if shutil.which(name)),None)
+                    browser=playwright.chromium.launch(executable_path=executable,headless=True)
                     for width in (320,390,1440):
                         page=browser.new_page(viewport={'width':width,'height':1000})
                         errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
@@ -128,10 +131,24 @@ def main():
                             raise
                         finally:page.close()
                     browser.close()
+                    browser=None
                 report['status']='passed'
             finally:
-                server.terminate();server.wait(timeout=10)
+                if browser is not None and browser.is_connected():browser.close()
+                if server.poll() is None:
+                    server.terminate()
+                    try:server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        server.kill();server.wait(timeout=10)
+                database.engine.dispose()
                 (out/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temporary);break
+        except FileNotFoundError:break
+        except PermissionError:
+            if attempt==19:raise
+            time.sleep(.1)
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
 
