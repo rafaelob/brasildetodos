@@ -158,6 +158,18 @@ def test_manifest_is_untrusted(full,tmp_path,mutation):
     with pytest.raises(ValueError):verify_catalog(folder)
 
 
+def test_manifest_cannot_claim_a_weaker_privacy_boundary(full, tmp_path):
+    folder = tmp_path / 'release'
+    export_catalog(full, folder)
+    path = folder / 'manifest.json'
+    manifest = json.loads(path.read_text(encoding='utf-8'))
+    manifest['excluded'] = []
+    path.write_bytes(canonical(manifest))
+
+    with pytest.raises(ValueError, match='invalid_catalog_privacy_boundary'):
+        verify_catalog(folder)
+
+
 @pytest.mark.parametrize('surface',['manifest','record'])
 def test_catalog_rejects_duplicate_json_keys(full,tmp_path,surface):
     folder=tmp_path/'release';export_catalog(full,folder)

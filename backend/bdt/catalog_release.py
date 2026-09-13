@@ -209,6 +209,8 @@ def load_manifest(folder: Path) -> dict:
         raise ValueError('unsupported_catalog_format')
     if manifest.get('national_catalog_certified') is not False:
         raise ValueError('unsupported_national_certification')
+    if manifest.get('excluded') != EXCLUDED:
+        raise ValueError('invalid_catalog_privacy_boundary')
     timestamp(manifest.get('generated_at'))
     revision = manifest.get('revision')
     if revision != 'development' and (not isinstance(revision, str) or not re.fullmatch(r'[a-f0-9]{40}', revision)):

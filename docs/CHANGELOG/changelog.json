@@ -726,6 +726,19 @@
         "A colisão falha antes da publicação e preserva o banco sem recursos parciais.",
         "Regressão da Issue #3: os identificadores 101 e  101  eram contados como duas linhas e colapsavam silenciosamente em um único recurso; depois, 82 testes do sincronizador passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.1",
+      "date": "2026-09-13",
+      "title": "Manifesto público preserva a fronteira de privacidade",
+      "user_impact": [
+        "Um pacote de catálogo é recusado quando seu manifesto omite ou altera a declaração das tabelas privadas que ficaram fora da publicação."
+      ],
+      "technical": [
+        "O verificador e o instalador exigem correspondência exata entre o campo excluded e a lista canônica de superfícies privadas.",
+        "A validação ocorre antes da leitura e da instalação do catálogo, mantendo contas, sessões, documentos privados e identidades de revisão fora do pacote.",
+        "Regressão da Issue #2: um manifesto com excluded vazio era aceito antes da correção; depois, 48 testes de release e 25 testes de instalação e integridade nacional passaram, com dois cenários de symlink indisponíveis neste Windows."
+      ]
     }
   ]
 }
