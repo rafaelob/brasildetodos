@@ -765,6 +765,19 @@
         "Somente uma lista com até cem investimentos continua elegível para normalização; tipos divergentes falham com invalid_project_investments.",
         "Regressão da Issue #3: quatro formas inválidas viravam silenciosamente uma lista vazia antes da correção e passaram a ser recusadas."
       ]
+    },
+    {
+      "version": "2026.09.13.4",
+      "date": "2026-09-13",
+      "title": "Detalhes malformados do Obrasgov ficam visíveis",
+      "user_impact": [
+        "Geometria ou execução física em formato inesperado deixa de parecer informação simplesmente ausente na fonte."
+      ],
+      "technical": [
+        "O adaptador exige que cada linha das respostas de geometria e execução seja um objeto antes de entregá-la ao batch.",
+        "Uma linha incompatível produz o erro específico da borda e conserva o tratamento existente de qualidade parcial, em vez de certificar uma resposta vazia.",
+        "Regressão da Issue #3: as duas bordas aceitavam uma lista contendo null antes da correção; depois, os 19 testes do batch Obrasgov passaram."
+      ]
     }
   ]
 }

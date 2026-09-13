@@ -137,7 +137,7 @@ def _rows_for_project(endpoint: str, project_id: str, *, schema_error: str,
         raise ValueError('obrasgov_missing_project_id')
     payload = fetch_api_json(endpoint, {'id_projeto_investimento': pid}, timeout=timeout, client=client)
     rows = payload.get('data')
-    if not isinstance(rows, list):
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
         raise ValueError(schema_error)
     return rows
 

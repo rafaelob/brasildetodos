@@ -14,6 +14,7 @@ from bdt.obrasgov_batch import (
     batch_ingest_obrasgov,
     fetch_api_json,
     fetch_obrasgov_projects,
+    fetch_project_execution,
     fetch_project_geometries,
     reviewed_obrasgov_url,
 )
@@ -200,6 +201,21 @@ def test_geometry_schema_change_is_not_empty_success(http_guard):
     install(lambda req: json_response({'total_items': 0}))
     with pytest.raises(ValueError, match='obrasgov_geometry_schema_changed'):
         fetch_project_geometries('99001.14-01')
+
+
+@pytest.mark.parametrize(
+    ('fetch', 'error'),
+    [
+        (fetch_project_geometries, 'obrasgov_geometry_schema_changed'),
+        (fetch_project_execution, 'obrasgov_execution_schema_changed'),
+    ],
+)
+def test_detail_rows_that_are_not_objects_are_schema_errors(http_guard, fetch, error):
+    install, _state = http_guard
+    install(lambda req: json_response({'data': [None]}))
+
+    with pytest.raises(ValueError, match=error):
+        fetch('99001.14-01')
 
 
 def test_batch_ingest_obrasgov_mocked(test_db, http_guard):
