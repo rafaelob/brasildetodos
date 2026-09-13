@@ -313,10 +313,11 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
           <span><strong>{text('zoom')}:</strong> {cameraZoom}</span>
           {threeD&&cameraZoom<14&&<button className="telemetry-action" onClick={zoomFor3D}>{text('zoomIn3D')} ↗</button>}
         </div>
-        {(dataFailed||failed||tileWarning)&&<div className="map-float-warning">
+        {(dataFailed||failed||tileWarning||(ready&&!hasBuildings))&&<div className="map-float-warning">
           {dataFailed&&<span>{t('mapDataFail')} <button onClick={()=>refreshRef.current()}>{t('refresh')}</button></span>}
           {failed&&<span className="callout">{text('styleFailure')}</span>}
           {tileWarning&&!failed&&<span className="callout">{text('tileWarning')}</span>}
+          {ready&&!hasBuildings&&<span>{text('unavailable3D')}</span>}
           {(failed||tileWarning)&&<button onClick={()=>setAttempt(value=>value+1)}>{text('retry')}</button>}
         </div>}
       </div>

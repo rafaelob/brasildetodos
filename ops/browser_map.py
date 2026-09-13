@@ -42,7 +42,7 @@ def main() -> None:
         'revision': os.environ.get('GITHUB_SHA'), 'synthetic_places_only': True,
         'synthetic_basemap': not args.live, 'public_deployment': False,
         'national_coverage_verified': False, 'checks': [], 'external_map_verified': False}
-    with tempfile.TemporaryDirectory(prefix='bdt-map-test-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='bdt-map-test-', ignore_cleanup_errors=True) as temporary:
         root = Path(temporary); url = 'sqlite:///' + str(root/'map.db')
         db = Database(url); db.initialize()
         source = Source(dataset='synthetic-map-test', record_id='map-test',
@@ -61,6 +61,7 @@ def main() -> None:
         with (out/'server.log').open('w') as log:
             server=subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory',
                 '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+            browser = None
             try:
                 for _ in range(60):
                     try:
@@ -69,7 +70,9 @@ def main() -> None:
                     time.sleep(.25)
                 else:raise RuntimeError('map_test_api_unavailable')
                 with sync_playwright() as playwright:
-                    browser=playwright.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),
+                    executable = next((shutil.which(name) for name in ('google-chrome', 'chromium', 'chrome', 'msedge')
+                                       if shutil.which(name)), None)
+                    browser=playwright.chromium.launch(executable_path=executable,
                         headless=True,args=['--use-angle=swiftshader','--enable-unsafe-swiftshader'])
                     for width in ((1440,) if args.live else (320,390,1440)):
                         page=browser.new_page(viewport={'width':width,'height':1000},reduced_motion='reduce')
@@ -103,12 +106,13 @@ def main() -> None:
                             assert not basemap_requests and not workers, 'Map must be opt-in and lazy'
                             panel=page.locator('.map-panel')
                             open_opt_in_map(panel)
-                            expect(panel.locator('.map-caption')).to_contain_text('1 registros',timeout=35000)
+                            expect(panel.locator('.map-count-pill')).to_contain_text('1 registros',timeout=35000)
                             expect(panel.locator('.map-canvas canvas')).to_be_visible()
                             assert workers and all(origin in worker for worker in workers),workers
-                            expect(panel.locator('.map-feedback .callout')).to_have_count(0)
+                            expect(panel.locator('.map-float-warning .callout')).to_have_count(0)
                             if args.live:
-                                expect(panel.get_by_role('button',name='Vista 3D',exact=True)).to_be_enabled()
+                                expect(panel.locator('.map-btn-3d')).to_be_enabled()
+                                expect(panel.locator('.map-btn-3d')).to_contain_text('Modo 2D')
                             # Readiness of own points exercises a real bundled worker; basemap is independent.
                             canvas=panel.locator('.map-canvas canvas')
                             canvas.screenshot(path=str(out/f'map-2d-{width}.png'))
@@ -118,15 +122,16 @@ def main() -> None:
                                 for _ in range(12):
                                     page.locator('.maplibregl-ctrl-zoom-in').click()
                                     page.wait_for_timeout(330)
-                                page.wait_for_function("document.querySelector('.map-caption') && !document.querySelector('.map-feedback').textContent.includes('Atualizando')")
+                                page.wait_for_function("document.querySelector('.map-count-pill') && !document.querySelector('.map-loading-pill')")
                                 # Wait for the final moveend, not an unrelated network-idle event.
                                 for _ in range(50):
                                     if requests and int(requests[-1].get('zoom',['0'])[0])>=15:break
                                     page.wait_for_timeout(100)
                                 else:raise AssertionError('map_never_reached_building_zoom')
-                                panel.get_by_role('button',name='Vista 3D',exact=True).click()
-                                expect(panel.get_by_role('button',name='Vista 3D',exact=True)).to_have_attribute('aria-pressed','true')
-                                expect(panel.locator('.map-caption')).to_be_visible()
+                                panel.locator('.map-btn-3d').click()
+                                expect(panel.locator('.map-btn-3d')).to_have_attribute('aria-pressed','true')
+                                expect(panel.locator('.map-btn-3d')).to_contain_text('Modo 3D')
+                                expect(panel.locator('.map-count-pill')).to_be_visible()
                                 for _ in range(50):
                                     if any('/test/building/' in row['url'] and row['status']==200 for row in tile_responses) or args.live:break
                                     page.wait_for_timeout(100)
@@ -145,24 +150,25 @@ def main() -> None:
                                 # A newer failing query must clear the previous count and clickable points.
                                 flags['fail_data']=True
                                 page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('Filtro Sintético')
-                                expect(panel.locator('.map-caption')).to_have_count(0)
+                                expect(panel.locator('.map-count-pill')).to_have_count(0)
                                 expect(panel.get_by_role('button',name='Atualizar',exact=True)).to_be_visible()
                                 flags['fail_data']=False
                                 page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('')
-                                expect(panel.locator('.map-caption')).to_contain_text('1 registros')
+                                expect(panel.locator('.map-count-pill')).to_contain_text('1 registros')
                                 flags['bad_counts']=True
                                 page.get_by_role('searchbox',name='Busque por nome ou endereço',exact=True).fill('Escola')
                                 expect(panel.get_by_role('button',name='Atualizar',exact=True)).to_be_visible()
-                                expect(panel.locator('.map-caption')).to_have_count(0)
+                                expect(panel.locator('.map-count-pill')).to_have_count(0)
                                 flags['bad_counts']=False
                                 panel.get_by_role('button',name='Atualizar',exact=True).click()
-                                expect(panel.locator('.map-caption')).to_contain_text('1 registros')
+                                expect(panel.locator('.map-count-pill')).to_contain_text('1 registros')
                                 panel.get_by_role('button',name='Fechar mapa',exact=True).click()
                                 expect(panel.locator('canvas')).to_have_count(0)
                                 flags['no_buildings']=True
                                 open_opt_in_map(panel)
-                                expect(panel.locator('.map-caption')).to_contain_text('1 registros')
-                                expect(panel.get_by_role('button',name='Vista 3D',exact=True)).to_be_disabled()
+                                expect(panel.locator('.map-count-pill')).to_contain_text('1 registros')
+                                expect(panel.locator('.map-btn-3d')).to_be_disabled()
+                                expect(panel.locator('.map-btn-3d')).to_contain_text('Modo 2D')
                                 expect(panel.get_by_text('O estilo atual não fornece uma camada de edificações compatível com 3D.',exact=True)).to_be_visible()
                                 if width==320:
                                     panel.get_by_role('button',name='Fechar mapa',exact=True).click()
@@ -172,7 +178,7 @@ def main() -> None:
                                     expect(page.get_by_role('button',name=item.name,exact=True)).to_be_visible()
                                     flags['fail_style']=False
                                     panel.get_by_role('button',name='Recarregar mapa',exact=True).click()
-                                    expect(panel.locator('.map-caption')).to_contain_text('1 registros')
+                                    expect(panel.locator('.map-count-pill')).to_contain_text('1 registros')
                             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'),width
                             assert not errors,errors
                             page.screenshot(path=str(out/f'map-page-{width}.png'),full_page=True)
@@ -184,10 +190,23 @@ def main() -> None:
                             report['failure_stage']='browser_assertion';raise
                         finally:page.close()
                     browser.close()
+                    browser = None
                 report['status']='passed'
             finally:
-                server.terminate();server.wait(timeout=10)
+                if server.poll() is None:
+                    server.terminate()
+                    try:server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        server.kill();server.wait(timeout=10)
+                db.engine.dispose()
                 (out/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temporary);break
+        except FileNotFoundError:break
+        except PermissionError:
+            if attempt==19:raise
+            time.sleep(.1)
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
 

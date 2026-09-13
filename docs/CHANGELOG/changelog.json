@@ -674,6 +674,19 @@
         "O teste consulta pg_roles pela própria conexão e falha quando o papel corrente é superusuário.",
         "A repetição integral do perfil Compose passou com 12 verificações no recibo PostgreSQL."
       ]
+    },
+    {
+      "version": "2026.09.12.49",
+      "date": "2026-09-12",
+      "title": "Mapa explica quando o modo 3D não está disponível",
+      "user_impact": [
+        "Quando a base cartográfica não oferece edificações compatíveis, o mapa informa o motivo de o controle 3D estar desabilitado."
+      ],
+      "technical": [
+        "A mensagem localizada de indisponibilidade volta a aparecer no painel de status ao lado do controle desabilitado.",
+        "A jornada de navegador acompanha os controles flutuantes atuais e valida opt-in, worker empacotado, WebGL, 2D/3D, falhas de dados e estilo nos viewports 320, 390 e 1440.",
+        "A prova usa lugares e mapa-base sintéticos e mantém cobertura nacional e mapa externo explicitamente não verificados."
+      ]
     }
   ]
 }
