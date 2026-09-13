@@ -52,7 +52,9 @@ def main():
                         page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
                         page.get_by_role('button', name=item.name, exact=True).wait_for()
                         assert not page.evaluate('document.documentElement.scrollWidth > window.innerWidth'), f'Horizontal overflow at {width}'
-                        page.get_by_text('Localização no mapa não confirmada', exact=True).wait_for()
+                        place_card = page.locator('.place-card')
+                        expect(place_card).to_have_count(1)
+                        expect(place_card.get_by_text('Sem coordenadas', exact=True)).to_be_visible()
                         for locale, heading in [('en','A living map of public services.'), ('es','El mapa vivo de lo público.'), ('pt-BR','O mapa vivo do que é público.')]:
                             page.get_by_label('Idioma / Language / Idioma').select_option(locale)
                             page.get_by_role('heading', name=heading, exact=True).wait_for()
