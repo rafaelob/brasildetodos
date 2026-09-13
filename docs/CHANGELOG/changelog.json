@@ -804,6 +804,19 @@
         "Booleanos, campo ausente e totais anteriores à página observada falham com obrasgov_projects_schema_changed antes do batch.",
         "Regressão da Issue #3: True era tratado como o inteiro 1 e encerrava a paginação; depois, os 21 testes do batch Obrasgov passaram."
       ]
+    },
+    {
+      "version": "2026.09.13.7",
+      "date": "2026-09-13",
+      "title": "Página divergente do Obrasgov interrompe a coleta",
+      "user_impact": [
+        "Uma resposta que identifica outra página deixa de ser importada como se correspondesse à página solicitada, evitando registros duplicados ou omitidos."
+      ],
+      "technical": [
+        "A borda exige page_number inteiro exato e igual ao parâmetro pagina enviado ao Obrasgov.",
+        "Campo ausente, booleano ou número diferente produz obrasgov_projects_schema_changed antes do batch.",
+        "Regressão da Issue #3: os três falsificadores e os 24 testes do batch Obrasgov passaram."
+      ]
     }
   ]
 }

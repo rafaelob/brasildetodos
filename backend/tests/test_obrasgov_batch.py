@@ -176,7 +176,7 @@ def test_fetch_uses_httpx_without_redirects_or_trust_env(http_guard):
 
 def test_project_rows_that_are_not_objects_are_schema_errors(http_guard):
     install, _state = http_guard
-    install(projects_only_handler({'data': [None], 'total_pages': 1}))
+    install(projects_only_handler({'data': [None], 'total_pages': 1, 'page_number': 1}))
 
     with pytest.raises(ValueError, match='obrasgov_projects_schema_changed'):
         fetch_obrasgov_projects(state='RR', page=1, page_size=10)
@@ -187,10 +187,24 @@ def test_boolean_total_pages_cannot_end_project_collection(http_guard):
     install(projects_only_handler({
         'data': [{'id_projeto_investimento': 'project-01'}],
         'total_pages': True,
+        'page_number': 1,
     }))
 
     with pytest.raises(ValueError, match='obrasgov_projects_schema_changed'):
         fetch_obrasgov_projects(state='RR', page=1, page_size=10)
+
+
+@pytest.mark.parametrize('reported_page', [None, True, 1])
+def test_project_page_metadata_must_match_the_requested_page(http_guard, reported_page):
+    install, _state = http_guard
+    install(projects_only_handler({
+        'data': [{'id_projeto_investimento': 'project-02'}],
+        'total_pages': 2,
+        'page_number': reported_page,
+    }))
+
+    with pytest.raises(ValueError, match='obrasgov_projects_schema_changed'):
+        fetch_obrasgov_projects(state='RR', page=2, page_size=10)
 
 
 def test_fetch_does_not_follow_redirect_off_allowlist(http_guard):

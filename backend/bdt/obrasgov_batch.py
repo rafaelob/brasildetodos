@@ -126,8 +126,10 @@ def fetch_obrasgov_projects(state: str | None = None, year: int | None = None,
     payload = fetch_api_json('/projeto-investimento', params, timeout=timeout, client=client)
     rows = payload.get('data')
     total_pages = payload.get('total_pages')
+    page_number = payload.get('page_number')
     if (not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows)
-            or type(total_pages) is not int or total_pages < page):
+            or type(total_pages) is not int or total_pages < page
+            or type(page_number) is not int or page_number != page):
         raise ValueError('obrasgov_projects_schema_changed')
     return payload
 
