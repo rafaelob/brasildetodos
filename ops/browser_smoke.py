@@ -5,6 +5,7 @@ import re
 import secrets
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -20,7 +21,7 @@ def main():
     out = Path('test-results/browser'); out.mkdir(parents=True, exist_ok=True)
     report = {'synthetic_test_only': True, 'checks': [], 'live_map_verified': False}
     password = secrets.token_urlsafe(24)
-    with tempfile.TemporaryDirectory(prefix='bdt-browser-') as temp:
+    with tempfile.TemporaryDirectory(prefix='bdt-browser-', ignore_cleanup_errors=True) as temp:
         url = f'sqlite:///{Path(temp) / "test.db"}'
         db = Database(url); db.initialize()
         source = Source(dataset='synthetic-browser-test', url='https://example.org/synthetic-test-only', record_id='browser', reference_date='2025', collected_at=now(), snapshot_sha256='a'*64)
@@ -34,7 +35,8 @@ def main():
         db.engine.dispose()
         env = os.environ | {'BDT_DATABASE_URL':url, 'BDT_PUBLIC_ORIGIN':'http://127.0.0.1:8034', 'BDT_STATIC_DIR':str(Path('web/dist').resolve()), 'BDT_ALLOW_REGISTRATION':'0', 'BDT_DATA_DIR':temp}
         with (out/'server.log').open('w') as log:
-            server = subprocess.Popen(['python','-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8034'], env=env, stdout=log, stderr=log)
+            server = subprocess.Popen([sys.executable,'-m','uvicorn','bdt.api:create_app','--factory','--host','127.0.0.1','--port','8034'], env=env, stdout=log, stderr=log)
+            browser = None
             try:
                 for _ in range(60):
                     try:
@@ -43,7 +45,8 @@ def main():
                     time.sleep(.25)
                 else: raise RuntimeError('Local API did not start')
                 with sync_playwright() as playwright:
-                    executable = shutil.which('google-chrome') or shutil.which('chromium')
+                    executable = next((shutil.which(name) for name in ('google-chrome', 'chromium', 'chrome', 'msedge')
+                                       if shutil.which(name)), None)
                     browser = playwright.chromium.launch(executable_path=executable, headless=True, args=['--no-sandbox'])
                     for width in [320, 390, 1440]:
                         page = browser.new_page(viewport={'width':width, 'height':1000})
@@ -66,7 +69,7 @@ def main():
                         page.get_by_role('button', name='Meus lugares', exact=True).click()
                         page.get_by_role('button', name=item.name, exact=True).click()
                         page.get_by_role('heading', name=item.name, exact=True).wait_for()
-                        page.get_by_role('button', name='Melhorias e recursos', exact=True).click()
+                        page.get_by_role('tab', name='Melhorias e recursos', exact=True).click()
                         page.get_by_role('heading', name=re.compile(r'1\.000,00')).wait_for()
                         page.get_by_role('heading', name=re.compile(r'300,00')).wait_for()
                         assert page.get_by_role('heading', name=re.compile(r'1\.300,00')).count() == 0
@@ -77,14 +80,15 @@ def main():
                     page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
                     def login(username):
                         page.get_by_role('button', name='Participar', exact=True).click()
-                        page.get_by_label('Nome de usuário', exact=True).fill(username)
-                        page.get_by_label('Senha (mínimo 12 caracteres)', exact=True).fill(password)
-                        page.get_by_role('button', name='Entrar', exact=True).click()
+                        form = page.locator('form').filter(has=page.get_by_role('button', name='Entrar', exact=True))
+                        form.get_by_label('Nome de usuário', exact=True).fill(username)
+                        form.get_by_label('Senha (mínimo 12 caracteres)', exact=True).fill(password)
+                        form.get_by_role('button', name='Entrar', exact=True).click()
                         page.get_by_role('button', name=username, exact=True).wait_for()
                     def community():
                         page.get_by_role('button', name='Explorar', exact=True).click()
                         page.get_by_role('button', name=item.name, exact=True).click()
-                        page.get_by_role('button', name='Contribuições da comunidade', exact=True).click()
+                        page.get_by_role('tab', name='Contribuições da comunidade', exact=True).click()
                     login('participant'); community()
                     text = 'Observação inteiramente sintética para testar o fluxo compartilhado.'
                     page.get_by_label('Data da observação', exact=True).fill('2025-01-01')
@@ -106,9 +110,29 @@ def main():
                     page.screenshot(path=str(out/'collaboration-approved.png'), full_page=True)
                     report['checks'].append({'collaboration':'submitted_private_then_independently_approved_and_public'})
                     browser.close()
+                    browser = None
             finally:
-                server.terminate(); server.wait(timeout=10)
+                if browser is not None and browser.is_connected():
+                    browser.close()
+                if server.poll() is None:
+                    server.terminate()
+                    try:
+                        server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        server.kill()
+                        server.wait(timeout=10)
+                db.engine.dispose()
                 (out/'result.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    for attempt in range(20):
+        try:
+            shutil.rmtree(temp)
+            break
+        except FileNotFoundError:
+            break
+        except PermissionError:
+            if attempt == 19:
+                raise
+            time.sleep(.1)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
