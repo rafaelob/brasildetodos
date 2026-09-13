@@ -108,8 +108,8 @@ def test_second_ocr_requires_explicit_review(database,document):
 
 @pytest.mark.parametrize(
     'value',
-    [None, '', '\x00\u200b', 'x'*200001],
-    ids=['none', 'empty', 'control-only', 'oversized'],
+    [None, '', '\x00\u200b', '.-—/', 'x'*200001],
+    ids=['none', 'empty', 'control-only', 'symbols-only', 'oversized'],
 )
 def test_unusable_text_rolls_back_and_releases_lease(database,document,value):
     with pytest.raises(ValueError,match='text_missing_or_budget'):

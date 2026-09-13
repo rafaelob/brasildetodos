@@ -700,6 +700,19 @@
         "A jornada compilada validou favoritos, histórico, paginação, filtros públicos e recuperação de falha em português, inglês e espanhol nos viewports 320, 390 e 1440.",
         "Os nove cenários usaram dados sintéticos isolados, preservaram campos privados fora da tela e terminaram sem erro JavaScript."
       ]
+    },
+    {
+      "version": "2026.09.12.51",
+      "date": "2026-09-12",
+      "title": "OCR se abstém diante de pontuação sem conteúdo",
+      "user_impact": [
+        "Uma página não recebe candidato de OCR quando o mecanismo devolve somente pontuação ou símbolos sem letra ou número."
+      ],
+      "technical": [
+        "O portão de saída exige ao menos um caractere alfanumérico Unicode antes de persistir texto, candidatos ou proveniência.",
+        "A recusa preserva a extração nativa, libera a lease e mantém o pacote privado sem candidato vazio.",
+        "Regressão da Issue #4: a saída .-—/ foi aceita antes da correção; depois, 45 testes das superfícies de OCR e evidência passaram."
+      ]
     }
   ]
 }
