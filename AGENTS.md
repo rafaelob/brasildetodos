@@ -12,3 +12,5 @@
 - Preserve unrelated work. Publication, passing tests, national ingestion and public deployment are separate results and must be reported separately.
 - IAJUS and DOCIA must not appear on public or citizen-facing surfaces (README, web UI copy, and `docs/` product docs). Fleet internals under `scripts/ops/` and `control_docs/` are excluded from that prohibition.
 - Docker Compose and localhost (including the documented `:8008` bind) are a local instance, never production.
+
+Fleet: para migrar a instalação ou instruções legadas, consulte control_docs/MIGRACAO_FLEET.md
