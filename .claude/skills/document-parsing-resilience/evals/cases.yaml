@@ -1,0 +1,136 @@
+version: 1
+skill: "document-parsing-resilience"
+cases:
+  # --- Positive activation: parsing heterogeneous documents inside a pipeline ---
+  - id: positive-trigger-extraction-half-works
+    type: activation
+    prompt: "our PDF text extraction pipeline half-works on some documents"
+    expect:
+      activates: true
+
+  - id: positive-trigger-fallback-chain-provenance
+    type: activation
+    prompt: "Build a parser fallback chain that records which parser produced which page"
+    expect:
+      activates: true
+
+  - id: positive-trigger-parsing-resiliente-pt
+    type: activation
+    prompt: "Parsing resiliente de documentos no pipeline de ingestão"
+    expect:
+      activates: true
+
+  - id: positive-trigger-extracao-falhando-pt
+    type: activation
+    prompt: "Extração de texto de PDF falhando no pipeline em algumas páginas"
+    expect:
+      activates: true
+
+  - id: positive-trigger-scanned-ocr-decision
+    type: activation
+    prompt: "Route scanned PDFs to OCR by explicit decision instead of a silent fallback"
+    expect:
+      activates: true
+
+  - id: positive-trigger-encoding-repair
+    type: activation
+    prompt: "Repair mojibake and cp1252 encoding while extracting document text"
+    expect:
+      activates: true
+
+  - id: positive-trigger-named-states
+    type: activation
+    prompt: "Truncated and encrypted files should be named states, not empty extraction output"
+    expect:
+      activates: true
+
+  - id: positive-trigger-page-accounting
+    type: activation
+    prompt: "Compare expected versus extracted page counts so a lost page is never swallowed"
+    expect:
+      activates: true
+
+  # --- Negative activation. The boundary cases, one per neighbour that could be
+  # confused with this skill. `pdf` owns the artifact, this skill owns the pipeline.
+  - id: negative-trigger-pdf-artifact
+    type: activation
+    prompt: "merge two PDFs into one and add a watermark"
+    expect:
+      activates: false
+
+  - id: negative-trigger-tabular-conversion
+    type: activation
+    prompt: "convert this CSV to Parquet and validate the schema"
+    expect:
+      activates: false
+
+  - id: negative-trigger-dataset-gates
+    type: activation
+    prompt: "add validity and completeness checks to our warehouse tables"
+    expect:
+      activates: false
+
+  - id: negative-trigger-hostile-upload
+    type: activation
+    prompt: "scan uploads for malware and reject infected ones"
+    expect:
+      activates: false
+
+  - id: negative-trigger-empty-vs-unknown-rule
+    type: activation
+    prompt: "an empty search result must not look like a timeout"
+    expect:
+      activates: false
+
+  # --- Output checks: the bundle and the load-bearing distinctions must survive edits ---
+  - id: output-bundle-present
+    type: output
+    prompt: "Which reference files does this skill ship?"
+    expect:
+      checks:
+        - kind: file_exists
+          path: references/outcome-states-and-page-ledger.md
+        - kind: file_exists
+          path: references/parser-chains-and-scanned-routing.md
+        - kind: file_exists
+          path: references/encoding-repair-and-normalization.md
+        - kind: no_secrets
+
+  - id: output-state-vocabulary
+    type: output
+    prompt: "Design the extraction outcome states and the page ledger"
+    expect:
+      checks:
+        # The pair that carries the whole skill: both look like an empty string and
+        # demand opposite handling. Losing either name collapses the distinction.
+        - kind: contains_keywords
+          keywords:
+            - "empty_by_content"
+            - "needs_ocr"
+            - "extracted_partial"
+            - "parser_version"
+            - "expected_count"
+            - "coverage"
+        - kind: no_secrets
+
+  - id: output-sourced-claims-survive
+    type: output
+    prompt: "Why can a text-layer parser not be trusted on a scanned page, and how should encoding be normalized?"
+    expect:
+      checks:
+        # Each of these is a verified primary-source quote; a rewrite that drops them
+        # turns a sourced design constraint back into an opinion.
+        - kind: contains_keywords
+          keywords:
+            - "never be able to extract text from images"
+            - "closed under string concatenation"
+            - "surrogateescape"
+        # Two claims deliberately CUT under the sourcing contract, pinned so a future
+        # sweep cannot reintroduce them: pdfplumber's README documents no repair
+        # parameter, and pypdf's encryption docs never state which exception is raised
+        # when an encrypted file is read without decrypting.
+        - kind: not_contains
+          keywords:
+            - "repair=True"
+            - "File has not been decrypted"
+        - kind: no_secrets
