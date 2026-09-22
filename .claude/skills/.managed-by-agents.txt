@@ -1,2 +1,1 @@
-backend-python-fastapi
 document-parsing-resilience
