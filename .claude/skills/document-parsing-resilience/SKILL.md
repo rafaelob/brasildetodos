@@ -1,18 +1,17 @@
 ---
 name: document-parsing-resilience
 description: >-
-  Recover text from malformed PDF, DOCX or HTML: parser/OCR route and
-  expected-vs-extracted coverage. Use when a parser returns empty or partial
-  text, a corpus mixes scanned pages or broken encodings, or a
-  truncated/encrypted upload needs an honest per-part ledger instead of a
-  silent empty string. PDF editing -> pdf. Upload security ->
-  file-ingestion-security-gates.
+  Use when document parsing fails or lies: "PDF quebrado", "OCR falhou", "parse de documento",
+  "texto vazio", empty or partial text from a PDF, DOCX or HTML parser, scanned pages mixed with
+  text, mojibake or cp1252, a truncated or encrypted upload. Routes parser -> OCR per page and keeps
+  an expected-vs-extracted ledger instead of a silent empty string. OCR engine choice ->
+  ocr-engine-evaluation. PDF editing -> pdf. Upload security -> file-ingestion-security-gates.
 license: Apache-2.0
 compatibility: Language-agnostic design. Measured examples use Python 3.13 stdlib (codecs, unicodedata,
   zipfile); parser notes cite pypdf, pdfplumber, PyMuPDF and python-docx official docs.
 metadata:
   author: coding-agent
-  version: 1.0.2
+  version: 1.0.3
   category: data-analysis
   subcategory: dataset-analysis
   vendor: universal
