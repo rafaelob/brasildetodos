@@ -4,6 +4,7 @@ import json
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from bdt.api import create_app
+from bdt.domain import now
 from bdt.storage import Ingestion
 from test_resource_sync import contract, current, save_collection
 from bdt.resource_sync import import_resources
@@ -52,13 +53,22 @@ def test_only_known_import_profiles_are_public(database):
     with database.session() as session:
         session.add(Ingestion(dataset='operator_private', source={'secret':'PRIVATE'}, error='PRIVATE'))
         session.add(Ingestion(dataset='pncp_contracts', source={}, status='running',
-                              counts={'read':1,'created':True,'updated':-1,'unchanged':1.5}))
+                              started_at=now(), counts={'read':1,'created':True,'updated':-1,'unchanged':1.5}))
     result = coverage(database)
     row = result['profiles'][0]
     assert row['last_attempt']['status'] == 'running'
     assert row['last_attempt']['counts'] == {'read':1}
     assert row['last_successful_import_at'] is None
     assert 'PRIVATE' not in json.dumps(result) and 'operator_private' not in json.dumps(result)
+
+
+def test_stale_running_attempt_is_reported_as_interrupted(database):
+    with database.session() as session:
+        session.add(Ingestion(dataset='pncp_contracts', source={}, status='running',
+                              started_at='2026-09-08T14:54:23.157751+00:00', finished_at=None))
+    row = coverage(database)['profiles'][0]
+    assert row['last_attempt']['status'] == 'interrupted'
+    assert row['last_attempt']['finished_at'] is None
 
 
 def test_import_timestamp_is_not_presented_as_source_reference_date(database, tmp_path):

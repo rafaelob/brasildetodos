@@ -1088,4 +1088,11 @@ footer p { max-width: 600px; margin: 0.5rem 0; }
 @media (max-width: 480px) {
   .resource-fact { grid-template-columns: 1fr; gap: 0.2rem; }
   .resource-card { padding: 1rem; }
+  /* Compact sticky header: two rows within 90px, keeping the 44px account controls. */
+  .header { padding: 0.15rem 4vw; gap: 0; }
+  .header nav { padding: 0; }
+  .header nav button { min-height: 40px; padding: 0.25rem 0.7rem; }
+  .header-right { gap: 0.25rem; }
+  .header-right select { font-size: 0.78rem; padding: 0.35rem 0.3rem; }
+  .header-right button { font-size: 0.78rem; padding: 0.4rem 0.5rem; }
 }

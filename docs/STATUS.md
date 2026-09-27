@@ -96,5 +96,5 @@ Transferegov/Obrasgov/PDDE/FNS e reconciliação financeira; corpus oficial de O
 fila e retenção; fotos/panoramas; mapas externos; recuperação de conta/moderação;
 acessibilidade assistiva/dispositivos; segurança e desempenho; implantação pública
 com HTTPS, armazenamento durável, monitoramento e recuperação.
-Detalhamento executável: `../TODO.md`; visão: `ROADMAP.md`; matriz: `FEATURE_MATRIX.md`.
+Detalhamento executável: Issues #2–#5 no GitHub; visão: `ROADMAP.md`; matriz: `FEATURE_MATRIX.md`.
 O texto anterior permanece intacto em `history/STATUS_89584b82.md`.

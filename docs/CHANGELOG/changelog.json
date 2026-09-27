@@ -891,6 +891,28 @@
         "A interface preserva separadamente a rota de inspeção e a presença de texto OCR retornada pela API; a presença do resultado tem prioridade no rótulo visível e é limpa ao trocar de documento ou página.",
         "Regressão da Issue #4: a jornada Chromium contra API e SQLite reais recebeu o texto OCR, observou antes “Candidata a OCR” e agora confirma “OCR Executado”; os 242 testes web e o build Vite passaram."
       ]
+    },
+    {
+      "version": "2026.09.27",
+      "date": "2026-09-27",
+      "title": "Ficha, mapa e cobertura voltam a funcionar em instalação atualizada",
+      "user_impact": [
+        "Abrir a ficha de um serviço carregado voltou a funcionar: uma instalação atualizada no lugar, sem recriar o banco, respondia erro interno ao abrir qualquer ficha.",
+        "O mapa deixou de tentar uma fonte que o provedor de tiles não serve, o que antes deixava os rótulos de agrupamento sem desenhar.",
+        "Uma importação que começou e não registrou conclusão passa a aparecer como “Interrompida”, com a nota de que os dados anteriores foram preservados, em vez de ficar indefinidamente em “Em andamento”.",
+        "Depois de uma atualização, o navegador passa a buscar a versão nova da interface em vez de reutilizar a anterior em cache.",
+        "A página inicial mostra “Recursos cadastrados” entre as contagens, em vez de um destaque de 3D que não era uma contagem.",
+        "Em telas estreitas o cabeçalho fixo ocupa até 90 pixels, mantendo os botões de conta com 44 pixels."
+      ],
+      "technical": [
+        "Database.initialize() reconcilia colunas aditivas ausentes em bancos escritos por revisões anteriores; coluna NOT NULL sem default falha de forma explícita exigindo migração revisada. SQLite e PostgreSQL, idempotente, sem apagar dados.",
+        "A camada bdt-counts declara text-font Noto Sans Regular, a fonte efetivamente servida pelo estilo liberty do OpenFreeMap; a fonte padrão do MapLibre respondia 404 em todos os glifos.",
+        "WebStaticFiles envia Cache-Control imutável para assets/ com hash e no-cache para o restante, incluindo index.html; StaticFiles não enviava nenhum dos dois.",
+        "A projeção pública classifica execução sem conclusão após 6 horas como interrupted (publication unknown), com filtro SQL alinhado inclusive para início sem carimbo canônico. /api/resource-coverage usa o mesmo vocabulário.",
+        "heroFromCoverage expõe summary.resources; o hero deixa de misturar um selo de 3D com contagens.",
+        "Cabeçalho compacto a 480px: navegação com 40px e controles de conta com 44px, sem transbordo horizontal em 320, 375, 390 e 430 pixels.",
+        "Suíte Python completa: 1603 testes passaram, 12 ignorados. Frontend: 242 testes e build Vite. Aceitação ao vivo sobre o banco nacional de 636 MB: ficha 200, glifos do mapa sem 404, duas execuções antigas do Obrasgov exibidas como Interrompida."
+      ]
     }
   ]
 }

@@ -21,6 +21,7 @@ export function ResourceCoverage({t,locale}:{t:T;locale:Locale}){
         <h3>{t(row.profile)}</h3><p><strong>{row.loaded_records.toLocaleString(locale)}</strong> {text('loaded')}</p>
         <p className={row.last_attempt?.status==='failed'?'import-failed':''}>{text(row.last_attempt?.status||'none')}</p>
         {row.last_attempt?.status==='failed'&&row.loaded_records>0&&<p>{text('kept')}</p>}
+        {row.last_attempt?.status==='interrupted'&&row.loaded_records>0&&<p>{text('interruptedKept')}</p>}
         {row.last_successful_import_at&&<p>{text('date')}: <time dateTime={row.last_successful_import_at}>{new Date(row.last_successful_import_at).toLocaleString(locale)}</time></p>}
       </article>)}</div>}</details></section>;
 }

@@ -19,6 +19,7 @@ test('heroFromCoverage empty payload is emptyInstall, not certified, places 0',(
   assert.equal(result.places,0);
   assert.equal(result.municipalities,0);
   assert.equal(result.withoutGeometry,0);
+  assert.equal(result.resources,0);
   assert.equal(result.failedImports,0);
 });
 
@@ -30,6 +31,7 @@ test('missing or invalid payload does not invent national totals and is not cert
     assert.equal(result.places,null);
     assert.equal(result.municipalities,null);
     assert.equal(result.withoutGeometry,null);
+    assert.equal(result.resources,null);
     assert.notEqual(result.places,234209);
     assert.notEqual(result.municipalities,5570);
     assert.notEqual(result.withoutGeometry,63930);
@@ -56,6 +58,7 @@ test('loaded payload maps places, municipalities, without_geometry and counts fa
   assert.equal(result.places,40);
   assert.equal(result.municipalities,12);
   assert.equal(result.withoutGeometry,10);
+  assert.equal(result.resources,5);
   assert.equal(result.failedImports,2);
   assert.equal(result.emptyInstall,false);
   assert.equal(result.certified,false);

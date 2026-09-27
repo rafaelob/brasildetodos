@@ -109,8 +109,8 @@ function App(){
           <div className="hero-stat-card"><strong>{coverageCount(hero.places,locale,t)}</strong><span>{t('coveragePlaces')}</span></div>
           <div className="hero-stat-card"><strong>{coverageCount(hero.municipalities,locale,t)}</strong><span>{t('municipalities')}</span></div>
           <div className="hero-stat-card"><strong>{coverageCount(hero.withoutGeometry,locale,t)}</strong><span>{t('coverageUnlocated')}</span></div>
+          <div className="hero-stat-card"><strong>{coverageCount(hero.resources,locale,t)}</strong><span>{t('coverageResources')}</span></div>
         </>}
-        <div className="hero-stat-card"><strong>{t('view3DExplorationBadge')}</strong><span>{t('view3DExploration')}</span></div>
       </div>
       <p>{t('coverageNote')}</p>
       {hero&&hero.failedImports>0&&<p className="quiet">{coverageCount(hero.failedImports,locale,t)} · {t('coverageFailed')}</p>}

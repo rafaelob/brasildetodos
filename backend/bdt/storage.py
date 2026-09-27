@@ -137,10 +137,56 @@ class Database:
         Base.metadata.create_all(self.engine)
         with self.session() as session:
             version = session.get(SchemaVersion, 1)
+            if version is not None and version.version != 1:
+                raise RuntimeError("Unsupported schema version; run a reviewed migration")
+            self._add_missing_columns()
             if version is None:
                 session.add(SchemaVersion(id=1, version=1))
-            elif version.version != 1:
-                raise RuntimeError("Unsupported schema version; run a reviewed migration")
+
+    def _add_missing_columns(self):
+        """Reconcile additive columns on a database written by an earlier revision.
+
+        ``create_all`` creates missing tables but never alters an existing one, so an
+        installation upgraded in place would keep a stale table shape and fail at query
+        time (for example, observations written before the contest columns existed).
+        Only additive, defaulted columns are added here; removing, renaming or retyping
+        anything still requires a reviewed migration.
+        """
+        inspector = inspect_state(self.engine)
+        existing_tables = set(inspector.get_table_names())
+        dialect = self.engine.dialect
+        statements = []
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+            present = {column["name"] for column in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in present:
+                    continue
+                if not column.nullable and column.server_default is None:
+                    raise RuntimeError(
+                        f"{table.name}.{column.name} is missing and has no server default; run a reviewed migration"
+                    )
+                definition = f'"{column.name}" {column.type.compile(dialect=dialect)}'
+                if column.server_default is not None:
+                    default = column.server_default.arg
+                    default = default if isinstance(default, str) else getattr(default, "text", None)
+                    if default is None:
+                        raise RuntimeError(
+                            f"{table.name}.{column.name} has a default that cannot be rendered; run a reviewed migration"
+                        )
+                    definition += f" DEFAULT {default}"
+                if not column.nullable:
+                    definition += " NOT NULL"
+                references = list(column.foreign_keys)
+                if len(references) == 1 and references[0].column.table.name in existing_tables:
+                    target = references[0].column
+                    definition += f' REFERENCES "{target.table.name}" ("{target.name}")'
+                statements.append(f'ALTER TABLE "{table.name}" ADD COLUMN {definition}')
+        if statements:
+            with self.engine.begin() as connection:
+                for statement in statements:
+                    connection.exec_driver_sql(statement)
 
     @contextmanager
     def session(self):

@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 from uuid import UUID
 
 from fastapi import Query
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import and_, case, func, or_, select
 
 from .catalog_release import consistent_read
 from .domain import now
@@ -21,7 +21,7 @@ from .evidence import Resource
 from .storage import Ingestion, Municipality, Place
 
 SourceFilter = Literal['all', 'ibge', 'inep', 'cnes', 'pncp', 'transferegov', 'obrasgov', 'other']
-StatusFilter = Literal['all', 'completed', 'partial', 'failed', 'running', 'unknown']
+StatusFilter = Literal['all', 'completed', 'partial', 'failed', 'running', 'interrupted', 'unknown']
 STATES = tuple('AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split())
 SOURCES = {
     'ibge': ('https://servicodados.ibge.gov.br/api/docs/localidades', ('ibge', 'ibge-municipalities')),
@@ -38,7 +38,13 @@ STATUS_ALIASES = {
     'failed': ('failed',),
     'running': ('running',),
 }
+# An import that started and never recorded a finish is not in progress forever.
+INTERRUPTED_AFTER_HOURS = 6
 MAX_SAFE_INTEGER = 2**53 - 1
+
+
+def _run_cutoff() -> str:
+    return (datetime.now(timezone.utc) - timedelta(hours=INTERRUPTED_AFTER_HOURS)).isoformat()
 
 
 def source_group(column):
@@ -84,6 +90,9 @@ def public_run(row) -> dict:
     """Project recorded attempt counters, never infer publication from a failed tx."""
     source = next((key for key, (_, aliases) in SOURCES.items() if row['dataset'] in aliases), 'other')
     status = next((key for key, aliases in STATUS_ALIASES.items() if row['status'] in aliases), 'unknown')
+    started_at = _timestamp(row['started_at'])
+    if status == 'running' and (started_at is None or started_at < _run_cutoff()):
+        status = 'interrupted'
     raw = row['counts'] if isinstance(row['counts'], dict) else {}
     counts = {key: _count(raw.get(key)) for key in ('read', 'source_read', 'excluded', 'quarantined', 'unchanged', 'without_geometry')}
     if counts['read'] is None:
@@ -95,8 +104,8 @@ def public_run(row) -> dict:
         counts['created'] = counts['updated'] = 0
         # These can be tentative counters from the rolled-back transaction.
         counts['unchanged'] = counts['without_geometry'] = None
-    elif status == 'running':
-        publication = 'pending'
+    elif status in ('running', 'interrupted'):
+        publication = 'pending' if status == 'running' else 'unknown'
         counts['unchanged'] = counts['without_geometry'] = None
     elif status in ('completed', 'partial'):
         publication = 'partial' if status == 'partial' else 'recorded'
@@ -112,7 +121,7 @@ def public_run(row) -> dict:
     except ValueError:
         identity = 'run-' + hashlib.sha256(str(row['id']).encode()).hexdigest()[:24]
     return {'id': identity, 'source_id': source, 'dataset': source, 'status': status,
-            'started_at': _timestamp(row['started_at']), 'finished_at': _timestamp(row['finished_at']),
+            'started_at': started_at, 'finished_at': _timestamp(row['finished_at']),
             'reference_date': _reference(row.get('reference_date')), 'counts': counts,
             'publication': publication, 'scope': 'recorded_attempt_not_national_release',
             'error_code': 'import_not_published' if status == 'failed' else None}
@@ -128,7 +137,23 @@ def read_imports(connection, source: str = 'all', status: str = 'all', page: int
     if source != 'all':
         filters.append(source_group(Ingestion.dataset) == source)
     if status != 'all':
-        filters.append(status_group(Ingestion.status) == status)
+        if status in ('running', 'interrupted'):
+            # The projection classifies an unparseable start as interrupted; the filter
+            # must not rely on raw string order to disagree with it.
+            cutoff = _run_cutoff()
+            filters.append(status_group(Ingestion.status) == 'running')
+            legacy = [started for started in connection.scalars(select(Ingestion.started_at))
+                      if _timestamp(started) is None]
+            if status == 'running':
+                filters.append(Ingestion.started_at >= cutoff)
+                if legacy:
+                    filters.append(Ingestion.started_at.not_in(legacy))
+            else:
+                filters.append(or_(Ingestion.started_at < cutoff,
+                                   Ingestion.started_at.in_(legacy)) if legacy
+                               else Ingestion.started_at < cutoff)
+        else:
+            filters.append(status_group(Ingestion.status) == status)
     total = connection.scalar(select(func.count()).select_from(Ingestion).where(*filters))
     records = connection.execute(select(*_run_columns()).where(*filters)
         .order_by(Ingestion.started_at.desc(), Ingestion.id.desc()).offset((page - 1) * limit).limit(limit)).mappings()

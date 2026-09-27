@@ -57,6 +57,24 @@ def public_observation(row: Observation) -> dict:
     return payload
 
 
+class WebStaticFiles(StaticFiles):
+    """Content-hashed build assets never change; every other file must revalidate.
+
+    Without an explicit policy, a browser may reuse a cached index.html for minutes
+    after an upgrade and keep loading the previous bundle. StaticFiles sets ETag and
+    Last-Modified but no Cache-Control, so the policy is declared here.
+    """
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            relative = path.replace('\\', '/')
+            response.headers['Cache-Control'] = (
+                'public, max-age=31536000, immutable' if relative.startswith('assets/') else 'no-cache'
+            )
+        return response
+
+
 def create_app(database_url: str | None = None, *, testing: bool = False) -> FastAPI:
     folder = Path(os.getenv('BDT_DATA_DIR', 'data'))
     folder.mkdir(parents=True, exist_ok=True)
@@ -351,5 +369,5 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
     install_regions(app, database)
     static = Path(os.getenv('BDT_STATIC_DIR', 'web/dist'))
     if static.is_dir() and not testing:
-        app.mount('/', StaticFiles(directory=static, html=True), name='web')
+        app.mount('/', WebStaticFiles(directory=static, html=True), name='web')
     return app

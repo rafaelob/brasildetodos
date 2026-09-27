@@ -320,7 +320,9 @@ class TestCoverageDashboardAdversarial:
             "id": str(uuid4()),
             "dataset": "obrasgov",
             "status": raw_status,
-            "started_at": "2026-09-08T10:00:00Z",
+            # A run recorded as running is only in progress while its start is recent;
+            # the stale-start projection has its own regression in test_coverage_dashboard.
+            "started_at": now() if raw_status == "running" else "2026-09-08T10:00:00Z",
             "finished_at": "2026-09-08T10:05:00Z",
             "counts": {"read": 50, "created": 20, "updated": 5},
         }

@@ -5,7 +5,7 @@ Only import attempts present in the local ledger are covered. A download that
 fails before creating an import record is outside this view. No query parameters,
 error text, user data, local paths or raw source payload are publicized here.
 """
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 
@@ -14,6 +14,9 @@ from .resource_profiles import PROFILES
 from .storage import Ingestion
 
 COUNTS = ('read', 'created', 'updated', 'unchanged', 'unresolved_municipality', 'published')
+# Mirrors coverage_dashboard.INTERRUPTED_AFTER_HOURS: a start with no recorded finish
+# is not in progress forever, and the two public surfaces must not disagree.
+INTERRUPTED_AFTER_HOURS = 6
 
 
 def _time(value):
@@ -30,8 +33,18 @@ def _attempt(row):
     if row is None:
         return None
     counts = row.counts if isinstance(row.counts, dict) else {}
-    return {'status': row.status if row.status in {'running', 'success', 'failed'} else 'unknown',
-            'started_at': _time(row.started_at), 'finished_at': _time(row.finished_at),
+    status = row.status if row.status in {'running', 'success', 'failed'} else 'unknown'
+    started_at = _time(row.started_at)
+    if status == 'running':
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=INTERRUPTED_AFTER_HOURS)
+        try:
+            recent = datetime.fromisoformat(started_at) >= cutoff
+        except (TypeError, ValueError):
+            recent = False
+        if not recent:
+            status = 'interrupted'
+    return {'status': status,
+            'started_at': started_at, 'finished_at': _time(row.finished_at),
             'counts': {key: counts[key] for key in COUNTS
                        if type(counts.get(key)) is int and 0 <= counts[key] <= 9_007_199_254_740_991},
             'rolled_back': counts.get('rolled_back') is True}

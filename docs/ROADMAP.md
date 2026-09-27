@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Roadmap reconciliado — Brasil de Todos
 
-Revisão funcional: `8324b762`. Estado de execução: `../TODO.md`.
+Revisão funcional: `8324b762`. Estado de execução: Issues #2–#5 no GitHub.
 Matriz por capacidade: `FEATURE_MATRIX.md`. Evidências: `STATUS.md`,
 `reports/20260906-verified-closeout.json` (fechamento 06/09) e
 `data/releases/education-2025-20260907-v1.json` (catálogo escolar posterior).

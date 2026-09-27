@@ -112,7 +112,7 @@ export default function MapView({select,t,onBounds,filters={},locale='pt-BR',foc
             instance.addLayer({id:'bdt-groups',type:'circle',source:'bdt-places',filter:['==',['get','cluster'],true],
               paint:{'circle-color':'#176b55','circle-radius':['step',['get','count'],17,100,23,1000,30],'circle-stroke-color':'#ffffff','circle-stroke-width':2}});
             instance.addLayer({id:'bdt-counts',type:'symbol',source:'bdt-places',filter:['==',['get','cluster'],true],
-              layout:{'text-field':['to-string',['get','count']],'text-size':12},paint:{'text-color':'#ffffff'}});
+              layout:{'text-field':['to-string',['get','count']],'text-size':12,'text-font':['Noto Sans Regular']},paint:{'text-color':'#ffffff'}});
             instance.addLayer({id:'bdt-single',type:'circle',source:'bdt-places',filter:['==',['get','cluster'],false],
               paint:{'circle-color':['match',['get','kind'],'school','#b66d26','health','#267790','work','#9c412b','#176b55'],
                 'circle-radius':7,'circle-stroke-color':'#ffffff','circle-stroke-width':2}});

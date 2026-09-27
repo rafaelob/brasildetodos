@@ -8,6 +8,7 @@ from sqlalchemy import select
 from fastapi import FastAPI
 from bdt.coverage_dashboard import install
 from bdt.coverage_dashboard import public_run, _reference, _timestamp
+from bdt.domain import now
 from bdt.evidence import Resource, initialize_extensions
 from bdt.storage import Ingestion, Municipality, Place, upsert_place
 
@@ -160,12 +161,40 @@ def test_request_bounds_and_fixed_vocabulary(client, params):
 @pytest.mark.parametrize('status,expected,publication', [
     ('success', 'completed', 'recorded'), ('completed_file', 'completed', 'recorded'),
     ('partial_quality', 'partial', 'partial'), ('failed', 'failed', 'not_published'),
-    ('running', 'running', 'pending'), ('unexpected', 'unknown', 'unknown')])
+    ('running', 'interrupted', 'unknown'), ('unexpected', 'unknown', 'unknown')])
 def test_status_projection(status, expected, publication):
     result = public_run(run_record(status=status))
     assert result['status'] == expected and result['publication'] == publication
-    if expected in ('running', 'unknown'):
+    if expected in ('running', 'interrupted', 'unknown'):
         assert result['counts']['created'] is None
+
+
+def test_recent_running_attempt_is_still_pending():
+    result = public_run(run_record(status='running', started_at=now(), finished_at=None))
+    assert result['status'] == 'running' and result['publication'] == 'pending'
+
+
+def test_interrupted_attempt_is_filtered_and_visible(database, client):
+    save_run(database, dataset='obrasgov_projects', status='running',
+             started_at='2026-09-08T14:54:23.157751+00:00', finished_at=None)
+    recent = save_run(database, dataset='pncp_contracts', status='running', started_at=now(), finished_at=None)
+    listing = client.get('/api/imports', params={'status': 'interrupted'}).json()
+    assert listing['total'] == 1 and listing['items'][0]['status'] == 'interrupted'
+    assert listing['items'][0]['publication'] == 'unknown'
+    running = client.get('/api/imports', params={'status': 'running'}).json()
+    assert running['total'] == 1 and running['items'][0]['id'] == recent
+
+
+def test_non_canonical_start_agrees_between_projection_and_filter(database, client):
+    # An unparseable start cannot be ordered against the cutoff string, so the filter
+    # must classify it exactly as public_run does, not by raw comparison.
+    legacy = save_run(database, dataset='obrasgov_projects', status='running',
+                      started_at='2026-12-31 23:59:59', finished_at=None)
+    assert public_run(run_record(status='running', started_at='2026-12-31 23:59:59'))['status'] == 'interrupted'
+    listing = client.get('/api/imports', params={'status': 'interrupted'}).json()
+    assert [row['id'] for row in listing['items']] == [legacy]
+    assert listing['items'][0]['status'] == 'interrupted'
+    assert client.get('/api/imports', params={'status': 'running'}).json()['total'] == 0
 
 
 def test_partial_quality_is_visible_and_not_national_completion(database, client):

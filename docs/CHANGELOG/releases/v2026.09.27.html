@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Brasil de Todos — Versão 2026.09.27</title>
+  <style>:root {
+  color-scheme: light dark;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-alt: #eef2f6;
+  --ink: #17202a;
+  --muted: #566574;
+  --accent: #155eef;
+  --border: #cbd5e1;
+  --focus: #f59e0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101418;
+    --surface: #182027;
+    --surface-alt: #202b35;
+    --ink: #edf2f7;
+    --muted: #b8c4cf;
+    --accent: #8bb8ff;
+    --border: #41505e;
+    --focus: #fbbf24;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--bg);
+  font: 1rem/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+a { color: var(--accent); }
+a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.skip-link {
+  position: absolute; left: 1rem; top: -5rem; padding: .5rem .75rem;
+  background: var(--surface); color: var(--ink); border: 2px solid var(--focus);
+}
+.skip-link:focus { top: 1rem; z-index: 2; }
+.shell { width: min(100% - 2rem, 72rem); margin: 0 auto; }
+header.page-header { padding: 3rem 0 2rem; }
+.eyebrow { color: var(--muted); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3, h4, h5 { line-height: 1.2; }
+h1 { max-width: 50rem; margin: .25rem 0 1rem; font-size: clamp(2rem, 6vw, 4rem); }
+h2 { margin-top: 0; }
+.intro { max-width: 48rem; color: var(--muted); }
+.weeks { display: grid; gap: 1rem; }
+.week, .release-card, .snapshot {
+  background: var(--surface); border: 1px solid var(--border); border-radius: .75rem;
+}
+.week { padding: clamp(1rem, 3vw, 1.5rem); }
+.week > h3 { margin-top: 0; }
+.empty-week { color: var(--muted); font-style: italic; }
+.release-card { margin-top: 1rem; padding: 1rem; }
+.release-card:first-of-type { margin-top: 0; }
+.release-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; }
+.release-version { font-weight: 700; }
+.release-title { margin: .25rem 0 1rem; }
+.impact, .technical { padding: .75rem 1rem; margin-top: .75rem; background: var(--surface-alt); border-radius: .5rem; }
+.impact h5, .technical h5 { margin: 0 0 .4rem; }
+ul { padding-left: 1.4rem; }
+.snapshot { padding: clamp(1rem, 4vw, 2rem); }
+footer { padding: 3rem 0 2rem; color: var(--muted); font-size: .9rem; }
+@media (min-width: 48rem) { .release-card { padding: 1.25rem; } }
+@media print {
+  :root { color-scheme: light; --bg: #fff; --surface: #fff; --surface-alt: #f3f4f6; --ink: #000; --muted: #333; --border: #aaa; }
+  .skip-link, footer { display: none; }
+  .shell { width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  .release-card, .week, .snapshot { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="page-header shell">
+    <p class="eyebrow">Changelog público · Semana ISO 2026-W39</p>
+    <h1>Brasil de Todos</h1>
+  </header>
+  <main id="conteudo" class="shell">
+    <article class="snapshot" data-version="2026.09.27" data-week="2026-W39">
+      <div class="release-meta">
+        <span class="release-version">Versão 2026.09.27</span>
+        <time datetime="2026-09-27">2026-09-27</time>
+      </div>
+      <h2 class="release-title">Ficha, mapa e cobertura voltam a funcionar em instalação atualizada</h2>
+      <section class="impact" aria-labelledby="snapshot-impact">
+        <h3 id="snapshot-impact">Impacto para quem usa</h3>
+        <ul><li>Abrir a ficha de um serviço carregado voltou a funcionar: uma instalação atualizada no lugar, sem recriar o banco, respondia erro interno ao abrir qualquer ficha.</li><li>O mapa deixou de tentar uma fonte que o provedor de tiles não serve, o que antes deixava os rótulos de agrupamento sem desenhar.</li><li>Uma importação que começou e não registrou conclusão passa a aparecer como “Interrompida”, com a nota de que os dados anteriores foram preservados, em vez de ficar indefinidamente em “Em andamento”.</li><li>Depois de uma atualização, o navegador passa a buscar a versão nova da interface em vez de reutilizar a anterior em cache.</li><li>A página inicial mostra “Recursos cadastrados” entre as contagens, em vez de um destaque de 3D que não era uma contagem.</li><li>Em telas estreitas o cabeçalho fixo ocupa até 90 pixels, mantendo os botões de conta com 44 pixels.</li></ul>
+      </section>
+      <section class="technical" aria-labelledby="snapshot-technical">
+        <h3 id="snapshot-technical">Detalhes técnicos</h3>
+        <ul><li>Database.initialize() reconcilia colunas aditivas ausentes em bancos escritos por revisões anteriores; coluna NOT NULL sem default falha de forma explícita exigindo migração revisada. SQLite e PostgreSQL, idempotente, sem apagar dados.</li><li>A camada bdt-counts declara text-font Noto Sans Regular, a fonte efetivamente servida pelo estilo liberty do OpenFreeMap; a fonte padrão do MapLibre respondia 404 em todos os glifos.</li><li>WebStaticFiles envia Cache-Control imutável para assets/ com hash e no-cache para o restante, incluindo index.html; StaticFiles não enviava nenhum dos dois.</li><li>A projeção pública classifica execução sem conclusão após 6 horas como interrupted (publication unknown), com filtro SQL alinhado inclusive para início sem carimbo canônico. /api/resource-coverage usa o mesmo vocabulário.</li><li>heroFromCoverage expõe summary.resources; o hero deixa de misturar um selo de 3D com contagens.</li><li>Cabeçalho compacto a 480px: navegação com 40px e controles de conta com 44px, sem transbordo horizontal em 320, 375, 390 e 430 pixels.</li><li>Suíte Python completa: 1603 testes passaram, 12 ignorados. Frontend: 242 testes e build Vite. Aceitação ao vivo sobre o banco nacional de 636 MB: ficha 200, glifos do mapa sem 404, duas execuções antigas do Obrasgov exibidas como Interrompida.</li></ul>
+      </section>
+    </article>
+  </main>
+  <footer class="shell"><a href="../index.html">Voltar ao changelog completo</a></footer>
+</body>
+</html>

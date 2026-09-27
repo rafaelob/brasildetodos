@@ -3,6 +3,7 @@
 - Product name is Brasil de Todos; package/repository is brasildetodos. Earlier planning artifacts used Conferido; that name is superseded.
 - **Skills:** `document-parsing-resilience` a PDF parser fails or returns empty text.
 - Work ONLY on `main`, as explicitly directed by the repository owner on 2026-09-05. Do not create implementation branches or PRs. Fetch the current main before each publication, preserve concurrent changes, and never force-push. Existing feature history was integrated by fast-forward.
+- Tracker: github — as Issues #2–#5 são a autoridade do trabalho pendente; commits referenciam `#N`. Não existe TODO local.
 - National scope is a product requirement, never a fabricated coverage claim. Keep failed/partial loads visible. No synthetic production bootstrap.
 - Runtime requires no LLM, vector database or paid map key. Optional providers must not block list/search/contribution workflows.
 - Official facts, citizen observations, extracted candidates and confirmed relations are distinct. Preserve source, record ID, reference date, collection date and byte hash.

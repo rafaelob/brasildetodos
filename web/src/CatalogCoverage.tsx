@@ -34,6 +34,7 @@ function ImportHistory({locale,t}:{locale:Locale;t:T}){
    <dl><div><dt>{t('coverageAttemptDate')}</dt><dd>{watchDate(run.started_at,locale,t)}</dd></div><div><dt>{t('coverageReference')}</dt><dd>{run.reference_date?(t('refPrefix')+' '+run.reference_date):t('officialRecord')}</dd></div>
    {[['read','coverageRead'],['created','coverageCreated'],['updated','coverageUpdated']].map(([key,label])=><div key={key}><dt>{t(label)}</dt><dd>{coverageCount(run.counts[key],locale,t)}</dd></div>)}</dl>
    {run.status==='failed'&&<p className="callout">{t('coverageFailedNote')}</p>}
+   {run.status==='interrupted'&&<p className="callout">{t('coverageInterruptedNote')}</p>}
   </article>)}</div>
   {data&&<nav className="pager" aria-label={t('coverageHistoryPage')}><button disabled={page===1||loading} onClick={()=>setPage(v=>v-1)}>{t('prev')}</button><span>{page} · {coverageCount(data.total,locale,t)} {t('runs')}</span><button disabled={!data.has_more||loading} onClick={()=>setPage(v=>v+1)}>{t('next')}</button></nav>}
  </section>;

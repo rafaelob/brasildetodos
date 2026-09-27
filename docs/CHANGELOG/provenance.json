@@ -1,0 +1,10 @@
+{
+  "releases": {
+    "2026.09.27": {
+      "origem": "publicacao",
+      "snapshot_sha256": "6bea38ed890dcb97e7a9dfbf6d811bc1e777d1f435e2c396c3089dbd03ee56fa",
+      "source_sha256": "84a09b41a9544a0d03193ca66e58b1a8b3376976a1c36f28e716a84a9c028100"
+    }
+  },
+  "schema_version": 1
+}

@@ -15,3 +15,11 @@ test('unknown locale and text key do not crash the interface',()=>{
   assert.equal(statusText('unknown','title'),statusText('pt-BR','title'));
   assert.equal(statusText('unknown','missing'),'missing');
 });
+
+test('an interrupted attempt has its own label in every locale',()=>{
+  for(const locale of ['pt-BR','en','es']){
+    assert.notEqual(statusText(locale,'interrupted'),'interrupted');
+    assert.notEqual(statusText(locale,'interrupted'),statusText(locale,'running'));
+    assert.notEqual(statusText(locale,'interruptedKept'),'interruptedKept');
+  }
+});

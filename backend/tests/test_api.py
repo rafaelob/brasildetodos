@@ -127,6 +127,16 @@ def test_no_synthetic_bootstrap(tmp_path):
         assert c.get('/api/places').json()['total']==0
         assert c.get('/api/coverage').json()['municipalities']==0
 
+def test_static_cache_policy_revalidates_html_and_pins_hashed_assets(tmp_path,monkeypatch):
+    static=tmp_path/'dist';(static/'assets').mkdir(parents=True)
+    (static/'index.html').write_text('<!doctype html><script src="/assets/app-abc.js"></script>')
+    (static/'assets'/'app-abc.js').write_text('console.log(1)')
+    monkeypatch.setenv('BDT_STATIC_DIR',str(static))
+    with TestClient(create_app(f"sqlite:///{tmp_path/'static.db'}",testing=False),base_url='http://localhost') as c:
+        assert c.get('/').headers['cache-control']=='no-cache'
+        assert c.get('/index.html').headers['cache-control']=='no-cache'
+        assert c.get('/assets/app-abc.js').headers['cache-control']=='public, max-age=31536000, immutable'
+
 def test_production_fails_without_https(tmp_path,monkeypatch):
     monkeypatch.setenv('BDT_ENV','production');monkeypatch.setenv('BDT_PUBLIC_ORIGIN','http://localhost')
     with pytest.raises(RuntimeError):create_app(f"sqlite:///{tmp_path/'prod.db'}",testing=True)
