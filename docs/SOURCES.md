@@ -48,14 +48,19 @@ pode vir vazio. Bolsa/BPC/servidores nominais permanecem recusados. Sem HOSTS
 novo. Spike:
 [reports/20260909-cgu-spike.md](reports/20260909-cgu-spike.md).
 
-SICONFI **ainda não está neste catálogo**: HTTPS
+SICONFI **continua fora das seis famílias**: HTTPS
 `apidatalake.tesouro.gov.br` serve RREO/DCA do **ente**, nunca pagamento de
-escola. Conjunto em dados.gov.br sob **ODbL**. Sem HOSTS nesta onda. Spike:
+escola. Conjunto sob **ODbL**. O coletor de operador
+`python -m bdt.siconfi collect|import` grava `siconfi_reports` com SHA-256,
+exercício/período/anexo e vínculo municipal apenas com `cod_ibge` de 7 dígitos;
+não entra em `GET /api/coverage` e não certifica o país. Spike:
 [reports/20260909-siconfi-spike.md](reports/20260909-siconfi-spike.md).
 
-PDDE/FNDE **ainda não está neste catálogo**: o PDDE Básico paga UEx/EEx/EM
-(CNPJ), não um Place. `CO_ENTIDADE` aparece em recorte SECADI Campo/Água, não
-provado no Básico. Sem HOSTS nesta onda. Spike:
+PDDE/FNDE **continua fora das seis famílias**: o PDDE Básico paga UEx/EEx/EM
+(CNPJ), não um Place; o arquivo Básico traz `CO_ESCOLA`, não `CO_ENTIDADE`. O
+coletor de operador `python -m bdt.pdde collect|import` grava `pdde_payments`
+com SHA-256 e encoding registrados e só liga `inep:<CO_ESCOLA>` quando o lugar
+já existe no catálogo. Sem linha em `GET /api/coverage`. Spike:
 [reports/20260909-pdde-spike.md](reports/20260909-pdde-spike.md).
 
 ## Restante (honestidade)
@@ -96,10 +101,15 @@ expansão da allowlist. Candidatos de nome (`cnefe_candidate`) ficam inéditos;
 
 **Obrasgov.** A amostra limitada de páginas/UFs
 (`python ops/ingest_obrasgov_batch.py`) **não** é recenseamento do Brasil.
-Um projeto na edição certificada também não o é.
+Um projeto na edição certificada também não o é. O coletor de operador
+`python -m bdt.obrasgov_execution collect|import` grava `obrasgov_executions`
+com o percentual e as datas declarados por projeto; isso não é pagamento, não
+é município e não é censo.
 
-FNS, CGU, SICONFI e PDDE permanecem `not_wired` nos parágrafos acima: sem
-conector, sem linha em `GET /api/coverage`, sem cobertura fictícia.
+FNS e CGU permanecem `not_wired`: sem conector e sem linha em
+`GET /api/coverage`, sem cobertura fictícia. SICONFI, PDDE e a execução física
+do Obrasgov têm coletor de operador, continuam fora das seis famílias e não
+mudam `national_catalog_certified`.
 
 ## Como ler esta instalação
 

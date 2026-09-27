@@ -913,6 +913,22 @@
         "Cabeçalho compacto a 480px: navegação com 40px e controles de conta com 44px, sem transbordo horizontal em 320, 375, 390 e 430 pixels.",
         "Suíte Python completa: 1603 testes passaram, 12 ignorados. Frontend: 242 testes e build Vite. Aceitação ao vivo sobre o banco nacional de 636 MB: ficha 200, glifos do mapa sem 404, duas execuções antigas do Obrasgov exibidas como Interrompida."
       ]
+    },
+    {
+      "version": "2026.09.27.1",
+      "date": "2026-09-27",
+      "title": "Coletas de operador para SICONFI, PDDE Básico e execução física do Obrasgov",
+      "user_impact": [
+        "Quem opera o catálogo pode coletar e importar, num banco local, os relatórios fiscais RREO/DCA do Tesouro (SICONFI), a execução do PDDE Básico por escola e CNPJ publicada pelo FNDE e o percentual declarado de execução física dos projetos do Obrasgov — cada um com URL, SHA-256, data de coleta e referência.",
+        "Nada disso vira cobertura nacional nem certificação: as seis famílias e `GET /api/coverage` continuam iguais, e uma instalação vazia continua vazia."
+      ],
+      "technical": [
+        "`python -m bdt.siconfi collect|import` (apidatalake.tesouro.gov.br, ODbL, sem autenticação, 1 req/s, paginação ORDS limit/offset) grava `siconfi_reports`; vínculo municipal apenas com cod_ibge de 7 dígitos; valor permanece texto exato.",
+        "`python -m bdt.pdde collect|import` (artefato público do FNDE, gzip CSV) grava `pdde_payments`; CO_ESCOLA, CNPJ do recebedor, valores publicados e encoding registrado; nenhuma soma e nenhuma deduplicação silenciosa.",
+        "`python -m bdt.obrasgov_execution collect|import` grava `obrasgov_executions`; aceita carimbos com hora e fração como publicados; uma única transação para todas as páginas, sem linhas parciais.",
+        "HOSTS ganhou apidatalake.tesouro.gov.br e www.fnde.gov.br; todo download passa por safe_download (HTTPS, allowlist, IP público, sem redirect, SHA-256 e manifesto).",
+        "32 testes sintéticos dos três coletores; suíte completa 1638 passaram, 12 ignorados. Aceite ao vivo: SICONFI 5/5, Obrasgov 2/2, PDDE 1622 lidas e 1473 criadas, 0 rejeitadas."
+      ]
     }
   ]
 }

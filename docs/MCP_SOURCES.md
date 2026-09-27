@@ -86,7 +86,9 @@ FTP) é recusa, não exceção silenciosa.
 `download.inep.gov.br`, `dadosabertos.saude.gov.br`,
 `repositorio.dados.gov.br`, `repositorio.transferegov.gestao.gov.br`,
 `api-publica.transferegov.gestao.gov.br`,
-`api-publica.obrasgov.gestao.gov.br`, `pncp.gov.br`.
+`api-publica.obrasgov.gestao.gov.br`, `pncp.gov.br`,
+`apidatalake.tesouro.gov.br` (SICONFI/RREO-DCA, sem autenticação),
+`www.fnde.gov.br` (artefato público do PDDE Básico, sem autenticação).
 
 ## Propor CLI, não executar coleta
 
