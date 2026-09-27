@@ -86,16 +86,17 @@ existem só no endpoint de beneficiários, fora desta fatia). Empenho não é
 desembolso nem pagamento; valores nunca são somados. Não infla contagens nem
 famílias.
 
-**FNS Fundo a Fundo (operador-local).** O portal publica o repasse FAF anual
-(XLSX em 2026; CSV em anos anteriores) sob **CC BY-ND 3.0**; o coletor
+**FNS Fundo a Fundo.** O portal publica o repasse FAF anual (XLSX em 2026;
+CSV em anos anteriores) sob **CC BY-ND 3.0** — dado aberto com atribuição; a
+licença restringe distribuir cópias modificadas, não o uso. O coletor
 `python -m bdt.fns collect|import` baixa o arquivo original, guarda SHA-256 e
-não redistribui derivados. `CO_MUNICIPIO_IBGE` vem com **6 dígitos** (dígito
+processa localmente; o produto não publica espelho derivado. `CO_MUNICIPIO_IBGE` vem com **6 dígitos** (dígito
 verificador suprimido) e o vínculo municipal usa apenas o crosswalk derivado
 das identidades IBGE já carregadas — nunca preenchido por nome. `VL_BRUTO`,
 `VL_LIQUIDO` e `VL_SALDO_CONTA` ficam como texto exato e nunca são somados.
 Não infla contagens nem famílias.
 
-**CGU Recursos transferidos (operador-local).** O endereço mensal
+**CGU Recursos transferidos.** O endereço mensal
 `.../download-de-dados/transferencias/{YYYYMM}` responde 302 para o CDN
 `dadosabertos-download.cgu.gov.br`; o coletor
 `python -m bdt.cgu_transferencias collect|import` guarda SHA-256 e a cadeia de
@@ -103,7 +104,17 @@ redirect. O CSV é cp1252 com ponto-e-vírgula; `CÓDIGO MUNICÍPIO SIAFI` tem
 **4 dígitos** e não existe coluna IBGE — nenhum vínculo municipal é criado.
 O recorte não contém pessoa física (censo completo de 2026-09-27); ainda assim
 linhas de categoria PF são rejeitadas e contadas por defesa. Sem somas.
-Licença: Decreto 8.777 com atribuição; uso operador-local, sem espelho público.
+Licença: Decreto 8.777 (livre utilização com atribuição); o produto não publica
+espelho derivado do dump.
+
+**CGU Emendas parlamentares.** O dump `EmendasParlamentares.zip` (CDN direto)
+traz três blocos: por emenda, por convênio e por favorecido; o coletor
+`python -m bdt.cgu_emendas collect|import` grava `cgu_emendas` com `block`,
+SHA-256 e valores como texto exato (empenhado/liquidado/pago/restos nunca
+somados). O bloco por favorecido rejeita e conta pessoa física (≈21,9% do
+arquivo em 2026-09-27); `Código Município IBGE` vem com 7 dígitos ou o literal
+"Sem informação" e só vincula com chave exata no IBGE carregado. Licença:
+Decreto 8.777 com atribuição; sem espelho derivado.
 
 **PNCP atas (operador).** `python -m bdt.pncp_atas collect|import` consulta
 `/api/consulta/v1/atas` por janela de **vigência** (≤365 dias), página 10–500 e

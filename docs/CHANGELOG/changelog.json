@@ -966,6 +966,22 @@
         "Testes: 195 nos arquivos afetados desta rodada; suíte completa 1838 passaram, 12 ignorados. Aceites ao vivo: FNS 116.164 criadas e 0 sem vínculo; CGU 144.284 e 0 PF; PNCP 1/1 idempotente; Obrasgov 4×5; Compras itens 10 (2 excluídos).",
         "Higiene: `.gitignore` passa a ignorar `.playwright-mcp/`, `fleet_runtime/` e `fleet_tmp/`."
       ]
+    },
+    {
+      "version": "2026.09.27.4",
+      "date": "2026-09-27",
+      "title": "Coletor das emendas parlamentares da CGU, com pessoa física rejeitada",
+      "user_impact": [
+        "As emendas parlamentares do Portal da Transparência ganham coletor de operador: os três blocos (por emenda, por convênio e por favorecido) entram em `cgu_emendas` com SHA-256 e valores como texto exato.",
+        "Pessoa física nunca é armazenada: o bloco por favorecido rejeita e conta a categoria PF em qualquer grafia (21,9% do arquivo em 2026-09-27); as demais categorias são preservadas com o tipo publicado.",
+        "Nota de licença corrigida nos docs: são dados abertos (Decreto 8.777; CC BY-ND com atribuição); o uso local é livre e o produto apenas não publica espelho derivado."
+      ],
+      "technical": [
+        "`python -m bdt.cgu_emendas collect|import`: ZIP do CDN direto (0 redirecionamentos) com membros streamados em cp1252 e ponto-e-vírgula; cabeçalho exato por bloco (falha fechada); chave = SHA-256 de todos os valores publicados em ordem; `Código Município IBGE` com 7 dígitos ou o literal \"Sem informação\", vínculo apenas por chave exata do crosswalk (inclusive a chave derivada de 6 dígitos), nunca por nome, padding ou truncamento.",
+        "O filtro de pessoa física foi endurecido na revisão: radical \"pessoa\"+\"física\" com apenas letras após normalização, cobrindo espaços duplos, tab, hífen, quebra de linha e maiúsculas; categorias PJ publicadas nunca são afetadas.",
+        "Aceite ao vivo: 1.004.950 linhas lidas, 824.164 criadas (94.584 emenda + 85.267 convênio + 644.313 favorecido), 180.786 PF rejeitadas e contadas, reimportação idempotente; censo idêntico antes e depois do endurecimento.",
+        "Testes: 36 no arquivo novo; suíte completa 1874 passaram, 12 ignorados."
+      ]
     }
   ]
 }

@@ -90,8 +90,8 @@ FTP) é recusa, não exceção silenciosa.
 `apidatalake.tesouro.gov.br` (SICONFI/RREO-DCA, sem autenticação),
 `www.fnde.gov.br` (artefato público do PDDE Básico, sem autenticação),
 `dadosabertos.compras.gov.br` (contratos e itens do Compras.gov.br, sem
-autenticação), `portalfns.saude.gov.br` (repasse FAF do FNS; uso operador-local
-sob CC BY-ND 3.0), `portaldatransparencia.gov.br` e
+autenticação), `portalfns.saude.gov.br` (repasse FAF do FNS; dado aberto sob
+CC BY-ND 3.0 com atribuição), `portaldatransparencia.gov.br` e
 `dadosabertos-download.cgu.gov.br` (CSV mensal de transferências; o portal
 responde 302 para o CDN). Redirecionamentos seguem no máximo 3 saltos, todos
 HTTPS e allowlisted, e a cadeia fica registrada no manifesto do download.

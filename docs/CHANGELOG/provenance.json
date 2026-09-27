@@ -19,6 +19,11 @@
       "origem": "publicacao",
       "snapshot_sha256": "1dd029deaae565e78f42d55c39a24065455fb1775c8f7ea0ed93b669f162d985",
       "source_sha256": "fc5dbf86a1792f37bdcef4afb64834f93f76ceb738d3a816c8aad9d149c4e3e3"
+    },
+    "2026.09.27.4": {
+      "origem": "publicacao",
+      "snapshot_sha256": "638f363d4c7f469ce03989d1266a4e2cd77819cd40b1bdda9d3956f6592a1d58",
+      "source_sha256": "c343dbe06a0db4aa38196c5ce3c25de3fa82efe29996519fabb22ed16b247427"
     }
   },
   "schema_version": 1
