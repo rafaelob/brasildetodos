@@ -1,25 +1,31 @@
-"""Contratos administrativos declarados no portal de dados abertos do Compras.gov.br.
+"""Contratos e itens de contrato declarados no portal de dados abertos do Compras.gov.br.
 
 Pode afirmar: os contratos retornados pelo endpoint público
-``/modulo-contratos/1_consultarContratos`` para o órgão (``codigoOrgao``) e a
-janela de vigência inicial declarados, exatamente como publicados, com a URL da
-página, o SHA-256 do arquivo e a data de coleta. O envelope
-(``resultado``/``totalRegistros``/``totalPaginas``/``paginasRestantes``) é
-validado em toda página; o fim só é reconhecido quando ``paginasRestantes`` é
-zero ou a página retorna vazio, e um HTTP 404 com JSON de erro é tratado como
-erro de contrato, nunca como "página ausente". Valores monetários permanecem no
-payload JSON e só viram float quando finitos; nunca são somados.
+``/modulo-contratos/1_consultarContratos`` e, com ``--dataset itens``, os itens
+retornados por ``/modulo-contratos/2_consultarContratosItem`` para o órgão
+(``codigoOrgao``) e a janela de vigência inicial declarados, exatamente como
+publicados, com a URL da página, o SHA-256 do arquivo e a data de coleta. O
+envelope (``resultado``/``totalRegistros``/``totalPaginas``/``paginasRestantes``)
+é validado em toda página; o fim só é reconhecido quando ``paginasRestantes`` é
+zero ou a página retorna vazio com os registros declarados já servidos — página
+vazia que contradiz os totais declarados é erro de contrato, nunca terminal
+completo. Um HTTP 404 com JSON de erro é tratado como erro de contrato, nunca
+como "página ausente". Valores monetários permanecem no
+payload JSON e só viram float quando finitos; nunca são somados. A identidade de
+um item é o SHA-256 de ``[dataset, numeroControlePncpContrato, numeroItem,
+codigoItem]``; ``descricaoIitem`` (grafia publicada) vira ``description``.
 
-Nunca pode afirmar: execução, pagamento ou liquidação; vínculo do contrato com
-município, unidade federativa, localidade ou unidade física (o DTO não publica
-IBGE/UF, então nenhum vínculo territorial é criado); valor somado; completude
-nacional ou ``national_catalog_certified``. A coleta é recortada pelo órgão e
-pela janela solicitados: ``complete`` significa apenas que a paginação
-declarada terminou. Contratos com ``contratoExcluido=True`` são preservados com
-a coluna ``excluded`` marcada e o payload original — a exclusão é um ato
-declarado pelo publicador e continua sendo evidência; a linha nunca é descartada
-em silêncio. A importação usa apenas arquivos e manifestos locais, confere
-tamanho e SHA-256 de todas as páginas antes de gravar e nunca inventa valores.
+Nunca pode afirmar: execução, pagamento ou liquidação; vínculo do contrato ou do
+item com município, unidade federativa, localidade ou unidade física (nenhum dos
+DTOs publica IBGE/UF, então nenhum vínculo territorial é criado); valor somado;
+completude nacional ou ``national_catalog_certified``. A coleta é recortada pelo
+órgão e pela janela solicitados: ``complete`` significa apenas que a paginação
+declarada terminou. Contratos com ``contratoExcluido=True`` e itens com
+``contratoItemExcluido=True`` são preservados com a coluna ``excluded`` marcada
+e o payload original — a exclusão é um ato declarado pelo publicador e continua
+sendo evidência; a linha nunca é descartada em silêncio. A importação usa apenas
+arquivos e manifestos locais, confere tamanho e SHA-256 de todas as páginas antes
+de gravar e nunca inventa valores.
 
 Licença declarada no rodapé do site: CC BY-ND 3.0, registrada no manifesto sem
 certificação de redistribuição.
@@ -36,10 +42,11 @@ import time
 from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
+from typing import NamedTuple
 from urllib.parse import urlencode
 
 import httpx
-from sqlalchemy import JSON, Boolean, Column, Float, String, Text, select
+from sqlalchemy import JSON, Boolean, Column, Float, Integer, String, Text, select
 
 from .domain import digest, now
 from .ingest import safe_download
@@ -47,8 +54,11 @@ from .json_codec import decode
 from .storage import Base, Database, Ingestion
 
 DATASET = "compras"
+ITEMS_DATASET = "itens"
 API_URL = "https://dadosabertos.compras.gov.br/modulo-contratos/1_consultarContratos"
+ITEMS_API_URL = "https://dadosabertos.compras.gov.br/modulo-contratos/2_consultarContratosItem"
 PAGES_DIR = "contratos"
+ITEMS_PAGES_DIR = "itens"
 MIN_PAGE_SIZE = 10
 MAX_PAGE_SIZE = 500
 MAX_WINDOW_DAYS = 365
@@ -60,6 +70,38 @@ NOT_NATIONAL_COVERAGE = (
     "Compras.gov.br para o órgão e a janela de vigência declarados; status complete/bounded "
     "nunca prova cobertura nacional, de todos os órgãos ou de todos os contratos publicados."
 )
+NOT_NATIONAL_COVERAGE_ITEMS = (
+    "Cada coleta cobre apenas as páginas solicitadas do endpoint público de itens de contrato "
+    "do Compras.gov.br para o órgão e a janela de vigência declarados; status complete/bounded "
+    "nunca prova cobertura nacional, de todos os órgãos ou de todos os itens publicados. O "
+    "número de controle PNCP publicado é o único elo com o contrato; nenhum vínculo territorial "
+    "é criado."
+)
+
+
+class _Dataset(NamedTuple):
+    """Um endpoint declarado: vocabulário público, nome do manifesto, pasta e cobertura."""
+    option: str
+    name: str
+    url: str
+    pages_dir: str
+    coverage: str
+
+
+_DATASETS = {
+    "contratos": _Dataset("contratos", DATASET, API_URL, PAGES_DIR, NOT_NATIONAL_COVERAGE),
+    "itens": _Dataset("itens", ITEMS_DATASET, ITEMS_API_URL, ITEMS_PAGES_DIR, NOT_NATIONAL_COVERAGE_ITEMS),
+}
+
+
+def _dataset(value) -> _Dataset:
+    """Resolve o vocabulário público (``contratos``/``itens``) para o endpoint declarado."""
+    try:
+        return _DATASETS[value]
+    except (KeyError, TypeError):
+        raise ValueError("dataset must be one of: contratos, itens") from None
+
+
 _DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _SUPPLIER = re.compile(r"[0-9]{14}\Z")
@@ -87,16 +129,41 @@ class ComprasContract(Base):
     source = Column(JSON, nullable=False)
 
 
+class ComprasContractItem(Base):
+    """Uma linha publicada de item de contrato; o único elo é o controle PNCP publicado."""
+    __tablename__ = "compras_contract_items"
+    key = Column(String(64), primary_key=True)
+    orgao_code = Column(String(20), nullable=False, index=True)
+    unit_code = Column(String(20), nullable=False, index=True)
+    contract_control = Column(String(80), nullable=False, index=True)
+    item_number = Column(String(20), nullable=False, index=True)
+    item_code = Column(Integer, nullable=False, index=True)
+    item_type = Column(String(40))
+    description = Column(Text)
+    quantity = Column(Integer)
+    unit_value = Column(Float)
+    global_value = Column(Float)
+    excluded = Column(Boolean, nullable=False)
+    payload = Column(JSON, nullable=False)
+    source = Column(JSON, nullable=False)
+
+
 def initialize_compras(database: Database) -> None:
     """Cria apenas a tabela aditiva; nunca substitui linhas já importadas."""
     ComprasContract.__table__.create(database.engine, checkfirst=True)
 
 
-def page_url(page: int, orgao: str, window_from: str, window_to: str, page_size: int) -> str:
+def initialize_compras_items(database: Database) -> None:
+    """Cria apenas a tabela aditiva de itens; nunca substitui linhas já importadas."""
+    ComprasContractItem.__table__.create(database.engine, checkfirst=True)
+
+
+def page_url(page: int, orgao: str, window_from: str, window_to: str, page_size: int,
+             dataset: str = "contratos") -> str:
     query = urlencode({"codigoOrgao": orgao, "dataVigenciaInicialMin": window_from,
                        "dataVigenciaInicialMax": window_to, "pagina": page,
                        "tamanhoPagina": page_size})
-    return f"{API_URL}?{query}"
+    return f"{_dataset(dataset).url}?{query}"
 
 
 def _write_json(path: Path, content: dict) -> None:
@@ -167,14 +234,20 @@ def _reviewed_envelope(payload, page_size: int) -> tuple[list, int, int, int]:
 
 
 def collect_compras(folder: Path, *, orgao, window_from, window_to, page_size: int = 500,
-                    max_pages: int = 20, delay_seconds: float = 1.0) -> dict:
-    """Baixa páginas com o baixador allowlisted e grava ``contratos/page-<i>.json``.
+                    max_pages: int = 20, delay_seconds: float = 1.0,
+                    dataset: str = "contratos") -> dict:
+    """Baixa páginas com o baixador allowlisted para ``<pasta>/<dataset>/page-<i>.json``.
 
-    Sem autenticação: o intervalo entre páginas é obrigatório e nunca inferior a
-    1 segundo. Reutilizar a pasta para outro plano é recusado antes de qualquer
-    rede. ``complete`` exige condição terminal observada (``paginasRestantes``
-    zero ou página vazia); caso contrário o status é ``bounded``.
+    O vocabulário público é ``contratos`` (padrão) ou ``itens``; o manifesto grava
+    ``dataset``/``url``/pasta do endpoint escolhido. Sem autenticação: o intervalo
+    entre páginas é obrigatório e nunca inferior a 1 segundo. Reutilizar a pasta
+    para outro plano ou outro dataset é recusado antes de qualquer rede.
+    ``complete`` exige condição terminal observada (``paginasRestantes`` zero ou
+    página vazia coerente com os totais declarados); página vazia que contradiz
+    os totais declarados é erro de contrato e não grava manifesto; caso
+    contrário o status é ``bounded``.
     """
+    profile = _dataset(dataset)
     plan = _validated_plan(orgao=orgao, window_from=window_from, window_to=window_to,
                            page_size=page_size, max_pages=max_pages, delay_seconds=delay_seconds)
     folder = Path(folder)
@@ -185,19 +258,25 @@ def collect_compras(folder: Path, *, orgao, window_from, window_to, page_size: i
             existing = decode(checkpoint.read_bytes())
         except (json.JSONDecodeError, ValueError) as error:
             raise ValueError("compras_collection_manifest_unreadable") from error
-        if not isinstance(existing, dict) or existing.get("dataset") != DATASET or existing.get("plan") != plan:
+        if not isinstance(existing, dict):
             raise ValueError("compras_collection_manifest_plan_mismatch; use a different folder")
-    pages_dir = folder / PAGES_DIR
+        if existing.get("dataset") != profile.name:
+            raise ValueError("compras_collection_manifest_dataset_mismatch; use a different folder")
+        if existing.get("plan") != plan:
+            raise ValueError("compras_collection_manifest_plan_mismatch; use a different folder")
+    pages_dir = folder / profile.pages_dir
     pages_dir.mkdir(parents=True, exist_ok=True)
     started_at = now()
     entries: list[dict] = []
     total_registros = total_paginas = None
+    read_registros = 0
     terminal = None
     page = 1
     while page <= plan["max_pages"]:
         if page > 1:
             time.sleep(plan["delay_seconds"])
-        url = page_url(page, plan["orgao"], plan["window_from"], plan["window_to"], plan["page_size"])
+        url = page_url(page, plan["orgao"], plan["window_from"], plan["window_to"],
+                       plan["page_size"], dataset=profile.option)
         path = pages_dir / f"page-{page}.json"
         metadata = _download(url, path)
         payload = decode(path.read_bytes())
@@ -209,8 +288,11 @@ def collect_compras(folder: Path, *, orgao, window_from, window_to, page_size: i
         entries.append({"index": page, "url": metadata["url"], "sha256": metadata["sha256"],
                         "bytes": metadata["bytes"]})
         if not rows:
+            if declared_registros != 0 and read_registros != declared_registros:
+                raise ValueError("compras_empty_page_contradicts_totals")
             terminal = "no_pages_remaining" if remaining == 0 else "empty_page"
             break
+        read_registros += len(rows)
         if remaining == 0:
             terminal = "no_pages_remaining"
             break
@@ -219,8 +301,8 @@ def collect_compras(folder: Path, *, orgao, window_from, window_to, page_size: i
         terminal = "max_pages_bound"
     status = "complete" if terminal in COMPLETE_TERMINALS else "bounded"
     collection = {
-        "dataset": DATASET,
-        "url": API_URL,
+        "dataset": profile.name,
+        "url": profile.url,
         "license": LICENSE,
         "plan": plan,
         "started_at": started_at,
@@ -230,15 +312,15 @@ def collect_compras(folder: Path, *, orgao, window_from, window_to, page_size: i
         "pages": entries,
         "total_registros": total_registros,
         "total_paginas": total_paginas,
-        "not_national_coverage": NOT_NATIONAL_COVERAGE,
+        "not_national_coverage": profile.coverage,
     }
     _write_json(checkpoint, collection)
     return collection
 
 
-def _reviewed_manifest(manifest) -> tuple[dict, str, str, list, str]:
-    """Valida o manifesto local antes de qualquer gravação; nunca confia no rótulo de completo."""
-    if not isinstance(manifest, dict) or manifest.get("dataset") != DATASET:
+def _reviewed_manifest(manifest, profile: _Dataset) -> tuple[dict, str, str, list, str]:
+    """Valida o manifesto local antes de qualquer gravação; o dataset precisa bater com o pedido."""
+    if not isinstance(manifest, dict) or manifest.get("dataset") != profile.name:
         raise ValueError("compras_collection_manifest_dataset_mismatch")
     plan = manifest.get("plan")
     if not isinstance(plan, dict):
@@ -267,10 +349,12 @@ def _reviewed_manifest(manifest) -> tuple[dict, str, str, list, str]:
     return plan, status, terminal, entries, finished_at
 
 
-def _verified_pages(folder: Path, entries: list, status: str, plan: dict) -> list[tuple[dict, dict]]:
+def _verified_pages(folder: Path, entries: list, status: str, plan: dict,
+                    profile: _Dataset) -> list[tuple[dict, dict]]:
     """Confere bytes e SHA-256 de cada página antes de publicar qualquer linha."""
-    pages_dir = folder / PAGES_DIR
+    pages_dir = folder / profile.pages_dir
     declared_registros = declared_paginas = None
+    read_registros = 0
     verified: list[tuple[dict, dict]] = []
     for position, entry in enumerate(entries):
         if not isinstance(entry, dict):
@@ -279,7 +363,8 @@ def _verified_pages(folder: Path, entries: list, status: str, plan: dict) -> lis
         url, sha, size = entry.get("url"), entry.get("sha256"), entry.get("bytes")
         if type(index) is not int or index != position + 1:
             raise ValueError("compras_page_manifest_invalid")
-        expected = page_url(index, plan["orgao"], plan["window_from"], plan["window_to"], plan["page_size"])
+        expected = page_url(index, plan["orgao"], plan["window_from"], plan["window_to"],
+                            plan["page_size"], dataset=profile.option)
         if not isinstance(url, str) or url != expected:
             raise ValueError("compras_page_url_invalid")
         if not isinstance(sha, str) or not _SHA256.fullmatch(sha):
@@ -298,9 +383,12 @@ def _verified_pages(folder: Path, entries: list, status: str, plan: dict) -> lis
             declared_registros, declared_paginas = registros, paginas
         elif declared_registros != registros or declared_paginas != paginas:
             raise ValueError("compras_page_totals_changed")
+        if not rows and registros != 0 and read_registros != registros:
+            raise ValueError("compras_empty_page_contradicts_totals")
         if (status == "complete" and position == len(entries) - 1
                 and not (remaining == 0 or not rows)):
             raise ValueError("compras_collection_complete_without_terminal_evidence")
+        read_registros += len(rows)
         verified.append((entry, payload))
     return verified
 
@@ -399,12 +487,46 @@ def _contract_row(raw, source: dict) -> dict:
     }
 
 
-def _flush_batch(session, batch: list[dict], counts: Counter) -> None:
+def _item_row(raw, source: dict) -> dict:
+    """Valida um item publicado; a chave é o controle PNCP + número + código declarados."""
+    if not isinstance(raw, dict):
+        raise ValueError("compras_row_not_object")
+    contract_control = _required_text(raw.get("numeroControlePncpContrato"), "contract_control", 80)
+    item_number = _required_text(raw.get("numeroItem"), "item_number", 20)
+    item_code = raw.get("codigoItem")
+    if type(item_code) is not int:
+        raise ValueError("compras_row_malformed_item_code")
+    orgao_code = _required_text(raw.get("codigoOrgao"), "orgao_code", 20)
+    unit_code = _required_text(raw.get("codigoUnidadeGestora"), "unit_code", 20)
+    excluded = raw.get("contratoItemExcluido")
+    if type(excluded) is not bool:
+        raise ValueError("compras_row_malformed_excluded")
+    quantity = raw.get("quantidadeItem")
+    if quantity is not None and type(quantity) is not int:
+        raise ValueError("compras_row_malformed_quantity")
+    return {
+        "key": digest([ITEMS_DATASET, contract_control, item_number, item_code]),
+        "orgao_code": orgao_code,
+        "unit_code": unit_code,
+        "contract_control": contract_control,
+        "item_number": item_number,
+        "item_code": item_code,
+        "item_type": _optional_text(raw.get("tipoItem"), "item_type", 40),
+        "description": _optional_text(raw.get("descricaoIitem"), "description"),
+        "quantity": quantity,
+        "unit_value": _finite_number(raw.get("valorUnitarioItem"), "unit_value"),
+        "global_value": _finite_number(raw.get("valorTotalItem"), "global_value"),
+        "excluded": excluded,
+        "payload": raw,
+        "source": dict(source),
+    }
+
+
+def _flush_rows(session, batch: list[dict], counts: Counter, model) -> None:
     """Uma transação por lote: o lote inteiro grava ou volta atrás junto."""
     keys = [item["key"] for item in batch]
     existing = {}
-    for key, payload in session.execute(
-            select(ComprasContract.key, ComprasContract.payload).where(ComprasContract.key.in_(keys))):
+    for key, payload in session.execute(select(model.key, model.payload).where(model.key.in_(keys))):
         existing[key] = payload
     pending: dict[str, dict] = {}
     for item in batch:
@@ -415,33 +537,42 @@ def _flush_batch(session, batch: list[dict], counts: Counter) -> None:
             continue
         if recorded is not None:
             raise ValueError("compras_row_conflict_requires_reconciliation")
-        session.add(ComprasContract(
-            key=key, orgao_code=item["orgao_code"], unit_code=item["unit_code"],
-            contract_number=item["contract_number"], supplier_id=item["supplier_id"],
-            supplier_name=item["supplier_name"], organ_name=item["organ_name"],
-            unit_name=item["unit_name"], object_text=item["object_text"],
-            starts_on=item["starts_on"], ends_on=item["ends_on"], published_at=item["published_at"],
-            pncp_contract_id=item["pncp_contract_id"], global_value=item["global_value"],
-            excluded=item["excluded"], payload=item["payload"], source=item["source"]))
+        session.add(model(**item))
         pending[key] = item["payload"]
         counts["created"] += 1
     batch.clear()
     session.flush()
 
 
-def import_compras(database: Database, folder: Path, *, batch_size: int = 500) -> dict:
-    """Importa páginas e manifesto locais; nunca baixa, nunca soma e nunca sobrescreve em silêncio."""
+def _flush_batch(session, batch: list[dict], counts: Counter) -> None:
+    _flush_rows(session, batch, counts, ComprasContract)
+
+
+def _flush_item_batch(session, batch: list[dict], counts: Counter) -> None:
+    _flush_rows(session, batch, counts, ComprasContractItem)
+
+
+def import_compras(database: Database, folder: Path, *, batch_size: int = 500,
+                   dataset: str = "contratos") -> dict:
+    """Importa páginas e manifesto locais; nunca baixa, nunca soma e nunca sobrescreve em silêncio.
+
+    O ``dataset`` pedido precisa ser o mesmo gravado no manifesto: uma pasta de
+    contratos não é importada como itens e vice-versa. Itens usam a tabela
+    ``compras_contract_items`` e os mesmos limites de integridade dos contratos.
+    """
+    profile = _dataset(dataset)
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")
     folder = Path(folder)
     checkpoint = folder / "collection.json"
     raw_manifest = checkpoint.read_bytes()
-    plan, status, terminal, entries, finished_at = _reviewed_manifest(decode(raw_manifest))
-    initialize_compras(database)
+    plan, status, terminal, entries, finished_at = _reviewed_manifest(decode(raw_manifest), profile)
+    initialize = {DATASET: initialize_compras, ITEMS_DATASET: initialize_compras_items}[profile.name]
+    initialize(database)
     counts: Counter = Counter({"read": 0, "created": 0, "unchanged": 0, "rejected": 0})
     source_json = {
-        "dataset": DATASET,
-        "url": API_URL,
+        "dataset": profile.name,
+        "url": profile.url,
         "collected_at": finished_at,
         "orgao": plan["orgao"],
         "window": {"from": plan["window_from"], "to": plan["window_to"]},
@@ -451,33 +582,35 @@ def import_compras(database: Database, folder: Path, *, batch_size: int = 500) -
         "terminal": terminal,
         "pages": len(entries),
         "license": LICENSE,
-        "not_national_coverage": NOT_NATIONAL_COVERAGE,
+        "not_national_coverage": profile.coverage,
         "national_catalog_certified": False,
     }
     with database.session() as session:
-        load = Ingestion(dataset=DATASET, source=source_json)
+        load = Ingestion(dataset=profile.name, source=source_json)
         session.add(load)
         session.flush()
         load_id = load.id
+    row_builder = _contract_row if profile.name == DATASET else _item_row
+    flush = _flush_batch if profile.name == DATASET else _flush_item_batch
     batch: list[dict] = []
     try:
         # Uma única transação para as linhas: qualquer erro volta com o lote inteiro,
         # sem deixar registros parciais commitados.
         with database.session() as session:
-            for entry, payload in _verified_pages(folder, entries, status, plan):
+            for entry, payload in _verified_pages(folder, entries, status, plan, profile):
                 page_source = {"url": entry["url"], "sha256": entry["sha256"], "collected_at": finished_at}
                 for raw in payload["resultado"]:
                     counts["read"] += 1
                     try:
-                        item = _contract_row(raw, page_source)
+                        item = row_builder(raw, page_source)
                     except ValueError:
                         counts["rejected"] += 1
                         continue
                     batch.append(item)
                     if len(batch) >= batch_size:
-                        _flush_batch(session, batch, counts)
+                        flush(session, batch, counts)
             if batch:
-                _flush_batch(session, batch, counts)
+                flush(session, batch, counts)
             if counts["read"] == 0:
                 raise ValueError("compras_has_no_data_rows")
             if checkpoint.read_bytes() != raw_manifest:
@@ -494,7 +627,7 @@ def import_compras(database: Database, folder: Path, *, batch_size: int = 500) -
         raise
     return {
         "status": "imported",
-        "dataset": DATASET,
+        "dataset": profile.name,
         "ingestion_id": load_id,
         "counts": dict(counts),
         "collection_status": status,
@@ -503,7 +636,7 @@ def import_compras(database: Database, folder: Path, *, batch_size: int = 500) -
         "orgao": plan["orgao"],
         "window": {"from": plan["window_from"], "to": plan["window_to"]},
         "manifest_sha256": source_json["manifest_sha256"],
-        "not_national_coverage": NOT_NATIONAL_COVERAGE,
+        "not_national_coverage": profile.coverage,
         "national_catalog_certified": False,
     }
 
@@ -512,7 +645,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     collector = commands.add_parser(
-        "collect", help="Baixa páginas públicas e grava contratos/page-<i>.json + collection.json")
+        "collect", help="Baixa páginas públicas e grava <pasta>/<dataset>/page-<i>.json + collection.json")
     collector.add_argument("--folder", required=True, type=Path)
     collector.add_argument("--orgao", required=True)
     collector.add_argument("--from", dest="window_from", required=True, metavar="YYYY-MM-DD")
@@ -520,20 +653,24 @@ def main(argv=None):
     collector.add_argument("--page-size", type=int, default=500)
     collector.add_argument("--max-pages", type=int, default=20)
     collector.add_argument("--delay-seconds", type=float, default=1.0)
+    collector.add_argument("--dataset", choices=("contratos", "itens"), default="contratos")
     importer = commands.add_parser("import", help="Importa páginas locais com hashes verificados")
     importer.add_argument("--database", required=True)
     importer.add_argument("--folder", required=True, type=Path)
     importer.add_argument("--batch-size", type=int, default=500)
+    importer.add_argument("--dataset", choices=("contratos", "itens"), default="contratos")
     args = parser.parse_args(argv)
     if args.command == "collect":
         result = collect_compras(args.folder, orgao=args.orgao, window_from=args.window_from,
                                  window_to=args.window_to, page_size=args.page_size,
-                                 max_pages=args.max_pages, delay_seconds=args.delay_seconds)
+                                 max_pages=args.max_pages, delay_seconds=args.delay_seconds,
+                                 dataset=args.dataset)
     else:
         database = Database(args.database)
         database.initialize()
         try:
-            result = import_compras(database, args.folder, batch_size=args.batch_size)
+            result = import_compras(database, args.folder, batch_size=args.batch_size,
+                                    dataset=args.dataset)
         finally:
             database.engine.dispose()
     print(json.dumps(result, ensure_ascii=False))

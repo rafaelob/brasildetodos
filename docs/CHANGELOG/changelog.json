@@ -945,6 +945,27 @@
         "Endurecimentos: transação única com rollback provado por testes de tamper multi-página e de manifesto alterado durante a importação; carimbos com mais de 40 caracteres rejeitados e contados; erros HTTP de coleta traduzidos em erro de contrato; `HOSTS` ganhou `dadosabertos.compras.gov.br`.",
         "Testes: 90 nos cinco arquivos de coletores (24 novos nesta rodada); suíte completa 1695 passaram, 12 ignorados; aceite ao vivo: Compras 10/10 e Transferegov 5/5 (reimportação: 5 inalterados, 0 rejeitados)."
       ]
+    },
+    {
+      "version": "2026.09.27.3",
+      "date": "2026-09-27",
+      "title": "Coletores FNS, CGU, PNCP atas, catálogo Obrasgov e itens do Compras.gov.br; redirecionamentos bounded",
+      "user_impact": [
+        "Cinco fontes oficiais novas ganham coletor de operador: repasse FAF do FNS (XLSX/CSV, vínculo municipal pelo código IBGE de 6 dígitos derivado do IBGE carregado), recursos transferidos mensais do Portal da Transparência (CGU), atas do PNCP, quatro catálogos do Obrasgov (projeto, geometria, empenho, contrato) e itens de contrato do Compras.gov.br.",
+        "Downloads oficiais que redirecionam (FNS e CGU) agora funcionam com política restrita: até 3 saltos, todos HTTPS e na allowlist revisada, com a cadeia registrada no manifesto; nenhum salto pode sair da allowlist ou descer para http.",
+        "Correções da revisão: o FNS não marca mais sucesso quando nenhuma linha é aceita; página vazia ou HTTP 204 que contradiz os totais declarados deixa de ser rotulada \"completa\" (PNCP, Obrasgov, Compras); o CGU registra ingestão falha em qualquer adulteração do artefato; o intervalo de cortesia do FNS passou a ser aplicado de fato.",
+        "Nada disso vira cobertura nacional: FNS e CGU são operador-local (CC BY-ND 3.0 / Decreto 8.777, sem espelho público), nenhum vínculo municipal é inventado (CGU usa código SIAFI de 4 dígitos; PNCP atas não publica município) e valores nunca são somados."
+      ],
+      "technical": [
+        "`python -m bdt.fns collect|import`: XLSX 2026 parseado em streaming com stdlib (sem dependência nova) mais CSV cp1252; 116.164 linhas ao vivo, 0 sem vínculo municipal, idempotente; dinheiro como texto exato; serial de data fora de faixa plausível não é convertido.",
+        "`python -m bdt.cgu_transferencias collect|import`: o 302 do portal para o CDN fica registrado; CSV cp1252 com ponto-e-vírgula, 36 colunas; 144.284 linhas ao vivo, 0 pessoa física (categoria PF rejeitada e contada por defesa); `municipality_id` sempre nulo (SIAFI não é IBGE).",
+        "`python -m bdt.pncp_atas collect|import`: janela de vigência de até 365 dias, página 10–500, HTTP 204 só é terminal sem totais declarados; `--max-pages` é obrigatório na prática (487 mil atas para um dia de vigência).",
+        "`python -m bdt.obrasgov_catalog collect|import`: quatro datasets com página de até 200, `cod_ibge` guardado como texto sem vínculo criado, fases de empenho nunca somadas, recibo de atualização verificado.",
+        "`--dataset itens` no `bdt.compras`: tabela `compras_contract_items` com junção por `numeroControlePncpContrato` e itens excluídos preservados (`excluded=True`).",
+        "`safe_download`: redirecionamentos bounded (no máximo 3 saltos, cada um HTTPS e allowlisted, com IP público verificado) e cadeia no manifesto; `HOSTS` ganha `portalfns.saude.gov.br`, `portaldatransparencia.gov.br` e `dadosabertos-download.cgu.gov.br`.",
+        "Testes: 195 nos arquivos afetados desta rodada; suíte completa 1838 passaram, 12 ignorados. Aceites ao vivo: FNS 116.164 criadas e 0 sem vínculo; CGU 144.284 e 0 PF; PNCP 1/1 idempotente; Obrasgov 4×5; Compras itens 10 (2 excluídos).",
+        "Higiene: `.gitignore` passa a ignorar `.playwright-mcp/`, `fleet_runtime/` e `fleet_tmp/`."
+      ]
     }
   ]
 }

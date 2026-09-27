@@ -18,5 +18,8 @@ web/dist/
 *.db-shm
 test-results/
 playwright-report/
+.playwright-mcp/
+fleet_runtime/
+fleet_tmp/
 .DS_Store
 .agents/

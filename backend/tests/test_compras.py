@@ -12,10 +12,14 @@ import bdt.compras as compras
 import bdt.ingest
 from bdt.compras import (
     DATASET,
+    ITEMS_DATASET,
+    ITEMS_PAGES_DIR,
     LICENSE,
     NOT_NATIONAL_COVERAGE,
+    NOT_NATIONAL_COVERAGE_ITEMS,
     PAGES_DIR,
     ComprasContract,
+    ComprasContractItem,
     collect_compras,
     import_compras,
     page_url,
@@ -127,10 +131,26 @@ def test_collect_bounded_at_max_pages_and_empty_page_terminal(tmp_path, monkeypa
     assert bounded["status"] == "bounded"
     assert bounded["terminal"] == "max_pages_bound"
     assert len(bounded["pages"]) == 1 and len(calls) == 1
-    install_api(monkeypatch, [envelope([], total_paginas=3, total_registros=2, paginas_restantes=2)])
+    # Página vazia final legítima: os registros declarados (2) já foram lidos na página 1.
+    install_api(monkeypatch, [
+        envelope([make_item("00001/2025"), make_item("00002/2025")], total_paginas=2,
+                 total_registros=2, paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1)])
     empty = collect_compras(tmp_path / "empty", **valid_plan())
     assert empty["status"] == "complete"
     assert empty["terminal"] == "empty_page"
+    assert len(empty["pages"]) == 2
+
+
+def test_collect_empty_page_contradicting_declared_totals_is_refused(tmp_path, monkeypatch):
+    # Página 2 vazia, mas totalRegistros=2 declara 2 linhas e só 1 foi servida: não é terminal.
+    install_api(monkeypatch, [
+        envelope([make_item("00036/2024")], total_paginas=2, total_registros=2,
+                 paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1)])
+    with pytest.raises(ValueError, match="compras_empty_page_contradicts_totals"):
+        collect_compras(tmp_path, **valid_plan())
+    assert not (tmp_path / "collection.json").exists()
 
 
 def test_collect_refuses_invalid_plan_before_network(tmp_path, monkeypatch):
@@ -350,6 +370,32 @@ def test_multi_page_tamper_is_refused_before_any_write(database, tmp_path):
         assert load.counts["created"] == 0
 
 
+def test_import_accepts_empty_page_after_all_declared_records_served(database, tmp_path):
+    # A guarda compara com o que foi lido: totalRegistros=2 servido pela página 1.
+    write_pages(tmp_path, [
+        envelope([make_item("00036/2024"), make_item("00037/2024")], total_paginas=2,
+                 total_registros=2, paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1),
+    ], terminal="empty_page")
+    result = import_compras(database, tmp_path)
+    assert result["counts"] == {"read": 2, "created": 2, "unchanged": 0, "rejected": 0}
+    assert result["collection_terminal"] == "empty_page"
+
+
+def test_import_refuses_empty_page_contradicting_declared_totals(database, tmp_path):
+    write_pages(tmp_path, [
+        envelope([make_item("00036/2024")], total_paginas=2, total_registros=2,
+                 paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1),
+    ], terminal="empty_page")
+    with pytest.raises(ValueError, match="compras_empty_page_contradicts_totals"):
+        import_compras(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContract)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+    assert load.status == "failed"
+
+
 def test_manifest_changed_during_import_rolls_back_flushed_rows(database, tmp_path, monkeypatch):
     # Simula outro escritor alterando collection.json entre a leitura inicial e a
     # conferência final; o retrocesso precisa desfazer as linhas já em lote.
@@ -455,3 +501,268 @@ def test_no_place_or_municipality_link_is_created(database, tmp_path):
 def test_compras_host_is_in_the_download_allowlist():
     # O host do Compras.gov.br não pode desaparecer da allowlist de download.
     assert "dadosabertos.compras.gov.br" in bdt.ingest.HOSTS
+
+
+def item_plan(**overrides):
+    return {"orgao": "26000", "window_from": "2025-01-01", "window_to": "2025-12-31",
+            "page_size": 10, "max_pages": 5, "delay_seconds": 1.0} | overrides
+
+
+def make_contract_item(**overrides):
+    row = {
+        "codigoOrgao": "26000",
+        "nomeOrgao": "MINISTERIO DA EDUCACAO",
+        "codigoUnidadeGestora": "152005",
+        "nomeUnidadeGestora": "INSTITUTO NACIONAL DE EDUCACAO DE SURDOS-RJ",
+        "numeroContrato": "00036/2024",
+        "numeroControlePncpContrato": "00394445000101-2-000086/2024",
+        "numeroItem": "00001",
+        "codigoItem": 403893,
+        "tipoItem": "Material",
+        "descricaoIitem": "AQUISIÇÃO DE UM VEÍCULO TIPO ÔNIBUS TURISMO",
+        "quantidadeItem": 1,
+        "valorUnitarioItem": 673000.0,
+        "valorTotalItem": 673000.0,
+        "contratoItemExcluido": False,
+    }
+    row.update(overrides)
+    return row
+
+
+def item_page_url(page, plan=None):
+    plan = plan or item_plan()
+    return page_url(page, plan["orgao"], plan["window_from"], plan["window_to"],
+                    plan["page_size"], dataset="itens")
+
+
+def write_item_pages(folder, pages, *, plan=None, status="complete", terminal="no_pages_remaining",
+                     finished_at=None):
+    plan = dict(plan or item_plan())
+    pages_dir = folder / ITEMS_PAGES_DIR
+    pages_dir.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for index, payload in enumerate(pages, start=1):
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        (pages_dir / f"page-{index}.json").write_bytes(body)
+        entries.append({"index": index, "url": item_page_url(index, plan),
+                        "sha256": hashlib.sha256(body).hexdigest(), "bytes": len(body)})
+    last = pages[-1] if pages else {"totalRegistros": 0, "totalPaginas": 0}
+    manifest = {"dataset": ITEMS_DATASET, "url": compras.ITEMS_API_URL, "license": LICENSE,
+                "plan": plan, "started_at": now(), "finished_at": finished_at or now(),
+                "status": status, "terminal": terminal, "pages": entries,
+                "total_registros": last["totalRegistros"], "total_paginas": last["totalPaginas"],
+                "not_national_coverage": NOT_NATIONAL_COVERAGE_ITEMS}
+    (folder / "collection.json").write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    return manifest
+
+
+def test_items_collect_writes_itens_pages_and_manifest(tmp_path, monkeypatch):
+    pages = [envelope([make_contract_item(codigoItem=1)], total_paginas=2, total_registros=2,
+                      paginas_restantes=1),
+             envelope([make_contract_item(codigoItem=2)], total_paginas=2, total_registros=2,
+                      paginas_restantes=0)]
+    calls, sleeps = install_api(monkeypatch, pages)
+    result = collect_compras(tmp_path, dataset="itens", **item_plan())
+    assert result["dataset"] == ITEMS_DATASET
+    assert result["status"] == "complete" and result["terminal"] == "no_pages_remaining"
+    assert calls == [item_page_url(1), item_page_url(2)]
+    assert sleeps == [1.0]
+    assert result["not_national_coverage"] == NOT_NATIONAL_COVERAGE_ITEMS
+    stored = json.loads((tmp_path / "collection.json").read_text(encoding="utf-8"))
+    assert stored["dataset"] == ITEMS_DATASET
+    assert stored["url"] == compras.ITEMS_API_URL
+    assert stored["plan"] == item_plan()
+    assert (tmp_path / ITEMS_PAGES_DIR / "page-1.json").is_file()
+    assert (tmp_path / ITEMS_PAGES_DIR / "page-2.json").is_file()
+    assert not (tmp_path / PAGES_DIR).exists()
+
+
+def test_items_collect_empty_page_contradicting_declared_totals_is_refused(tmp_path, monkeypatch):
+    install_api(monkeypatch, [
+        envelope([make_contract_item(codigoItem=1)], total_paginas=2, total_registros=2,
+                 paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1)])
+    with pytest.raises(ValueError, match="compras_empty_page_contradicts_totals"):
+        collect_compras(tmp_path, dataset="itens", **item_plan())
+    assert not (tmp_path / "collection.json").exists()
+
+
+def test_items_import_refuses_empty_page_contradicting_declared_totals(database, tmp_path):
+    write_item_pages(tmp_path, [
+        envelope([make_contract_item(codigoItem=1)], total_paginas=2, total_registros=2,
+                 paginas_restantes=1),
+        envelope([], total_paginas=2, total_registros=2, paginas_restantes=1),
+    ], terminal="empty_page")
+    with pytest.raises(ValueError, match="compras_empty_page_contradicts_totals"):
+        import_compras(database, tmp_path, dataset="itens")
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContractItem)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET))
+    assert load.status == "failed"
+
+
+def test_items_plan_validation_refuses_before_network(database, tmp_path, monkeypatch):
+    monkeypatch.setattr(compras, "safe_download",
+                        lambda *args, **kwargs: pytest.fail("network download attempted"))
+    with pytest.raises(ValueError, match="365"):
+        collect_compras(tmp_path / "window", dataset="itens", **item_plan(window_to="2026-01-02"))
+    with pytest.raises(ValueError, match="10 and 500"):
+        collect_compras(tmp_path / "size", dataset="itens", **item_plan(page_size=9))
+    with pytest.raises(ValueError, match="after"):
+        collect_compras(tmp_path / "order", dataset="itens",
+                        **item_plan(window_from="2025-12-31", window_to="2025-01-01"))
+    with pytest.raises(ValueError, match="dataset"):
+        collect_compras(tmp_path / "unknown", dataset="ofertas", **item_plan())
+    write_item_pages(tmp_path / "badplan", [envelope([make_contract_item()])],
+                     plan=item_plan(page_size=9))
+    with pytest.raises(ValueError, match="plan_invalid"):
+        import_compras(database, tmp_path / "badplan", dataset="itens")
+    assert not (tmp_path / "window" / "collection.json").exists()
+
+
+def test_items_envelope_schema_change_is_refused(database, tmp_path, monkeypatch):
+    install_api(monkeypatch, [{"resultado": [], "totalRegistros": 0, "totalPaginas": 0}])
+    with pytest.raises(ValueError, match="schema"):
+        collect_compras(tmp_path / "collect", dataset="itens", **item_plan(max_pages=1))
+    assert not (tmp_path / "collect" / "collection.json").exists()
+    bad = {"resultado": [make_contract_item()], "totalRegistros": 1, "totalPaginas": 1}
+    write_item_pages(tmp_path / "import", [bad], status="bounded", terminal="max_pages_bound")
+    with pytest.raises(ValueError, match="schema"):
+        import_compras(database, tmp_path / "import", dataset="itens")
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContractItem)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET))
+        assert load.status == "failed" and load.counts["rolled_back"] is True
+
+
+def test_items_import_writes_typed_rows_and_is_idempotent(database, tmp_path):
+    manifest = write_item_pages(tmp_path, [envelope([
+        make_contract_item(codigoItem=403893, numeroItem="00001", tipoItem="Material",
+                           descricaoIitem="AQUISIÇÃO DE ÔNIBUS", quantidadeItem=2,
+                           valorUnitarioItem=336500.0, valorTotalItem=673000.0),
+        make_contract_item(codigoItem=403894, numeroItem="00002", tipoItem="Serviço",
+                           descricaoIitem="MANUTENÇÃO PREVENTIVA", quantidadeItem=3,
+                           valorUnitarioItem=100.5, valorTotalItem=301.5),
+    ])])
+    first = import_compras(database, tmp_path, dataset="itens")
+    second = import_compras(database, tmp_path, dataset="itens")
+    assert first["counts"] == {"read": 2, "created": 2, "unchanged": 0, "rejected": 0}
+    assert second["counts"] == {"read": 2, "created": 0, "unchanged": 2, "rejected": 0}
+    assert first["dataset"] == ITEMS_DATASET
+    with database.session() as session:
+        rows = {row.item_code: row for row in session.scalars(select(ComprasContractItem))}
+        assert set(rows) == {403893, 403894}
+        row = rows[403893]
+        assert row.key == digest([ITEMS_DATASET, "00394445000101-2-000086/2024", "00001", 403893])
+        assert row.orgao_code == "26000" and row.unit_code == "152005"
+        assert row.contract_control == "00394445000101-2-000086/2024"
+        assert row.item_number == "00001" and row.item_code == 403893
+        assert row.item_type == "Material"
+        assert row.description == "AQUISIÇÃO DE ÔNIBUS"
+        assert row.quantity == 2
+        assert row.unit_value == 336500.0 and row.global_value == 673000.0
+        assert row.excluded is False
+        assert row.payload["descricaoIitem"] == "AQUISIÇÃO DE ÔNIBUS"
+        assert row.source == {"url": manifest["pages"][0]["url"],
+                              "sha256": manifest["pages"][0]["sha256"],
+                              "collected_at": manifest["finished_at"]}
+        loads = list(session.scalars(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET)))
+    assert [load.status for load in loads] == ["success", "success"]
+
+
+def test_items_excluded_flag_is_preserved(database, tmp_path):
+    write_item_pages(tmp_path, [envelope([
+        make_contract_item(codigoItem=1, numeroItem="00001", contratoItemExcluido=True,
+                           dataHoraExclusaoItem="2025-03-01T10:00:00"),
+        make_contract_item(codigoItem=2, numeroItem="00002"),
+    ])])
+    result = import_compras(database, tmp_path, dataset="itens")
+    assert result["counts"] == {"read": 2, "created": 2, "unchanged": 0, "rejected": 0}
+    with database.session() as session:
+        excluded = session.scalars(
+            select(ComprasContractItem).where(ComprasContractItem.excluded.is_(True))).one()
+    assert excluded.item_code == 1
+    assert excluded.payload["contratoItemExcluido"] is True
+    assert excluded.payload["dataHoraExclusaoItem"] == "2025-03-01T10:00:00"
+
+
+def test_items_dataset_mismatch_is_refused(database, tmp_path, monkeypatch):
+    monkeypatch.setattr(compras, "safe_download",
+                        lambda *args, **kwargs: pytest.fail("network download attempted"))
+    write_pages(tmp_path / "contracts", [envelope([make_item("00036/2024")])])
+    with pytest.raises(ValueError, match="dataset_mismatch"):
+        import_compras(database, tmp_path / "contracts", dataset="itens")
+    write_item_pages(tmp_path / "items", [envelope([make_contract_item()])])
+    with pytest.raises(ValueError, match="dataset_mismatch"):
+        import_compras(database, tmp_path / "items")
+    with pytest.raises(ValueError, match="dataset_mismatch"):
+        collect_compras(tmp_path / "items", **valid_plan())
+    with pytest.raises(ValueError, match="dataset_mismatch"):
+        collect_compras(tmp_path / "contracts", dataset="itens", **valid_plan())
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContract)) == 0
+        assert session.scalar(select(func.count()).select_from(ComprasContractItem)) == 0
+
+
+def test_items_same_length_tamper_is_refused_before_any_write(database, tmp_path):
+    manifest = write_item_pages(tmp_path, [
+        envelope([make_contract_item(codigoItem=1)], total_paginas=2, total_registros=2,
+                 paginas_restantes=1),
+        envelope([make_contract_item(codigoItem=2)], total_paginas=2, total_registros=2,
+                 paginas_restantes=0),
+    ])
+    page = tmp_path / ITEMS_PAGES_DIR / "page-2.json"
+    raw = page.read_bytes()
+    page.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0x01]))
+    assert page.stat().st_size == manifest["pages"][1]["bytes"]
+    assert hashlib.sha256(page.read_bytes()).hexdigest() != manifest["pages"][1]["sha256"]
+    with pytest.raises(ValueError, match="compras_page_integrity_failure"):
+        import_compras(database, tmp_path, batch_size=1, dataset="itens")
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContractItem)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["read"] == 0 and load.counts["created"] == 0
+
+
+def test_items_conflict_rolls_back_the_whole_import(database, tmp_path):
+    # Mesmo item (controle PNCP + número + código) com descrição diferente: a segunda
+    # página conflita e nenhuma linha pode ficar commitada, nem mesmo a da primeira.
+    write_item_pages(tmp_path, [
+        envelope([make_contract_item(codigoItem=7, numeroItem="00007",
+                                     descricaoIitem="PRIMEIRA DESCRIÇÃO")],
+                 total_paginas=2, total_registros=2, paginas_restantes=1),
+        envelope([make_contract_item(codigoItem=7, numeroItem="00007",
+                                     descricaoIitem="DESCRIÇÃO CORRIGIDA")],
+                 total_paginas=2, total_registros=2, paginas_restantes=0),
+    ])
+    with pytest.raises(ValueError, match="conflict"):
+        import_compras(database, tmp_path, batch_size=1, dataset="itens")
+    with database.session() as session:
+        assert list(session.scalars(select(ComprasContractItem))) == []
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET))
+    assert load.status == "failed"
+    assert load.counts.get("rolled_back") is True
+    assert load.counts["created"] == 1
+
+
+def test_items_manifest_changed_during_import_rolls_back_flushed_rows(database, tmp_path, monkeypatch):
+    # Itens gravam por _flush_item_batch; o retrocesso precisa desfazer o lote já gravado.
+    write_item_pages(tmp_path, [envelope([make_contract_item()])])
+    checkpoint = tmp_path / "collection.json"
+    flush = compras._flush_item_batch
+
+    def flush_then_change_manifest(session, batch, counts):
+        flush(session, batch, counts)
+        checkpoint.write_bytes(checkpoint.read_bytes() + b" ")
+
+    monkeypatch.setattr(compras, "_flush_item_batch", flush_then_change_manifest)
+    with pytest.raises(ValueError, match="compras_manifest_changed_during_import"):
+        import_compras(database, tmp_path, batch_size=1, dataset="itens")
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ComprasContractItem)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == ITEMS_DATASET))
+    assert load.status == "failed"
+    assert load.counts["rolled_back"] is True
+    assert load.counts["created"] == 1

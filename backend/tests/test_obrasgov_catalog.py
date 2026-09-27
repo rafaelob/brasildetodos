@@ -221,6 +221,41 @@ def test_collect_empty_page_is_a_complete_terminal(tmp_path, monkeypatch):
     assert calls == [FRESHNESS_URL, page_url("empenho", 1, 2)]
 
 
+def test_collect_empty_page_after_all_declared_items_served_is_complete(tmp_path, monkeypatch):
+    # Terminal legítimo: o total declarado (1) já foi servido pela página 1.
+    pages = [envelope([make_row("empenho")], page=1, total_pages=2, total_items=1),
+             envelope([], page=2, total_pages=2, total_items=1)]
+    install_api(monkeypatch, pages)
+    result = collect_obrasgov_catalog(tmp_path, dataset="empenho", page_size=2,
+                                      max_pages=5, delay_seconds=1.0)
+    assert result["status"] == "complete"
+    assert result["terminal"] == "empty_page"
+    assert [entry["index"] for entry in result["pages"]] == [1, 2]
+
+
+def test_collect_empty_page_contradicting_declared_totals_is_refused(tmp_path, monkeypatch):
+    # Página 2 vazia, mas total_items=2 declara 2 linhas e só 1 foi lida: não é terminal.
+    pages = [envelope([make_row("empenho")], page=1, total_pages=2, total_items=2),
+             envelope([], page=2, total_pages=2, total_items=2)]
+    calls, _ = install_api(monkeypatch, pages)
+    with pytest.raises(ValueError, match="obrasgov_catalog_empty_page_contradicts_totals"):
+        collect_obrasgov_catalog(tmp_path, dataset="empenho", page_size=2,
+                                 max_pages=5, delay_seconds=1.0)
+    assert len(calls) == 3
+    assert not (tmp_path / "collection.json").exists()
+
+
+def test_collect_declared_totals_changed_between_pages_is_refused(tmp_path, monkeypatch):
+    pages = [envelope([make_row("empenho")], page=1, total_pages=2, total_items=2),
+             envelope([make_row("empenho", nr_empenho="2026NE000898")], page=2,
+                      total_pages=3, total_items=2)]
+    install_api(monkeypatch, pages)
+    with pytest.raises(ValueError, match="obrasgov_catalog_page_totals_changed"):
+        collect_obrasgov_catalog(tmp_path, dataset="empenho", page_size=2,
+                                 max_pages=5, delay_seconds=1.0)
+    assert not (tmp_path / "collection.json").exists()
+
+
 def test_collect_bounded_at_max_pages_and_short_delay_refused(tmp_path, monkeypatch):
     calls, _ = install_api(monkeypatch, [
         envelope([make_row("contrato")], page=1, total_pages=3, total_items=4)])
@@ -389,6 +424,43 @@ def test_conflicting_row_rolls_back_the_whole_import(database, tmp_path):
     assert load.status == "failed"
     assert load.counts["rolled_back"] is True
     assert load.counts["read"] == 2 and load.counts["created"] == 1
+
+
+def test_import_accepts_empty_page_after_all_declared_items_served(database, tmp_path):
+    # A guarda compara com o que foi lido: total_items=1 servido pela página 1.
+    write_pages(tmp_path, "empenho", [
+        envelope([make_row("empenho")], page=1, total_pages=2, total_items=1),
+        envelope([], page=2, total_pages=2, total_items=1),
+    ], terminal="empty_page")
+    result = import_obrasgov_catalog(database, tmp_path)
+    assert result["counts"] == {"read": 1, "created": 1, "unchanged": 0, "rejected": 0}
+    assert result["collection_terminal"] == "empty_page"
+
+
+def test_import_refuses_empty_page_contradicting_declared_totals(database, tmp_path):
+    write_pages(tmp_path, "empenho", [
+        envelope([make_row("empenho")], page=1, total_pages=2, total_items=2),
+        envelope([], page=2, total_pages=2, total_items=2),
+    ], terminal="empty_page")
+    with pytest.raises(ValueError, match="obrasgov_catalog_empty_page_contradicts_totals"):
+        import_obrasgov_catalog(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovCatalog)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == "obrasgov_catalog_empenho"))
+    assert load.status == "failed"
+    assert load.counts["rolled_back"] is True
+
+
+def test_import_refuses_pages_with_changed_declared_totals(database, tmp_path):
+    write_pages(tmp_path, "empenho", [
+        envelope([make_row("empenho")], page=1, total_pages=2, total_items=2),
+        envelope([make_row("empenho", nr_empenho="2026NE000898")], page=2,
+                 total_pages=3, total_items=2),
+    ], status="bounded", terminal="max_pages_bound")
+    with pytest.raises(ValueError, match="obrasgov_catalog_page_totals_changed"):
+        import_obrasgov_catalog(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovCatalog)) == 0
 
 
 def test_same_length_tamper_fails_hash_integrity(database, tmp_path):

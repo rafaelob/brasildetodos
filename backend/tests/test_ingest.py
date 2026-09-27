@@ -128,3 +128,67 @@ def test_ftp_ibge_host_is_not_in_allowlist():
 def test_private_resolution_rejected(monkeypatch,tmp_path):
     monkeypatch.setattr('bdt.ingest.socket.getaddrinfo',lambda *a,**k:[(None,None,None,None,('127.0.0.1',443))])
     with pytest.raises(ValueError):safe_download('https://pncp.gov.br/x',tmp_path/'x')
+
+class _RedirectResponse:
+    def __init__(self,status_code,headers,body):self.status_code,self.headers,self._body=status_code,headers,body
+    def raise_for_status(self):
+        if self.status_code>=400:
+            raise __import__('httpx').HTTPStatusError('synthetic',request=__import__('httpx').Request('GET','https://pncp.gov.br/'),response=__import__('httpx').Response(self.status_code))
+    def iter_bytes(self):yield self._body
+    def __enter__(self):return self
+    def __exit__(self,*exc):return False
+
+class _RedirectClient:
+    def __init__(self,routes):self.routes=routes
+    def __enter__(self):return self
+    def __exit__(self,*exc):return False
+    def stream(self,method,url,headers=None):return _RedirectResponse(*self.routes[url])
+
+def _install_redirects(monkeypatch,routes):
+    monkeypatch.setattr('bdt.ingest.socket.getaddrinfo',lambda *a,**k:[(None,None,None,None,('8.8.8.8',443))])
+    monkeypatch.setattr('bdt.ingest.httpx.Client',lambda **kwargs:_RedirectClient(routes))
+
+def test_reviewed_redirect_is_followed_and_recorded(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'https://pncp.gov.br/end'},b''),'https://pncp.gov.br/end':(200,{},b'data')})
+    result=safe_download('https://pncp.gov.br/start',tmp_path/'x')
+    assert (tmp_path/'x').read_bytes()==b'data'
+    assert result['url']=='https://pncp.gov.br/start' and result['final_url']=='https://pncp.gov.br/end'
+    assert result['redirects']==[{'status':302,'url':'https://pncp.gov.br/start','location':'https://pncp.gov.br/end'}]
+
+def test_relative_redirect_is_resolved_within_host(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'/end'},b''),'https://pncp.gov.br/end':(200,{},b'data')})
+    assert safe_download('https://pncp.gov.br/start',tmp_path/'x')['final_url']=='https://pncp.gov.br/end'
+
+def test_redirect_to_unreviewed_host_is_refused(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'https://evil.example/x'},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+    assert not (tmp_path/'x').exists()
+
+def test_redirect_downgrade_to_http_is_refused(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'http://pncp.gov.br/x'},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+def test_redirect_loop_is_refused(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'https://pncp.gov.br/start'},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+def test_redirect_without_location_is_refused(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+@pytest.mark.parametrize('location',['https://u:p@pncp.gov.br/x','https://pncp.gov.br:8443/x','//evil.example/x','https://evil.example/x'])
+def test_redirect_location_must_stay_reviewed(monkeypatch,tmp_path,location):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':location},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+def test_redirect_hop_resolving_private_is_refused(monkeypatch,tmp_path):
+    monkeypatch.setattr('bdt.ingest.socket.getaddrinfo',lambda host,*a,**k:[(None,None,None,None,('10.1.2.3',443) if host=='servicodados.ibge.gov.br' else ('8.8.8.8',443))])
+    monkeypatch.setattr('bdt.ingest.httpx.Client',lambda **kwargs:_RedirectClient({'https://pncp.gov.br/start':(302,{'location':'https://servicodados.ibge.gov.br/x'},b'')}))
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+def test_second_hop_off_allowlist_is_refused(monkeypatch,tmp_path):
+    _install_redirects(monkeypatch,{'https://pncp.gov.br/start':(302,{'location':'https://servicodados.ibge.gov.br/mid'},b''),'https://servicodados.ibge.gov.br/mid':(302,{'location':'https://evil.example/x'},b'')})
+    with pytest.raises(ValueError):safe_download('https://pncp.gov.br/start',tmp_path/'x')
+
+def test_new_official_hosts_are_in_allowlist():
+    assert {'portalfns.saude.gov.br','portaldatransparencia.gov.br','dadosabertos-download.cgu.gov.br'} <= HOSTS

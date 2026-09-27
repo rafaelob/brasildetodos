@@ -12,7 +12,7 @@ import zipfile
 from collections import Counter
 from decimal import Decimal
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 from uuid import uuid4
 import httpx
 from sqlalchemy import select
@@ -27,47 +27,84 @@ HOSTS = frozenset({
     "dadosabertos.saude.gov.br", "repositorio.dados.gov.br", "repositorio.transferegov.gestao.gov.br",
     "api-publica.transferegov.gestao.gov.br", "api-publica.obrasgov.gestao.gov.br", "pncp.gov.br",
     "apidatalake.tesouro.gov.br", "www.fnde.gov.br", "dadosabertos.compras.gov.br",
+    "portalfns.saude.gov.br", "portaldatransparencia.gov.br", "dadosabertos-download.cgu.gov.br",
 })
+MAX_REDIRECTS = 3
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
-def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *, allow_no_content: bool = False) -> dict:
-    """Operator-only downloader. Use a network-restricted worker, never public HTTP."""
+
+def _reviewed_host(url: str) -> str:
     parsed = urlsplit(url)
     if parsed.scheme != "https" or parsed.hostname not in HOSTS or parsed.port not in {None, 443} or parsed.username or parsed.password:
         raise ValueError("Download source is not in the reviewed HTTPS allowlist")
-    resolved = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
+    return parsed.hostname
+
+
+def _public_host(hostname: str) -> None:
+    resolved = socket.getaddrinfo(hostname, 443, type=socket.SOCK_STREAM)
     if not resolved or any(not ipaddress.ip_address(item[4][0]).is_global for item in resolved):
         raise ValueError("Source resolves to a non-public address")
+
+
+def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *, allow_no_content: bool = False) -> dict:
+    """Operator-only downloader. Use a network-restricted worker, never public HTTP.
+
+    Segue até ``MAX_REDIRECTS`` saltos, mas cada salto precisa continuar HTTPS e
+    allowlisted; a cadeia fica registrada no manifesto. Nenhum salto pode sair
+    da allowlist, descer para http:// ou carregar credenciais.
+    """
+    _public_host(_reviewed_host(url))
     target.parent.mkdir(parents=True, exist_ok=True)
     part = target.with_name(target.name + ".part-" + str(uuid4()))
     total, sha = 0, hashlib.sha256()
     tls_receipt = None
     verify = True
-    if parsed.hostname == "download.inep.gov.br":
+    if urlsplit(url).hostname == "download.inep.gov.br":
         from .education_tls import inep_download_context, policy_receipt
-        verify = inep_download_context(parsed.hostname)
+        verify = inep_download_context(urlsplit(url).hostname)
         tls_receipt = policy_receipt()
+    redirects: list[dict] = []
     try:
         with httpx.Client(timeout=httpx.Timeout(60, connect=15), follow_redirects=False,
                           trust_env=False, verify=verify) as client:
-            with client.stream("GET", url, headers={"User-Agent": "BrasilDeTodos/0.1 (+https://github.com/rafaelob/brasildetodos)"}) as response:
-                response.raise_for_status()
-                no_content = allow_no_content and response.status_code == 204
-                if response.status_code != 200 and not no_content:
-                    raise ValueError("Expected full HTTP 200 response; redirects require reviewed source configuration")
-                with part.open("wb") as handle:
-                    for block in response.iter_bytes():
-                        total += len(block)
-                        if total > max_bytes:
-                            raise ValueError("Download exceeds configured byte budget")
-                        handle.write(block)
-                        sha.update(block)
-                if total == 0 and not no_content:
-                    raise ValueError("Empty download")
-                if no_content and total != 0:
-                    raise ValueError("HTTP 204 must not contain a body")
-                metadata = {"url": url, "sha256": sha.hexdigest(), "bytes": total, "collected_at": now(), "etag": response.headers.get("etag"), "status_code": response.status_code}
-                if tls_receipt is not None:
-                    metadata['tls'] = tls_receipt | {'handshake_verified': True}
+            request_url = url
+            metadata = None
+            for _ in range(MAX_REDIRECTS + 1):
+                with client.stream("GET", request_url, headers={"User-Agent": "BrasilDeTodos/0.1 (+https://github.com/rafaelob/brasildetodos)"}) as response:
+                    if response.status_code in _REDIRECT_STATUSES:
+                        location = response.headers.get("location")
+                        if not location:
+                            raise ValueError("Redirect response without Location header")
+                        next_url = urljoin(request_url, location)
+                        _public_host(_reviewed_host(next_url))
+                        redirects.append({"status": response.status_code, "url": request_url, "location": next_url})
+                        if len(redirects) > MAX_REDIRECTS:
+                            raise ValueError("Too many redirects; source requires reviewed redirect configuration")
+                        request_url = next_url
+                        continue
+                    response.raise_for_status()
+                    no_content = allow_no_content and response.status_code == 204
+                    if response.status_code != 200 and not no_content:
+                        raise ValueError("Expected full HTTP 200 response; redirects require reviewed source configuration")
+                    with part.open("wb") as handle:
+                        for block in response.iter_bytes():
+                            total += len(block)
+                            if total > max_bytes:
+                                raise ValueError("Download exceeds configured byte budget")
+                            handle.write(block)
+                            sha.update(block)
+                    if total == 0 and not no_content:
+                        raise ValueError("Empty download")
+                    if no_content and total != 0:
+                        raise ValueError("HTTP 204 must not contain a body")
+                    metadata = {"url": url, "final_url": request_url, "redirects": redirects,
+                                "sha256": sha.hexdigest(), "bytes": total, "collected_at": now(),
+                                "etag": response.headers.get("etag"), "status_code": response.status_code}
+                    if tls_receipt is not None:
+                        metadata['tls'] = tls_receipt | {'handshake_verified': True}
+                break
+            if metadata is None:
+                raise ValueError("Too many redirects; source requires reviewed redirect configuration")
         os.replace(part, target)
         target.with_suffix(target.suffix + ".manifest.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         return metadata

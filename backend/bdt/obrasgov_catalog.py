@@ -6,8 +6,10 @@ retornadas, com a URL da página, o SHA-256 do arquivo, a data de coleta e a
 frescura declarada em ``/obras/data-atualizacao``. O envelope
 (``data``/``total_pages``/``total_items``/``page_number``/``page_size``) é
 validado em toda página; ``complete`` exige condição terminal observada (a
-paginação declarada alcançada ou uma página vazia); caso contrário o status é
-``bounded`` e permanece visível como parcial.
+paginação declarada alcançada ou uma página vazia coerente com os totais
+declarados). Página vazia com itens declarados ainda não servidos é erro de
+contrato, nunca terminal completo; caso contrário o status é ``bounded`` e
+permanece visível como parcial.
 
 Chave natural determinística (documentada porque a origem não publica um id de
 linha único em todos os datasets):
@@ -172,7 +174,9 @@ def collect_obrasgov_catalog(folder: Path, *, dataset: str, page_size: int = 200
     Sem autenticação e sem limite de taxa documentado: o intervalo entre páginas
     é obrigatório e nunca inferior a 1 segundo. Reutilizar a pasta para outro
     plano ou dataset é recusado antes de qualquer rede. ``complete`` exige
-    condição terminal observada (paginação declarada alcançada ou página vazia).
+    condição terminal observada (paginação declarada alcançada ou página vazia
+    coerente com os totais declarados); página vazia que contradiz os totais
+    declarados é erro de contrato e não grava manifesto.
     """
     plan = _validated_plan(dataset=dataset, page_size=page_size, max_pages=max_pages,
                            delay_seconds=delay_seconds)
@@ -193,6 +197,7 @@ def collect_obrasgov_catalog(folder: Path, *, dataset: str, page_size: int = 200
     freshness = _freshness_receipt(folder)
     entries: list[dict] = []
     total_pages = total_items = None
+    read_items = 0
     terminal = None
     page = 1
     while page <= plan["max_pages"]:
@@ -209,8 +214,11 @@ def collect_obrasgov_catalog(folder: Path, *, dataset: str, page_size: int = 200
         entries.append({"index": page, "url": metadata["url"], "sha256": metadata["sha256"],
                         "bytes": metadata["bytes"]})
         if not rows:
+            if declared_items != 0 and read_items != declared_items:
+                raise ValueError("obrasgov_catalog_empty_page_contradicts_totals")
             terminal = "empty_page"
             break
+        read_items += len(rows)
         if page >= declared_pages:
             terminal = "declared_total_pages"
             break
@@ -302,6 +310,7 @@ def _verified_pages(folder: Path, dataset: str, entries: list, status: str, plan
     """Confere bytes, SHA-256, envelope e totais de cada página antes de publicar qualquer linha."""
     pages_dir = folder / dataset
     declared_pages = declared_items = None
+    read_items = 0
     verified: list[tuple[dict, dict]] = []
     for position, entry in enumerate(entries):
         if not isinstance(entry, dict):
@@ -328,9 +337,12 @@ def _verified_pages(folder: Path, dataset: str, entries: list, status: str, plan
             declared_pages, declared_items = page_pages, page_items
         elif declared_pages != page_pages or declared_items != page_items:
             raise ValueError("obrasgov_catalog_page_totals_changed")
+        if not rows and page_items != 0 and read_items != page_items:
+            raise ValueError("obrasgov_catalog_empty_page_contradicts_totals")
         if (status == "complete" and position == len(entries) - 1
                 and not (index >= page_pages or not rows)):
             raise ValueError("obrasgov_catalog_complete_without_terminal_evidence")
+        read_items += len(rows)
         verified.append((entry, payload))
     if (declared_pages, declared_items) != totals:
         raise ValueError("obrasgov_catalog_manifest_totals_mismatch")
@@ -452,7 +464,7 @@ def _flush_batch(session, batch: list[dict], counts: Counter) -> None:
     session.flush()
 
 
-def import_obrasgov_catalog(database: Database, folder: Path, batch_size: int = 500) -> dict:
+def import_obrasgov_catalog(database: Database, folder: Path, *, batch_size: int = 500) -> dict:
     """Importa páginas e manifesto locais; nunca baixa, nunca soma e nunca sobrescreve em silêncio."""
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")

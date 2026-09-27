@@ -86,11 +86,48 @@ existem só no endpoint de beneficiários, fora desta fatia). Empenho não é
 desembolso nem pagamento; valores nunca são somados. Não infla contagens nem
 famílias.
 
+**FNS Fundo a Fundo (operador-local).** O portal publica o repasse FAF anual
+(XLSX em 2026; CSV em anos anteriores) sob **CC BY-ND 3.0**; o coletor
+`python -m bdt.fns collect|import` baixa o arquivo original, guarda SHA-256 e
+não redistribui derivados. `CO_MUNICIPIO_IBGE` vem com **6 dígitos** (dígito
+verificador suprimido) e o vínculo municipal usa apenas o crosswalk derivado
+das identidades IBGE já carregadas — nunca preenchido por nome. `VL_BRUTO`,
+`VL_LIQUIDO` e `VL_SALDO_CONTA` ficam como texto exato e nunca são somados.
+Não infla contagens nem famílias.
+
+**CGU Recursos transferidos (operador-local).** O endereço mensal
+`.../download-de-dados/transferencias/{YYYYMM}` responde 302 para o CDN
+`dadosabertos-download.cgu.gov.br`; o coletor
+`python -m bdt.cgu_transferencias collect|import` guarda SHA-256 e a cadeia de
+redirect. O CSV é cp1252 com ponto-e-vírgula; `CÓDIGO MUNICÍPIO SIAFI` tem
+**4 dígitos** e não existe coluna IBGE — nenhum vínculo municipal é criado.
+O recorte não contém pessoa física (censo completo de 2026-09-27); ainda assim
+linhas de categoria PF são rejeitadas e contadas por defesa. Sem somas.
+Licença: Decreto 8.777 com atribuição; uso operador-local, sem espelho público.
+
+**PNCP atas (operador).** `python -m bdt.pncp_atas collect|import` consulta
+`/api/consulta/v1/atas` por janela de **vigência** (≤365 dias), página 10–500 e
+filtro opcional por CNPJ do órgão; resultado vazio é HTTP 204. O endpoint não
+publica fornecedor, valores nem município/IBGE — nada disso é inventado. O
+volume é alto (487 mil atas para um único dia de vigência em 2026-09-27), então
+`--max-pages` é obrigatório na prática; `complete` não é cobertura.
+
+**Obrasgov (catálogo).** `python -m bdt.obrasgov_catalog collect|import`
+cobre `projeto-investimento`, `geometria`, `empenho` e `contrato` (página ≤200).
+Só `geometria` publica `cod_ibge` (7 dígitos, guardado como texto, sem vínculo
+criado); `empenho` publica fases (`liquidado`/`pago`/…) que **nunca** se somam;
+o CNPJ do fornecedor no contrato vem mascarado e é guardado como publicado.
+
+**Compras.gov.br itens.** `--dataset itens` no mesmo coletor grava
+`compras_contract_items` com `numeroControlePncpContrato` como chave de junção
+e itens excluídos preservados (`excluded=True`).
+
 ## Restante (honestidade)
 
 Caches e CLIs de operador abaixo **não** preenchem a tabela das seis famílias,
 **não** ligam FNS/CGU e **não** transformam os coletores
-SICONFI/PDDE/execução Obrasgov/Compras/Especiais em famílias; **não** mudam
+SICONFI/PDDE/execução Obrasgov/Compras/Especiais/FNS/CGU/PNCP
+atas/catálogo Obrasgov em famílias; **não** mudam
 `national_catalog_certified` (permanece `false`).
 
 **Transferegov financeiro.** ZIPs cacheados em `data/downloads/transferegov/`.
