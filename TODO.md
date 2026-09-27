@@ -1,3 +1,5 @@
+Fleet: arquivo CONGELADO (DEC-255) — agente, mova o que ainda estiver vivo aqui para a autoridade que o AGENTS.md declara em Tracker: (Issue do GitHub ou control_docs/WORK.md) e depois apague este arquivo, citando no commit o SHA que o guarda.
+
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # TODO executável — Brasil de Todos
 
