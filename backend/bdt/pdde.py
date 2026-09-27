@@ -216,6 +216,15 @@ def _sanitize(value: str) -> str:
     return "".join(character for character in text if character >= " " or character == "\t").strip()
 
 
+def _text(value: str, field: str, limit: int):
+    """Recusa a linha cujo texto publicado não cabe na coluna; nunca trunca."""
+    if not value:
+        return None
+    if len(value) > limit:
+        raise ValueError(f"pdde_row_malformed_{field}")
+    return value
+
+
 def _payment_row(header: list[str], fields: list[str], product_id: int, source: dict) -> dict:
     """Valida uma linha; ``alternate_key`` é o hash da tupla + linha completa, usado só em colisão."""
     if len(fields) != len(header):
@@ -243,11 +252,11 @@ def _payment_row(header: list[str], fields: list[str], product_id: int, source: 
         "product_id": product_id,
         "exercise": exercise,
         "state": state or None,
-        "municipality_name": clean.get("NO_MUNICIPIO") or None,
+        "municipality_name": _text(clean.get("NO_MUNICIPIO"), "municipality_name", 200),
         "municipality_code": municipality_code or None,
         "school_code": school_code,
-        "recipient_cnpj": clean.get("CNPJ_UEX") or None,
-        "recipient_name": clean.get("NO_UEX") or None,
+        "recipient_cnpj": _text(clean.get("CNPJ_UEX"), "recipient_cnpj", 20),
+        "recipient_name": _text(clean.get("NO_UEX"), "recipient_name", 300),
         "values": {name: raw[name] for name in header if name.startswith("VL_")},
         "payload": clean,
         "source": source | {"reference_date": exercise},

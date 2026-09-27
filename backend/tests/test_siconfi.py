@@ -203,6 +203,75 @@ def test_tampered_page_is_refused_and_ingestion_failed(database, tmp_path):
         assert load.status == "failed"
 
 
+def test_same_length_page_tampering_is_refused_by_hash(database, tmp_path):
+    # Um byte trocado mantém o tamanho: só a conferência de SHA-256 pode pegar.
+    manifest = write_collection(tmp_path, rreo_pages=[[rreo_row()]])
+    page = tmp_path / "rreo" / "page-0.json"
+    raw = page.read_bytes()
+    page.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0x01]))
+    assert page.stat().st_size == manifest["pages"][0]["bytes"]
+    assert hashlib.sha256(page.read_bytes()).hexdigest() != manifest["pages"][0]["sha256"]
+    with pytest.raises(ValueError, match="siconfi_page_hash_mismatch"):
+        import_siconfi(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(SiconfiReport)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+
+
+def test_duplicate_manifest_page_is_refused_before_import(database, tmp_path):
+    write_collection(tmp_path, rreo_pages=[[rreo_row()]])
+    checkpoint = tmp_path / "collection.json"
+    manifest = json.loads(checkpoint.read_text(encoding="utf-8"))
+    manifest["pages"].append(dict(manifest["pages"][0]))
+    checkpoint.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="siconfi_manifest_duplicate_page"):
+        import_siconfi(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(SiconfiReport)) == 0
+        assert session.scalar(select(func.count()).select_from(Ingestion)
+                              .where(Ingestion.dataset == DATASET)) == 0
+
+
+def test_later_page_hash_mismatch_rolls_back_flushed_rows(database, tmp_path):
+    # A primeira página entra em lote (batch_size=1) e a segunda falha; nada pode
+    # ficar commitado e a ingestão precisa registrar o retrocesso.
+    write_collection(tmp_path, rreo_pages=[[rreo_row()], [rreo_row(rotulo="Segunda Página")]])
+    page = tmp_path / "rreo" / "page-1.json"
+    raw = page.read_bytes()
+    page.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0x01]))
+    with pytest.raises(ValueError, match="siconfi_page_hash_mismatch"):
+        import_siconfi(database, tmp_path, batch_size=1)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(SiconfiReport)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["created"] == 1
+
+
+def test_manifest_changed_during_import_rolls_back_flushed_rows(database, tmp_path, monkeypatch):
+    # Simula outro escritor alterando collection.json entre a leitura inicial e a
+    # conferência final; o retrocesso precisa desfazer as linhas já em lote.
+    write_collection(tmp_path, rreo_pages=[[rreo_row()]])
+    checkpoint = tmp_path / "collection.json"
+    flush = siconfi._flush_batch
+
+    def flush_then_change_manifest(session, batch, counts, known_municipalities):
+        flush(session, batch, counts, known_municipalities)
+        checkpoint.write_bytes(checkpoint.read_bytes() + b" ")
+
+    monkeypatch.setattr(siconfi, "_flush_batch", flush_then_change_manifest)
+    with pytest.raises(ValueError, match="siconfi_manifest_changed_during_import"):
+        import_siconfi(database, tmp_path, batch_size=1)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(SiconfiReport)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["created"] == 1
+
+
 def test_no_national_coverage_claim(database, tmp_path):
     manifest = write_collection(tmp_path, rreo_pages=[[rreo_row()]])
     assert "nacional" in manifest["not_national_coverage"]

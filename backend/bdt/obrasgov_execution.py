@@ -56,13 +56,13 @@ class ObrasgovExecution(Base):
     execution_id = Column(Integer, nullable=False, index=True)
     project_id = Column(String(60), nullable=False, index=True)
     percentage = Column(Float, nullable=False)
-    starts_on = Column(String(10))
-    ends_on = Column(String(10))
+    starts_on = Column(String(40))
+    ends_on = Column(String(40))
     instrument_type = Column(String(200))
     execution_form = Column(String(200))
-    created_at_upstream = Column(String(10))
-    registered_at = Column(String(10))
-    updated_at_upstream = Column(String(10))
+    created_at_upstream = Column(String(40))
+    registered_at = Column(String(40))
+    updated_at_upstream = Column(String(40))
     indicatives = Column(JSON)
     reasons = Column(JSON)
     payload = Column(JSON, nullable=False)
@@ -104,6 +104,8 @@ def _iso_date(value, field: str) -> str | None:
         datetime.fromisoformat(text.replace("Z", "+00:00"))
     except ValueError:
         raise ValueError(f"obrasgov_execution_row_malformed_{field}") from None
+    if len(text) > 40:
+        raise ValueError(f"obrasgov_execution_row_malformed_{field}")
     return text
 
 

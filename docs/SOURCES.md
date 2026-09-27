@@ -28,9 +28,10 @@ paga de mapa.
 | Transferegov | [Download de dados](https://www.gov.br/transferegov/pt-br/ferramentas-gestao/dados-abertos/download-dados) · [API pública](https://api-publica.transferegov.gestao.gov.br/) | `bdt import-transferegov` (CSV + perfil JSON) | `GET /api/coverage` → `sources.id=transferegov`. Clone vazio: 0 | Um **plano de transferência especial** em `public-data-20260906-v1`. Tabela `finance` da edição: **0**. Inspeções CSV podem congelar `records_imported: 0` | Esse freeze **não** é sucesso. Fases (previsão, aditivo, desembolso) **nunca** se somam. Pré-convênio não é instrumento assinado |
 | Obrasgov | [API pública](https://api-publica.obrasgov.gestao.gov.br/) · `/obras/projeto-investimento` | importação de projeto (`bdt sync-resources obrasgov_projects`) | `GET /api/coverage` → `sources.id=obrasgov`. Clone vazio: 0 | **Um** projeto em `public-data-20260906-v1` | Endereço do órgão / comprador **não** é o canteiro. `facility_id` exige evidência revisada; o perfil de metadados não inventa vínculo com escola ou UBS |
 
-Somente estas seis famílias são de primeira classe. FNS, CGU, SICONFI, PDDE e
-módulos Transferegov/Obrasgov além dos perfis acima **não** são conectores
-embarcados neste catálogo; não há cobertura fictícia para eles.
+Somente estas seis famílias são de primeira classe. FNS, CGU e módulos
+Transferegov/Obrasgov além dos perfis acima **não** são conectores embarcados
+neste catálogo. SICONFI, PDDE e a execução física do Obrasgov têm coletor de
+operador fora das famílias (abaixo); não há cobertura fictícia para ninguém.
 
 FNS Fundo a Fundo **ainda não está neste catálogo**: ponto oficial
 [portalfns.saude.gov.br/downloads](https://portalfns.saude.gov.br/downloads/),
@@ -53,20 +54,43 @@ SICONFI **continua fora das seis famílias**: HTTPS
 escola. Conjunto sob **ODbL**. O coletor de operador
 `python -m bdt.siconfi collect|import` grava `siconfi_reports` com SHA-256,
 exercício/período/anexo e vínculo municipal apenas com `cod_ibge` de 7 dígitos;
-não entra em `GET /api/coverage` e não certifica o país. Spike:
+não infla contagens nem famílias (a tentativa de importação aparece em `runs` e
+no agregado `other` de `GET /api/coverage`) e não certifica o país. Spike:
 [reports/20260909-siconfi-spike.md](reports/20260909-siconfi-spike.md).
 
 PDDE/FNDE **continua fora das seis famílias**: o PDDE Básico paga UEx/EEx/EM
 (CNPJ), não um Place; o arquivo Básico traz `CO_ESCOLA`, não `CO_ENTIDADE`. O
 coletor de operador `python -m bdt.pdde collect|import` grava `pdde_payments`
 com SHA-256 e encoding registrados e só liga `inep:<CO_ESCOLA>` quando o lugar
-já existe no catálogo. Sem linha em `GET /api/coverage`. Spike:
+já existe no catálogo. Não infla contagens nem famílias; a tentativa de
+importação aparece em `runs` e no agregado `other`. Spike:
 [reports/20260909-pdde-spike.md](reports/20260909-pdde-spike.md).
+
+**Compras.gov.br.** O endpoint público
+`dadosabertos.compras.gov.br/modulo-contratos/1_consultarContratos` é recortado
+por órgão (`codigoOrgao`) e janela de vigência inicial de até 365 dias; o
+coletor de operador `python -m bdt.compras collect|import` grava
+`compras_contracts` com SHA-256 e sem nenhum vínculo territorial (o DTO não
+publica IBGE/UF). Contrato publicado não é execução, pagamento nem liquidação;
+contratos excluídos pelo publicador ficam com `excluded=True` e payload
+original. Licença declarada no site: CC BY-ND 3.0. Não infla contagens nem
+famílias; a tentativa aparece em `runs` e no agregado `other`.
+
+**Transferegov Especiais.** O endpoint público
+`api-publica.transferegov.gestao.gov.br/especiais/empenhos-especiais` lista
+empenhos das transferências especiais; o coletor de operador
+`python -m bdt.transferegov_especiais collect|import` grava
+`transferegov_especiais_empenhos` com SHA-256 e `id_plano_acao` para junção
+futura, e nenhum vínculo municipal (não há código IBGE no payload; UF/CNPJ/nome
+existem só no endpoint de beneficiários, fora desta fatia). Empenho não é
+desembolso nem pagamento; valores nunca são somados. Não infla contagens nem
+famílias.
 
 ## Restante (honestidade)
 
 Caches e CLIs de operador abaixo **não** preenchem a tabela das seis famílias,
-**não** ligam FNS/CGU/SICONFI/PDDE e **não** mudam
+**não** ligam FNS/CGU e **não** transformam os coletores
+SICONFI/PDDE/execução Obrasgov/Compras/Especiais em famílias; **não** mudam
 `national_catalog_certified` (permanece `false`).
 
 **Transferegov financeiro.** ZIPs cacheados em `data/downloads/transferegov/`.
@@ -102,7 +126,7 @@ expansão da allowlist. Candidatos de nome (`cnefe_candidate`) ficam inéditos;
 **Obrasgov.** A amostra limitada de páginas/UFs
 (`python ops/ingest_obrasgov_batch.py`) **não** é recenseamento do Brasil.
 Um projeto na edição certificada também não o é. O coletor de operador
-`python -m bdt.obrasgov_execution collect|import` grava `obrasgov_executions`
+`python -m bdt.obrasgov_execution collect|import` grava `obrasgov_execution`
 com o percentual e as datas declarados por projeto; isso não é pagamento, não
 é município e não é censo.
 

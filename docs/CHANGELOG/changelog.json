@@ -929,6 +929,22 @@
         "HOSTS ganhou apidatalake.tesouro.gov.br e www.fnde.gov.br; todo download passa por safe_download (HTTPS, allowlist, IP público, sem redirect, SHA-256 e manifesto).",
         "32 testes sintéticos dos três coletores; suíte completa 1638 passaram, 12 ignorados. Aceite ao vivo: SICONFI 5/5, Obrasgov 2/2, PDDE 1622 lidas e 1473 criadas, 0 rejeitadas."
       ]
+    },
+    {
+      "version": "2026.09.27.2",
+      "date": "2026-09-27",
+      "title": "Correções dos coletores e novos coletores de Compras.gov.br e Transferegov Especiais",
+      "user_impact": [
+        "Corrige três defeitos da rodada anterior: a largura das colunas de data da execução física do Obrasgov (o carimbo real de 19–26 caracteres não caberia no PostgreSQL), o caminho morto `--entes` do SICONFI (coleta sem importador) e a falta de limite de texto no PDDE (uma linha publicada longa abortava a importação inteira em vez de ser rejeitada e contada).",
+        "Adiciona dois coletores de operador: contratos do Compras.gov.br por órgão e janela de vigência, e empenhos das Transferências Especiais do Transferegov. Nenhum cria vínculo municipal nem soma valores; todos ficam fora das seis famílias e não certificam o país.",
+        "Corrige o registro público anterior: a tabela é `obrasgov_execution` (não `obrasgov_executions`), a contagem medida era 33 testes (não 32) e os coletores fora das famílias aparecem em `runs` e no agregado `other` do `GET /api/coverage` sem inflar contagens ou famílias."
+      ],
+      "technical": [
+        "`python -m bdt.compras collect|import` (dadosabertos.compras.gov.br, sem autenticação, licença CC BY-ND 3.0 declarada no site): recorte obrigatório por `codigoOrgao` e janela de vigência inicial de até 365 dias; envelope `resultado/totalRegistros/totalPaginas/paginasRestantes` validado em cada página; contratos excluídos pelo publicador preservados com `excluded=True`; nenhum vínculo territorial (o DTO não publica IBGE/UF).",
+        "`python -m bdt.transferegov_especiais collect|import` (api-publica.transferegov.gestao.gov.br/especiais, sem autenticação): empenhos com página de até 200 itens; URL da página no manifesto conferida por igualdade exata; `id_plano_acao` guardado para junção futura; sem código IBGE no payload, nenhum vínculo municipal; valores nunca somados.",
+        "Endurecimentos: transação única com rollback provado por testes de tamper multi-página e de manifesto alterado durante a importação; carimbos com mais de 40 caracteres rejeitados e contados; erros HTTP de coleta traduzidos em erro de contrato; `HOSTS` ganhou `dadosabertos.compras.gov.br`.",
+        "Testes: 90 nos cinco arquivos de coletores (24 novos nesta rodada); suíte completa 1695 passaram, 12 ignorados; aceite ao vivo: Compras 10/10 e Transferegov 5/5 (reimportação: 5 inalterados, 0 rejeitados)."
+      ]
     }
   ]
 }

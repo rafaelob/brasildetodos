@@ -26,7 +26,7 @@ HOSTS = frozenset({
     "servicodados.ibge.gov.br", "apidadosabertos.saude.gov.br", "download.inep.gov.br",
     "dadosabertos.saude.gov.br", "repositorio.dados.gov.br", "repositorio.transferegov.gestao.gov.br",
     "api-publica.transferegov.gestao.gov.br", "api-publica.obrasgov.gestao.gov.br", "pncp.gov.br",
-    "apidatalake.tesouro.gov.br", "www.fnde.gov.br",
+    "apidatalake.tesouro.gov.br", "www.fnde.gov.br", "dadosabertos.compras.gov.br",
 })
 
 def safe_download(url: str, target: Path, max_bytes: int = 256 * 1024 * 1024, *, allow_no_content: bool = False) -> dict:

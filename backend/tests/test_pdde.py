@@ -234,6 +234,68 @@ def test_tampered_artifact_is_refused(database, tmp_path):
         import_pdde(database, tmp_path)
 
 
+def test_same_length_artifact_tampering_is_refused_by_hash(database, tmp_path):
+    # Um byte trocado mantém o tamanho: só a conferência de SHA-256 pode pegar.
+    manifest = write_artifact(tmp_path, [payment()])
+    artifact = tmp_path / "artifact.gz"
+    raw = artifact.read_bytes()
+    artifact.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0x01]))
+    assert artifact.stat().st_size == manifest["bytes"]
+    assert hashlib.sha256(artifact.read_bytes()).hexdigest() != manifest["sha256"]
+    with pytest.raises(ValueError, match="pdde_artifact_hash_mismatch"):
+        import_pdde(database, tmp_path)
+
+
+def test_row_budget_failure_rolls_back_flushed_rows(database, tmp_path):
+    # A primeira linha entra em lote (batch_size=1) e o teto de linhas aborta na
+    # segunda; nada pode ficar commitado e a ingestão registra o retrocesso.
+    write_artifact(tmp_path, [payment(), payment(school="87654321")])
+    with pytest.raises(ValueError, match="pdde_row_budget_exceeded"):
+        import_pdde(database, tmp_path, batch_size=1, max_rows=1)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(PddePayment)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["created"] == 1
+
+
+def test_encoding_provenance_records_utf8_decode(database, tmp_path):
+    write_artifact(tmp_path, [payment(school_name="Ação Educativa São João")], encoding="utf-8")
+    result = import_pdde(database, tmp_path)
+    assert result["encoding"] == "utf-8-sig"
+    with database.session() as session:
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "success"
+        assert load.source["encoding"] == "utf-8-sig"
+        assert load.source["encoding_fallback"] is False
+
+
+def test_encoding_provenance_records_cp1252_fallback(database, tmp_path):
+    write_artifact(tmp_path, [payment(school_name="Ação Educativa São João")], encoding="cp1252")
+    result = import_pdde(database, tmp_path)
+    assert result["encoding"] == "cp1252"
+    with database.session() as session:
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "success"
+        assert load.source["encoding"] == "cp1252"
+        assert load.source["encoding_fallback"] is True
+
+
+def test_overlong_municipality_name_is_rejected_without_aborting_import(database, tmp_path):
+    # NO_MUNICIPIO de 201 caracteres não cabe em String(200): linha rejeitada e
+    # contabilizada, sem truncamento e sem derrubar as demais linhas.
+    write_artifact(tmp_path, [payment(), payment(school="87654321", municipality="M" * 201)])
+    result = import_pdde(database, tmp_path)
+    assert result["counts"] == {"read": 2, "created": 1, "unchanged": 0, "rejected": 1}
+    with database.session() as session:
+        stored = list(session.scalars(select(PddePayment)))
+        assert [row.school_code for row in stored] == ["12345678"]
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "success"
+        assert load.counts["rejected"] == 1
+
+
 def test_header_only_artifact_is_refused(database, tmp_path):
     write_artifact(tmp_path, [])
     with pytest.raises(ValueError, match="no_data_rows"):

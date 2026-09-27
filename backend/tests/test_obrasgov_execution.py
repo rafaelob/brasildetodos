@@ -1,6 +1,7 @@
 """Testes sintéticos do coletor/importador de execução física do ObrasGov; nenhuma rede é usada."""
 import hashlib
 import json
+from datetime import datetime
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -215,6 +216,26 @@ def test_invalid_rows_are_rejected_and_counted(database, tmp_path):
         assert load.counts["rejected"] == 7
 
 
+def test_overlong_timestamp_is_rejected_and_counted(database, tmp_path):
+    # Carimbo com 86 caracteres é aceito por datetime.fromisoformat, mas não cabe
+    # em String(40); a linha é rejeitada e contabilizada sem derrubar o import.
+    overlong = "2025-12-31T00:00:00." + "0" * 66
+    assert len(overlong) == 86
+    assert datetime.fromisoformat(overlong) == datetime(2025, 12, 31, 0, 0)
+    write_pages(tmp_path, [envelope([
+        make_item(1),
+        make_item(2, dt_inicial_execucao=overlong),
+    ], page_size=2)])
+    result = import_obrasgov_execution(database, tmp_path)
+    assert result["counts"] == {"read": 2, "created": 1, "unchanged": 0, "rejected": 1}
+    with database.session() as session:
+        stored = list(session.scalars(select(ObrasgovExecution)))
+        assert [row.execution_id for row in stored] == [1]
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "success"
+        assert load.counts["rejected"] == 1
+
+
 def test_reimport_is_idempotent(database, tmp_path):
     write_pages(tmp_path, [envelope([make_item(1), make_item(2, percentual_execucao_fisica=0.0)])])
     first = import_obrasgov_execution(database, tmp_path)
@@ -239,6 +260,76 @@ def test_tampered_page_is_refused_before_writing_rows(database, tmp_path):
         assert load.status == "failed"
         assert load.counts["read"] == 0
     assert manifest["pages"][0]["sha256"] != hashlib.sha256(page.read_bytes()).hexdigest()
+
+
+def test_same_length_page_tampering_fails_hash_integrity(database, tmp_path):
+    # Um byte trocado mantém o tamanho e não é JSON válido: a falha de integridade
+    # só pode vir da conferência de SHA-256, nunca da de tamanho.
+    manifest = write_pages(tmp_path, [envelope([make_item(1)])])
+    page = tmp_path / "execucao" / "page-1.json"
+    raw = page.read_bytes()
+    page.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0x01]))
+    assert page.stat().st_size == manifest["pages"][0]["bytes"]
+    assert hashlib.sha256(page.read_bytes()).hexdigest() != manifest["pages"][0]["sha256"]
+    with pytest.raises(ValueError, match="obrasgov_execution_page_integrity_failure"):
+        import_obrasgov_execution(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovExecution)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["read"] == 0
+
+
+def test_duplicate_manifest_page_is_refused(database, tmp_path):
+    # O mesmo recibo duas vezes quebra a sequência exigida dos índices; todas as
+    # páginas são conferidas antes de qualquer linha, então nada é lido nem gravado.
+    write_pages(tmp_path, [envelope([make_item(1)])])
+    checkpoint = tmp_path / "collection.json"
+    manifest = json.loads(checkpoint.read_text(encoding="utf-8"))
+    manifest["pages"].append(dict(manifest["pages"][0]))
+    checkpoint.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="obrasgov_execution_page_manifest_invalid"):
+        import_obrasgov_execution(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovExecution)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["read"] == 0
+        assert load.counts["created"] == 0
+
+
+def test_manifest_changed_during_import_rolls_back_flushed_rows(database, tmp_path, monkeypatch):
+    # Simula outro escritor alterando collection.json entre a leitura inicial e a
+    # conferência final; o retrocesso precisa desfazer as linhas já em lote.
+    write_pages(tmp_path, [envelope([make_item(1)])])
+    checkpoint = tmp_path / "collection.json"
+    flush = og._flush_batch
+
+    def flush_then_change_manifest(session, batch, counts):
+        flush(session, batch, counts)
+        checkpoint.write_bytes(checkpoint.read_bytes() + b" ")
+
+    monkeypatch.setattr(og, "_flush_batch", flush_then_change_manifest)
+    with pytest.raises(ValueError, match="obrasgov_execution_manifest_changed_during_import"):
+        import_obrasgov_execution(database, tmp_path, batch_size=1)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovExecution)) == 0
+        load = session.scalar(select(Ingestion).where(Ingestion.dataset == DATASET))
+        assert load.status == "failed"
+        assert load.counts["rolled_back"] is True
+        assert load.counts["created"] == 1
+
+
+def test_complete_status_without_terminal_evidence_is_refused(database, tmp_path):
+    # O rótulo complete sem evidência terminal declarada não pode ser aceito.
+    write_pages(tmp_path, [envelope([make_item(1)])], status="complete", terminal="max_pages_bound")
+    with pytest.raises(ValueError, match="collection_manifest_complete_without_terminal_evidence"):
+        import_obrasgov_execution(database, tmp_path)
+    with database.session() as session:
+        assert session.scalar(select(func.count()).select_from(ObrasgovExecution)) == 0
+        assert session.scalar(select(func.count()).select_from(Ingestion)
+                              .where(Ingestion.dataset == DATASET)) == 0
 
 
 def test_bounded_collection_imports_with_partial_status(database, tmp_path):

@@ -39,7 +39,7 @@ from .storage import Base, Database, Ingestion, Municipality
 
 DATASET = "siconfi"
 BASE_URL = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt/"
-PAGE_DATASETS = ("entes", "rreo", "dca")
+PAGE_DATASETS = ("rreo", "dca")
 RREO_PARAMETERS = ("an_exercicio", "nr_periodo", "co_tipo_demonstrativo", "id_ente", "no_anexo")
 DCA_PARAMETERS = ("an_exercicio", "id_ente", "no_anexo")
 LICENSE = "ODbL"
@@ -116,10 +116,8 @@ def _normalize_query(kind: str, spec) -> dict:
     return params
 
 
-def _collection_plan(entes: bool, rreo, dca, page_size: int, max_pages: int) -> dict:
+def _collection_plan(rreo, dca, page_size: int, max_pages: int) -> dict:
     queries = []
-    if entes:
-        queries.append({"dataset": "entes", "params": {}})
     for kind, specs in (("rreo", rreo), ("dca", dca)):
         normalized = [{"dataset": kind, "params": _normalize_query(kind, spec)} for spec in specs]
         normalized.sort(key=lambda query: tuple(sorted(query["params"].items())))
@@ -128,17 +126,15 @@ def _collection_plan(entes: bool, rreo, dca, page_size: int, max_pages: int) -> 
             "max_pages": max_pages, "queries": queries}
 
 
-def collect_siconfi(folder: Path, *, entes: bool = False, rreo=(), dca=(), page_size: int = 5000,
+def collect_siconfi(folder: Path, *, rreo=(), dca=(), page_size: int = 5000,
                     max_pages: int = 20, delay_seconds: float = 1.0) -> dict:
-    """Baixa páginas RREO/DCA/entes com o baixador allowlisted e grava collection.json.
+    """Baixa páginas RREO/DCA com o baixador allowlisted e grava collection.json.
 
     Reutilizar a pasta com outro plano é recusado antes de qualquer rede.
     ``status`` é ``complete`` apenas quando toda consulta alcançou
     ``hasMore=false``; caso contrário ``bounded``. O plano e os recibos de
     página (índice, URL, SHA-256, bytes) ficam no manifesto.
     """
-    if type(entes) is not bool:
-        raise ValueError("entes must be a boolean")
     if type(page_size) is not int or page_size < 1:
         raise ValueError("page_size must be a positive integer")
     if type(max_pages) is not int or max_pages < 1:
@@ -146,7 +142,7 @@ def collect_siconfi(folder: Path, *, entes: bool = False, rreo=(), dca=(), page_
     if isinstance(delay_seconds, bool) or not isinstance(delay_seconds, (int, float)):
         raise ValueError("delay_seconds must be a number")
     delay = max(MIN_DELAY_SECONDS, float(delay_seconds))
-    plan = _collection_plan(entes, list(rreo), list(dca), page_size, max_pages)
+    plan = _collection_plan(list(rreo), list(dca), page_size, max_pages)
     if not plan["queries"]:
         raise ValueError("siconfi_plan_has_no_queries")
     folder = Path(folder)
@@ -413,8 +409,6 @@ def import_siconfi(database: Database, folder: Path, *, batch_size: int = 500) -
                 if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
                     raise ValueError("siconfi_page_schema_changed")
                 for item in payload["items"]:
-                    if dataset == "entes":
-                        continue
                     counts["read"] += 1
                     try:
                         row = _report_row(dataset, item, url, sha256, collected_at)
@@ -460,7 +454,6 @@ def main(argv=None):
     collector = commands.add_parser(
         "collect", help="Baixa páginas públicas do SICONFI e grava <dataset>/page-N.json + collection.json")
     collector.add_argument("--folder", required=True, type=Path)
-    collector.add_argument("--entes", action="store_true")
     collector.add_argument("--rreo", action="append", default=[], type=_json_query, metavar="JSON")
     collector.add_argument("--dca", action="append", default=[], type=_json_query, metavar="JSON")
     collector.add_argument("--page-size", type=int, default=5000)
@@ -472,7 +465,7 @@ def main(argv=None):
     importer.add_argument("--batch-size", type=int, default=500)
     args = parser.parse_args(argv)
     if args.command == "collect":
-        result = collect_siconfi(args.folder, entes=args.entes, rreo=args.rreo, dca=args.dca,
+        result = collect_siconfi(args.folder, rreo=args.rreo, dca=args.dca,
                                  page_size=args.page_size, max_pages=args.max_pages,
                                  delay_seconds=args.delay_seconds)
     else:
