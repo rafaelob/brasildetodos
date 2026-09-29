@@ -96,6 +96,12 @@ def download_retry(url: str, target: Path, max_bytes: int, *, attempts: int = 3,
     raise ValueError('retry_budget_must_be_positive')
 
 
+def _check_page_file(path: Path, max_bytes: int) -> None:
+    """Check actual local bytes before hashing or decoding, including resumed pages."""
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > max_bytes:
+        raise ValueError('collection_page_not_regular_or_too_large')
+
+
 def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.sleep) -> dict:
     folder.mkdir(parents=True, exist_ok=True)
     checkpoint = folder / 'collection.json'
@@ -113,21 +119,29 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
         for index in range(plan.max_pages):
             path = folder / f'page-{index:06}.json'
             url = page_url(plan, index)
+            # Do not allow a loader to follow an existing link outside staging.
+            if path.is_symlink():
+                raise ValueError('collection_page_not_regular_or_too_large')
             if index in cached:
                 metadata = cached[index]
-                if metadata['url'] != url or not path.is_file() or file_hash(path) != metadata['sha256']:
+                _check_page_file(path, plan.max_bytes_per_page)
+                if metadata['url'] != url or file_hash(path) != metadata['sha256']:
                     raise ValueError('cached_page_integrity_failure')
             else:
                 if index:
                     sleep(plan.delay_seconds)
                 metadata = loader(url, path, plan.max_bytes_per_page)
+                _check_page_file(path, plan.max_bytes_per_page)
                 if file_hash(path) != metadata['sha256']:
                     raise ValueError('download_hash_mismatch')
             if metadata.get('url') != url:
                 raise ValueError('download_url_mismatch')
             if type(metadata.get('bytes')) is not int or metadata['bytes'] != path.stat().st_size:
                 raise ValueError('download_size_mismatch')
-            if metadata.get('status_code') == 204:
+            status_code = metadata.get('status_code', 200)
+            if type(status_code) is not int:
+                raise ValueError('unexpected_page_http_status')
+            if status_code == 204:
                 if (plan.dataset != 'pncp_contracts' or index != 0 or report['records'] != 0
                         or urlsplit(plan.url).hostname != 'pncp.gov.br'
                         or urlsplit(plan.url).path not in {'/api/consulta/v1/contratos', '/api/consulta/v1/contratos/atualizacao'}
@@ -140,14 +154,18 @@ def collect(plan: PagePlan, folder: Path, *, loader=download_retry, sleep=time.s
                               expected_records=0, finished_at=now())
                 atomic_json(checkpoint, report)
                 return report
-            if metadata.get('status_code', 200) != 200:
+            if status_code != 200:
                 raise ValueError('unexpected_page_http_status')
             payload = decode(path.read_bytes())
             rows = payload.get(plan.root) if isinstance(payload, dict) else None
             if not isinstance(rows, list):
                 raise ValueError('response_schema_changed')
-            if plan.response_page_field and payload.get(plan.response_page_field) != plan.start + index * plan.step:
-                raise ValueError('unexpected_response_page')
+            if len(rows) > plan.page_size:
+                raise ValueError('response_page_size_exceeded')
+            if plan.response_page_field:
+                response_page = payload.get(plan.response_page_field)
+                if type(response_page) is not int or response_page != plan.start + index * plan.step:
+                    raise ValueError('unexpected_response_page')
             for field, previous in ((plan.total_pages_field, expected_pages), (plan.total_records_field, expected_records)):
                 if field:
                     value = payload.get(field)
@@ -246,8 +264,12 @@ def collected_rows(folder: Path, report: dict):
         rows = payload.get(plan.root) if isinstance(payload, dict) else None
         if not isinstance(rows, list):
             raise ValueError('collection_page_schema_changed')
-        if plan.response_page_field and payload.get(plan.response_page_field) != plan.start + index * plan.step:
-            raise ValueError('collection_response_page_mismatch')
+        if len(rows) > plan.page_size:
+            raise ValueError('collection_page_size_exceeded')
+        if plan.response_page_field:
+            response_page = payload.get(plan.response_page_field)
+            if type(response_page) is not int or response_page != plan.start + index * plan.step:
+                raise ValueError('collection_response_page_mismatch')
         for field, previous in ((plan.total_pages_field, expected_pages),
                                 (plan.total_records_field, expected_records)):
             if field:
