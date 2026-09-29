@@ -27,6 +27,12 @@ def candidates(text: str) -> list[dict]:
         "legal_basis": r"LEI\s+(?:FEDERAL\s+)?(?:N[°ºO.]?\s*)?([0-9]{1,2}\.[0-9]{3}(?:/[0-9]{2,4})?|[0-9]{4,5}/[0-9]{2,4})",
     }
     for field, pattern in patterns.items():
+        if field.endswith("_reference") or field == "legal_basis":
+            # A supported identifier must be a complete lexical token: never
+            # invent 12/2025 from 12/20255, or CONTRATO from SUBCONTRATO.
+            # Standalone CNPJ numbers also cannot start inside another number.
+            prefix = r"(?<![\w./-])" if field == "cnpj_reference" else r"(?<!\w)"
+            pattern = prefix + pattern + r"(?![\w/]|[.-][\w])"
         for match in re.finditer(pattern, text, re.I):
             raw = match.group(1)
             value = brl(raw) if field in ("estimated_cents", "global_value") else int(raw) if field == "planned_capacity" else raw
