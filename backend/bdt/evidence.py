@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Literal
 from uuid import uuid4
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Text, select, update
 from .domain import Source, StrictModel, digest, now
 from .storage import Base
@@ -99,6 +99,10 @@ class DocumentInput(StrictModel):
     source: Source
 
 
+def _normalized_evidence_text(value: str) -> str:
+    return re.sub(r'\s+', ' ', value).strip()
+
+
 class LinkInput(StrictModel):
     place_id: str = Field(max_length=180)
     resource_id: str = Field(max_length=200)
@@ -107,12 +111,27 @@ class LinkInput(StrictModel):
     excerpt: str = Field(min_length=10, max_length=1500)
     justification: str = Field(min_length=20, max_length=2000)
 
+    @field_validator('excerpt', 'justification')
+    @classmethod
+    def meaningful_text(cls, value, info):
+        minimum = 10 if info.field_name == 'excerpt' else 20
+        if len(_normalized_evidence_text(value)) < minimum:
+            raise ValueError('insufficient_evidence_text')
+        return value  # Preserve original layout; normalization is only for validation.
+
 
 class Decision(StrictModel):
     decision: Literal['reviewed', 'rejected', 'retracted']
     note: str = Field(min_length=20, max_length=2000)
     expected_revision: int = Field(ge=1, strict=True)
     public_excerpt_checked: bool = False
+
+    @field_validator('note')
+    @classmethod
+    def meaningful_note(cls, value: str) -> str:
+        if len(_normalized_evidence_text(value)) < 20:
+            raise ValueError('insufficient_review_note')
+        return value
 
 
 def initialize_extensions(database):
@@ -158,7 +177,8 @@ def _file_sha256(path: Path) -> str:
 
 
 def validated_extraction_pages(extraction: object, expected_sha256: str) -> list[dict]:
-    if not isinstance(extraction, dict) or extraction.get('sha256') != expected_sha256:
+    if (not isinstance(expected_sha256, str) or not re.fullmatch(r'[a-f0-9]{64}', expected_sha256)
+            or not isinstance(extraction, dict) or extraction.get('sha256') != expected_sha256):
         raise ValueError('stored_document_extraction_invalid')
     pages = extraction.get('pages')
     if not isinstance(pages, list) or not pages:
@@ -226,9 +246,11 @@ def validate_excerpt(document: Document, page: int, excerpt: str):
     selected = next((item for item in pages if item['page'] == page), None)
     if not selected:
         raise ValueError('page_not_found')
-    normalize = lambda value: re.sub(r'\s+', ' ', value).strip()
+    normalized_excerpt = _normalized_evidence_text(excerpt)
     texts = [selected.get('text', ''), selected.get('ocr_candidate_text', '')]
-    if not any(normalize(excerpt) in normalize(text) for text in texts):
+    # Stored/legacy candidates bypass LinkInput, so enforce the boundary again.
+    if (len(normalized_excerpt) < 10
+            or not any(normalized_excerpt in _normalized_evidence_text(text) for text in texts)):
         raise ValueError('excerpt_not_found')
 
 
