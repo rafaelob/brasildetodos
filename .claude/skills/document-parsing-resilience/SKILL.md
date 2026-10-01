@@ -1,48 +1,10 @@
 ---
 name: document-parsing-resilience
-description: >-
-  Use when document parsing fails or lies: "PDF quebrado", "OCR falhou", "parse de documento",
-  "texto vazio", empty or partial text from a PDF, DOCX or HTML parser, scanned pages mixed with
-  text, mojibake or cp1252, a truncated or encrypted upload. Routes parser -> OCR per page and keeps
-  an expected-vs-extracted ledger instead of a silent empty string. OCR engine choice ->
-  ocr-engine-evaluation. PDF editing -> pdf. Upload security -> file-ingestion-security-gates.
+description: "Use when document parsing fails or lies (\"PDF quebrado\", \"OCR falhou\", empty or partial text, mojibake, mixed scanned pages): per-page parser to OCR ledger. OCR engine choice -> ocr-engine-evaluation. Not PDF editing."
 license: Apache-2.0
-compatibility: Language-agnostic design. Measured examples use Python 3.13 stdlib (codecs, unicodedata,
-  zipfile); parser notes cite pypdf, pdfplumber, PyMuPDF and python-docx official docs.
+compatibility: Language-agnostic design. Measured examples use Python 3.13 stdlib (codecs, unicodedata, zipfile); parser notes cite pypdf, pdfplumber, PyMuPDF and python-docx official docs.
 metadata:
-  author: coding-agent
-  version: 1.0.3
-  category: data-analysis
-  subcategory: dataset-analysis
-  vendor: universal
-  lifecycle: active
-  coding_agent: true
-  user_level: false
-  project_level: true
-  audience: developer
-  output_format: markdown
-  modality: text
-  freshness: 2026-07
-  short-description: Parser fallback chains with per-page provenance, honest partial extraction, and encoding
-    repair for messy document pipelines
-  tags:
-  - document-parsing
-  - text-extraction
-  - pdf
-  - docx
-  - ocr-routing
-  - provenance
-  - partial-extraction
-  - page-ledger
-  - encoding
-  - mojibake
-  - cp1252
-  - unicode-normalization
-  - quarantine
-  - reparse
-  - malformed-input
-  - ingestion-pipeline
-  - last_verified:2026-07-29
+  version: "1.0.3"
 ---
 
 # Document Parsing Resilience
