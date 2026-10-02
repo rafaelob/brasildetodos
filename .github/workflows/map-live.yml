@@ -3,11 +3,16 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): the map UI holds no auth, secrets, money,
+    # migration or API-contract code, so only the dependency manifests it installs qualify.
     paths:
-      - web/src/Map.tsx
-      - web/src/map-runtime.ts
-      - ops/browser_map.py
-      - .github/workflows/map-live.yml
+      - pyproject.toml
+      - requirements/**
+      - .python-version
+      - web/package.json
+      - web/package-lock.json
+      - web/.npmrc
+      - .nvmrc
 permissions:
   contents: read
 concurrency:

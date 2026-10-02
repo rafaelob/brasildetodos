@@ -3,17 +3,21 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): published data release selection, API
+    # contracts, schema and the dependency manifests it installs.
     paths:
-      - .github/workflows/national-catalog-acceptance.yml
-      - ops/install_national_catalog.py
-      - ops/national_catalog_acceptance.py
-      - ops/browser_national_catalog.py
-      - backend/bdt/**
-      - backend/tests/test_national_installation.py
-      - backend/tests/test_national_acceptance.py
-      - backend/tests/test_national_integrity.py
-      - data/releases/*.json
-      - web/**
+      - data/releases/**
+      - backend/bdt/api.py
+      - backend/bdt/domain.py
+      - backend/bdt/resource_routes.py
+      - backend/bdt/storage.py
+      - pyproject.toml
+      - requirements/**
+      - .python-version
+      - web/package.json
+      - web/package-lock.json
+      - web/.npmrc
+      - .nvmrc
 permissions:
   contents: read
 concurrency:

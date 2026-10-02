@@ -1,8 +1,91 @@
 name: Quality
+# Runs only when a critical path changes (fleet-machine-hub#248). Keep both lists identical.
 on:
   push:
     branches: [main]
+    paths:
+      # auth/permissions (accounts, sessions, recovery, groups, reviewer/operator authorization)
+      - backend/bdt/api.py
+      - backend/bdt/recovery.py
+      - backend/bdt/groups.py
+      - backend/bdt/cli.py
+      - backend/bdt/document_ocr.py
+      - backend/bdt/document_job.py
+      # secrets and configuration readers
+      - .env.example
+      - .mcp.json.example
+      - backend/bdt/features.py
+      # money
+      - backend/bdt/resource_money.py
+      # database schema and migrations
+      - backend/bdt/storage.py
+      - ops/postgres-test-init.sql
+      # deploy/infra (incl. the deploy and publish workflow files)
+      - '**/Dockerfile*'
+      - .dockerignore
+      - compose.yaml
+      - docker-compose.yml
+      - .github/workflows/archive-reviewed-ocr.yml
+      - .github/workflows/dependency-lock.yml
+      - .github/workflows/education-release.yml
+      - .github/workflows/public-data-bundle.yml
+      - .github/workflows/python-lock.yml
+      # dependency manifests and lockfiles
+      - pyproject.toml
+      - requirements/**
+      - .python-version
+      - web/package.json
+      - web/package-lock.json
+      - web/.npmrc
+      - .nvmrc
+      - .node-version
+      # public API contracts and published data releases
+      - backend/bdt/domain.py
+      - backend/bdt/resource_routes.py
+      - backend/bdt/photo_http.py
+      - data/releases/**
   pull_request:
+    paths:
+      # auth/permissions (accounts, sessions, recovery, groups, reviewer/operator authorization)
+      - backend/bdt/api.py
+      - backend/bdt/recovery.py
+      - backend/bdt/groups.py
+      - backend/bdt/cli.py
+      - backend/bdt/document_ocr.py
+      - backend/bdt/document_job.py
+      # secrets and configuration readers
+      - .env.example
+      - .mcp.json.example
+      - backend/bdt/features.py
+      # money
+      - backend/bdt/resource_money.py
+      # database schema and migrations
+      - backend/bdt/storage.py
+      - ops/postgres-test-init.sql
+      # deploy/infra (incl. the deploy and publish workflow files)
+      - '**/Dockerfile*'
+      - .dockerignore
+      - compose.yaml
+      - docker-compose.yml
+      - .github/workflows/archive-reviewed-ocr.yml
+      - .github/workflows/dependency-lock.yml
+      - .github/workflows/education-release.yml
+      - .github/workflows/public-data-bundle.yml
+      - .github/workflows/python-lock.yml
+      # dependency manifests and lockfiles
+      - pyproject.toml
+      - requirements/**
+      - .python-version
+      - web/package.json
+      - web/package-lock.json
+      - web/.npmrc
+      - .nvmrc
+      - .node-version
+      # public API contracts and published data releases
+      - backend/bdt/domain.py
+      - backend/bdt/resource_routes.py
+      - backend/bdt/photo_http.py
+      - data/releases/**
   workflow_dispatch:
 permissions:
   contents: read

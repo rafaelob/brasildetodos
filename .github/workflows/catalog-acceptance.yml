@@ -12,10 +12,16 @@ on:
         required: true
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): API contracts, schema and the Python
+    # dependency manifests it installs.
     paths:
-      - backend/bdt/catalog_acceptance.py
-      - backend/tests/test_catalog_acceptance.py
-      - .github/workflows/catalog-acceptance.yml
+      - backend/bdt/api.py
+      - backend/bdt/domain.py
+      - backend/bdt/resource_routes.py
+      - backend/bdt/storage.py
+      - pyproject.toml
+      - requirements/**
+      - .python-version
 permissions:
   contents: read
   actions: read

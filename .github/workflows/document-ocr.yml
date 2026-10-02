@@ -3,12 +3,15 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): reviewer/operator authorization in the OCR
+    # job code, the documents image and the Python dependency manifests it installs.
     paths:
       - backend/bdt/document_ocr.py
-      - backend/bdt/documents.py
-      - backend/tests/test_document_ocr.py
-      - ops/ocr_runtime.py
-      - .github/workflows/document-ocr.yml
+      - backend/bdt/document_job.py
+      - ops/Dockerfile.documents
+      - pyproject.toml
+      - requirements/**
+      - .python-version
 permissions:
   contents: read
 concurrency:

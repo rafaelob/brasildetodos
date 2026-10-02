@@ -3,10 +3,17 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): API contracts, exact-money handling, schema
+    # and the Python dependency manifests it installs.
     paths:
-      - backend/bdt/resource_release.py
-      - ops/resource_release_acceptance.py
-      - .github/workflows/resource-release.yml
+      - backend/bdt/api.py
+      - backend/bdt/domain.py
+      - backend/bdt/resource_routes.py
+      - backend/bdt/resource_money.py
+      - backend/bdt/storage.py
+      - pyproject.toml
+      - requirements/**
+      - .python-version
 permissions:
   contents: read
   actions: read
