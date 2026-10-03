@@ -29,12 +29,26 @@ def sha256(path: Path) -> str:
     return result.hexdigest()
 
 
-def readonly(path: Path):
+def _reject_backup_sidecars(path: Path) -> None:
+    # The manifest covers one self-contained file, not a SQLite journal/WAL set.
+    # Broken symlinks must also fail closed instead of being treated as absent.
+    for suffix in ('-wal', '-shm', '-journal'):
+        sidecar = path.with_name(path.name + suffix)
+        if sidecar.exists() or sidecar.is_symlink():
+            raise ValueError('backup_sidecar_not_allowed')
+
+
+def readonly(path: Path, *, snapshot: bool = False):
     if path.is_symlink() or not path.is_file():
         raise ValueError('database_file_required')
     if path.stat().st_size > MAX_BYTES:
         raise ValueError('database_size_budget')
-    connection = sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=5)
+    if snapshot:
+        _reject_backup_sidecars(path)
+    # Only a sealed backup is immutable. A live source MUST retain WAL visibility
+    # so create_backup includes committed changes not yet checkpointed.
+    query = '?mode=ro&immutable=1' if snapshot else '?mode=ro'
+    connection = sqlite3.connect(path.resolve().as_uri() + query, uri=True, timeout=5)
     connection.execute('PRAGMA query_only=ON')
     connection.execute('PRAGMA trusted_schema=OFF')
     return connection
@@ -116,13 +130,14 @@ def verify_backup(folder: Path) -> dict:
         raise ValueError('backup_size_mismatch')
     if sha256(database) != manifest.get('sha256'):
         raise ValueError('backup_hash_mismatch')
-    with closing(readonly(database)) as connection:
+    with closing(readonly(database, snapshot=True)) as connection:
         check_database(connection)
+    _reject_backup_sidecars(database)
     return manifest
 
 
 def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120) -> dict:
-    """All data remains private. Revoke sessions; never replace an active DB."""
+    """Keep data private; revoke sessions, recovery codes and group invites."""
     folder, destination = Path(folder), Path(destination)
     if not 0 < timeout_seconds <= 3600:
         raise ValueError('invalid_backup_timeout')
@@ -135,8 +150,9 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
         source = folder/'database.sqlite'; target = staging/'database.sqlite'
         if sha256(source) != manifest['sha256']:
             raise ValueError('backup_changed_during_restore')
-        with closing(readonly(source)) as connection:
+        with closing(readonly(source, snapshot=True)) as connection:
             copy_online(connection, target, timeout_seconds)
+        _reject_backup_sidecars(source)
         if sha256(source) != manifest['sha256']:
             raise ValueError('backup_changed_during_restore')
         with closing(sqlite3.connect(target)) as connection:
@@ -144,13 +160,18 @@ def restore_backup(folder: Path, destination: Path, timeout_seconds: float = 120
             with connection:
                 connection.execute('DELETE FROM sessions')
                 connection.execute('DELETE FROM rate_buckets')
+                # A code consumed/revoked after this backup must not become usable
+                # again. Older backups legitimately predate the recovery table.
+                if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='recovery_codes'").fetchone():
+                    connection.execute('DELETE FROM recovery_codes')
                 if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='group_invites'").fetchone():
                     connection.execute("UPDATE group_invites SET token_hash=NULL,status='revoked'")
             check_database(connection)
         with target.open('r+b') as stream:
             os.fsync(stream.fileno())
         result = {'status': 'restored_new_database', 'contains_private_data': True,
-            'sessions_revoked': True, 'source_backup_sha256': manifest['sha256'],
+            'sessions_revoked': True, 'recovery_codes_revoked': True,
+            'source_backup_sha256': manifest['sha256'],
             'restored_sha256': sha256(target), 'restored_at': now(),
             'requires_post_backup_deletion_reconciliation': True}
         # Atomic exclusive publication. No overwrite even with competing restores.
