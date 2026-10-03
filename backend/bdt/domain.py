@@ -6,7 +6,7 @@ import json
 import re
 import unicodedata
 from datetime import date, datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -42,16 +42,42 @@ def brl(value: str) -> int:
     raw = re.sub(r"^R\$\s*", "", value.replace("\u00a0", " ").strip())
     if not re.fullmatch(r"-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}", raw):
         raise ValueError("Ambiguous Brazilian monetary value")
-    return int(Decimal(raw.replace(".", "").replace(",", ".")) * 100)
+    return decimal_cents(raw.replace(".", "").replace(",", "."))
+
+
+# Resource limit, not a business amount limit: safely above stored financial ranges.
+_MAX_CENTS_DIGITS = 4096
 
 
 def decimal_cents(value: str | int | Decimal) -> int:
-    if isinstance(value, (float, bool)):
+    """Convert exact source digits without using the ambient Decimal context.
+
+    Even multiplying by 100 can round away cents (or hide fractional cents).
+    Scale the coefficient with integer arithmetic instead. Negative corrections,
+    scientific notation and insignificant fractional zeros remain supported.
+    """
+    if isinstance(value, bool) or not isinstance(value, (str, int, Decimal)):
         raise ValueError("Use decimal text, never binary float")
-    number = Decimal(value) * 100
-    if not number.is_finite() or number != number.to_integral_value():
+    try:
+        number = value if isinstance(value, Decimal) else Decimal(value)
+    except InvalidOperation:
+        raise ValueError("Invalid decimal monetary value") from None
+    if not number.is_finite():
         raise ValueError("Non-finite value or fractional cents")
-    return int(number)
+    sign, digits, exponent = number.as_tuple()
+    if not any(digits):
+        return 0
+    shift = exponent + 2
+    if shift < 0:
+        # Do not construct 10**(-shift): tiny exponents must fail in bounded work.
+        if -shift >= len(digits) or any(digits[shift:]):
+            raise ValueError("Non-finite value or fractional cents")
+        digits, shift = digits[:shift], 0
+    if len(digits) + shift > _MAX_CENTS_DIGITS:
+        raise ValueError("Monetary digit budget exceeded")
+    coefficient = int("".join(map(str, digits)))
+    cents = coefficient * 10 ** shift
+    return -cents if sign else cents
 
 
 class StrictModel(BaseModel):
