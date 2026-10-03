@@ -3,17 +3,24 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Critical paths only (fleet-machine-hub#248): container/compose, schema, API/config core
+    # and the dependency manifests the image installs.
     paths:
-      - backend/**
-      - web/**
-      - Dockerfile
+      - '**/Dockerfile*'
+      - .dockerignore
       - compose.yaml
       - docker-compose.yml
-      - pyproject.toml
       - ops/postgres-test-init.sql
-      - ops/postgres_smoke.py
-      - tests/runtime/test_postgres_runtime.py
-      - .github/workflows/runtime-validation.yml
+      - backend/bdt/storage.py
+      - backend/bdt/api.py
+      - backend/bdt/features.py
+      - pyproject.toml
+      - requirements/**
+      - .python-version
+      - web/package.json
+      - web/package-lock.json
+      - web/.npmrc
+      - .nvmrc
 permissions:
   contents: read
 concurrency:
