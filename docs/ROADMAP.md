@@ -80,7 +80,7 @@ exercitados. Não incentivar acusação ou transformar fotografia em laudo.
 Prioridade U05 e P01–P05: domínio/HTTPS, banco/objetos duráveis, implantação real,
 monitoramento/atualização, backup/restore/rollback, carga e segurança de dependências.
 A matriz adicional inclui assistive technology, Safari/iOS, Android físicos e
-WebGL limitado. Python 3.14.7 e Node 24.20.0 permanecem requisitos exatos.
+WebGL limitado. Python 3.14.8 e Node 24.20.0 permanecem requisitos exatos.
 
 Aceite: URL pública, revisão comprovada, dataset instalado e manifesto exposto,
 rotas privadas protegidas, restauração de dados e rollback demonstrados no ambiente

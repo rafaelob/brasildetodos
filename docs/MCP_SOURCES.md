@@ -25,7 +25,7 @@ Antes de tratar a instalação como sucesso, confira a chave `mcp-sources` em
 ainda não existe neste clone: o nome pretendido continua `mcp-sources`. Não
 invente outro extra e não coloque o pacote `mcp` no núcleo.
 
-Python **3.14.7**, o mesmo do README. `import bdt.cli` e `bdt.api` devem
+Python **3.14.8**, o mesmo do README. `import bdt.cli` e `bdt.api` devem
 funcionar **sem** o pacote `mcp`. A API web não importa o servidor MCP e não
 ingere dados em requisição HTTP. Docker Compose e `127.0.0.1:8008` são
 instância local, não produção, e não expõem MCP ao cidadão.

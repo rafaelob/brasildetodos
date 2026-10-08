@@ -17,16 +17,16 @@ def test_repository_configuration_is_consistent():
 
 
 @pytest.mark.parametrize('runtime,python,node', [
-    ('python', '3.14.7', None), ('node', None, 'v24.20.0'),
-    ('all', '3.14.7', '24.20.0'), ('config', '3.13.5', '22.16.0')])
+    ('python', '3.14.8', None), ('node', None, 'v24.20.0'),
+    ('all', '3.14.8', '24.20.0'), ('config', '3.13.5', '22.16.0')])
 def test_expected_runtime(runtime, python, node):
     assert module.runtime_errors(runtime, python, node) == []
 
 
 @pytest.mark.parametrize('python,node', [
     ('3.14.6', '24.20.0'), ('3.15.0', '24.20.0'),
-    ('3.14.7', '24.20.1'), ('3.13.5', '22.16.0'),
-    ('3.14.7rc1', '24.20.0')])
+    ('3.14.8', '24.20.1'), ('3.13.5', '22.16.0'),
+    ('3.14.7', '24.20.0'), ('3.14.8rc1', '24.20.0')])
 def test_wrong_runtime_fails_instead_of_falling_back(python, node):
     assert module.runtime_errors('all', python, node)
 
@@ -43,13 +43,13 @@ def config_root(tmp_path):
 
 
 @pytest.mark.parametrize('filename,old,new', [
-    ('.python-version', '3.14.7', '3.13'),
+    ('.python-version', '3.14.8', '3.13'),
     ('.nvmrc', '24.20.0', '24'),
     ('.node-version', '24.20.0', '22'),
-    ('pyproject.toml', '==3.14.7', '>=3.13'),
+    ('pyproject.toml', '==3.14.8', '>=3.13'),
     ('web/package.json', '24.20.0', '>=22.12'),
     ('web/.npmrc', 'engine-strict=true', 'engine-strict=false'),
-    ('Dockerfile', 'python:3.14.7', 'python:3.13'),
+    ('Dockerfile', 'python:3.14.8', 'python:3.13'),
     ('.github/workflows/ci.yml', "python-version-file: '.python-version'", "python-version: '3.13'"),
     ('.github/workflows/ci.yml', "node-version-file: '.nvmrc'", "node-version: '24'"),
 ])

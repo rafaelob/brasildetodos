@@ -8,7 +8,7 @@ hash de confiança. A release não tem imutabilidade administrativa habilitada;
 a proteção do cliente é a seleção versionada de bytes, não uma promessa de
 que um administrador nunca possa substituir um asset.
 
-Com Python 3.14.7 e as dependências travadas instaladas, baixe `public-data.zip`
+Com Python 3.14.8 e as dependências travadas instaladas, baixe `public-data.zip`
 da release e execute, a partir da raiz do repositório:
 
 ```sh
@@ -35,6 +35,6 @@ os bytes e a extração nativa, sem rede nem nova execução de OCR. São docume
 sintéticos identificados; não são convênios oficiais nem entram no pacote público.
 
 O workflow `Published data and OCR acceptance` baixa os bytes efetivamente
-publicados, confere a seleção versionada e testa a API em Python 3.14.7. Ele tem
+publicados, confere a seleção versionada e testa a API em Python 3.14.8. Ele tem
 somente permissão de leitura: não cria release, não altera o main e não faz deploy.
 O workflow Quality também verifica o corpus versionado em toda execução.

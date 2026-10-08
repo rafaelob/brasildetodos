@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Dependências reproduzíveis
 
-Alvos: Python 3.14.7 e Node.js 24.20.0. Não substituir por latest ou por uma
+Alvos: Python 3.14.8 e Node.js 24.20.0. Não substituir por latest ou por uma
 versão local disponível. Ver `TOOLCHAIN.md`.
 
 ## Web
@@ -14,7 +14,7 @@ futura. Uma atualização concorrente do manifesto impede publicar um lock obsol
 ## Backend Linux
 
 O workflow `python-lock.yml` resolve runtime, testes, PostgreSQL e build com
-pip-tools 7.6.1 no CPython 3.14.7/Linux. Cada distribuição tem hashes SHA-256.
+pip-tools 7.6.1 no CPython 3.14.8/Linux. Cada distribuição tem hashes SHA-256.
 Uma venv nova instala com `--require-hashes` e somente wheels; o projeto local
 é instalado sem nova resolução nem build isolado que busque outras versões.
 A suíte de backend e o piso de cobertura são obrigatórios antes da publicação.

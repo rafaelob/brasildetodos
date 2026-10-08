@@ -45,13 +45,13 @@ def locked_versions(text: str) -> dict[str, str]:
 
 
 def record(root: Path = ROOT, check_environment: bool = True) -> dict:
-    if check_environment and (platform.python_version() != '3.14.7' or platform.system() != 'Linux'):
-        raise ValueError('lock_requires_linux_python_3_14_7')
+    if check_environment and (platform.python_version() != '3.14.8' or platform.system() != 'Linux'):
+        raise ValueError('lock_requires_linux_python_3_14_8')
     packages = locked_versions((root / LOCK).read_text(encoding='utf-8'))
     for name, expected in packages.items():
         if version(name) != expected:
             raise ValueError(f'installed_version_mismatch:{name}')
-    result = {'schema': 'bdt.python-lock.v1', 'python': '3.14.7', 'system': 'Linux',
+    result = {'schema': 'bdt.python-lock.v1', 'python': '3.14.8', 'system': 'Linux',
               'architecture': platform.machine(), 'pyproject_sha256': fingerprint(root / 'pyproject.toml'),
               'lock_sha256': fingerprint(root / LOCK), 'packages': len(packages),
               'scope': 'runtime_test_postgres_and_build_dependencies',
@@ -63,7 +63,7 @@ def record(root: Path = ROOT, check_environment: bool = True) -> dict:
 
 def verify(root: Path = ROOT) -> dict:
     manifest = json.loads((root / MANIFEST).read_text(encoding='utf-8'))
-    if (manifest.get('schema') != 'bdt.python-lock.v1' or manifest.get('python') != '3.14.7'
+    if (manifest.get('schema') != 'bdt.python-lock.v1' or manifest.get('python') != '3.14.8'
             or manifest.get('system') != 'Linux'
             or manifest.get('pyproject_sha256') != fingerprint(root / 'pyproject.toml')
             or manifest.get('lock_sha256') != fingerprint(root / LOCK)):

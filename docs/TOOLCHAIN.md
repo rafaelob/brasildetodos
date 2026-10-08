@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Toolchain do Brasil de Todos
 
-Versões escolhidas pelo proprietário em 2026-09-06:
-**Python 3.14.7** e **Node.js 24.20.0**. A publicação oficial das duas versões
-foi consultada. Não usar a série genérica 3.14/24 como comprovação de patch.
+Versões escolhidas pelo proprietário: **Node.js 24.20.0** em 2026-09-06 e
+**Python 3.14.8** em 2026-10-08 (release de segurança de 2026-09-30, no lugar da
+3.14.7). A publicação oficial das duas versões foi consultada. Não usar a série genérica 3.14/24 como comprovação de patch.
 
 ## Única configuração coerente
 
@@ -39,7 +39,7 @@ vulnerabilidades impede a publicação; não adicionar exceções silenciosas.
 
 `python ops/check_toolchain.py --runtime config` apenas verifica arquivos. Serve
 para avaliar a alteração em um ambiente que ainda não tenha os runtimes, mas não
-substitui execução dos testes em Python 3.14.7. Os modos python/node/all também
+substitui execução dos testes em Python 3.14.8. Os modos python/node/all também
 conferem o executável. Sem a versão solicitada, retornam falha explícita.
 
 CI mantém o piso de cobertura e as jornadas de navegador. Ensaios de OCR e
@@ -57,7 +57,7 @@ de dependências; esses controles continuam rastreados no TODO.
 
 ## Referências
 
-- https://www.python.org/downloads/release/python-3147/
+- https://www.python.org/downloads/release/python-3148/
 - https://nodejs.org/en/download/archive/v24.20.0
 - https://github.com/actions/setup-python
 - https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md

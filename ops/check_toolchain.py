@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tomllib
 
-PYTHON = '3.14.7'
+PYTHON = '3.14.8'
 NODE = '24.20.0'
 ROOT = Path(__file__).resolve().parents[1]
 

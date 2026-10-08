@@ -59,7 +59,7 @@ def test_manifest_count_mismatch(root):
 
 def test_wrong_runtime_cannot_record(root, monkeypatch):
     monkeypatch.setattr(module.platform, 'python_version', lambda: '3.13.5')
-    with pytest.raises(ValueError, match='3_14_7'):
+    with pytest.raises(ValueError, match='3_14_8'):
         module.record(root)
 
 

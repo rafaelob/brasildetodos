@@ -3,7 +3,7 @@
 ## Architecture
 Brasil de Todos is a full-stack civic transparency and public service platform designed for high performance, accessibility, and cryptographic provenance without mandatory runtime LLMs, vector databases, or paid mapping keys.
 
-- **Backend**: Python 3.14.7, FastAPI 0.128.2, SQLAlchemy 2.0.50, Pydantic v2 (2.13.4). Dual SQLite (WAL mode, foreign keys) and PostgreSQL support.
+- **Backend**: Python 3.14.8, FastAPI 0.128.2, SQLAlchemy 2.0.50, Pydantic v2 (2.13.4). Dual SQLite (WAL mode, foreign keys) and PostgreSQL support.
 - **Frontend**: React 19.2.0, TypeScript 5.9.3, Vite 8.2.2, MapLibre GL 6.7.0 (OpenFreeMap liberty tiles).
 - **Security & Provenance**: Strict Pydantic models (`StrictModel`), SHA-256 cryptographic hashes on all ingested records, Scrypt password hashing, session tokens hashed with SHA-256 at rest, `X-BDT-Client: web` CSRF protection, `SameSite=Strict` cookies, anti-self-review moderation gates.
 - **Operations**: Docker Compose containerized deployment exposing service on `http://127.0.0.1:8008`.

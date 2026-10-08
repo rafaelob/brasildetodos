@@ -16,10 +16,10 @@ def installer(monkeypatch):
 
 @pytest.fixture
 def target(installer, tmp_path, monkeypatch):
-    manifest = {'python': '3.14.7', 'system': 'Linux', 'architecture': 'x86_64',
+    manifest = {'python': '3.14.8', 'system': 'Linux', 'architecture': 'x86_64',
                 'lock_sha256': 'a' * 64}
     monkeypatch.setattr(installer, 'verify', lambda _: manifest)
-    monkeypatch.setattr(installer.platform, 'python_version', lambda: '3.14.7')
+    monkeypatch.setattr(installer.platform, 'python_version', lambda: '3.14.8')
     monkeypatch.setattr(installer.platform, 'system', lambda: 'Linux')
     monkeypatch.setattr(installer.platform, 'machine', lambda: 'x86_64')
     p = tmp_path / installer.LOCK

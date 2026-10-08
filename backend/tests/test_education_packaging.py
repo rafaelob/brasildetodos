@@ -11,12 +11,12 @@ def test_repository_lock_matches_current_project_metadata():
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     manifest = module.verify(ROOT)
-    assert manifest['python'] == '3.14.7'
+    assert manifest['python'] == '3.14.8'
     assert manifest['hash_checked_installation_required'] is True
 
 
 def test_reviewed_certificate_is_declared_as_package_data():
     project = tomllib.loads((ROOT / 'pyproject.toml').read_text())
     assert 'certificates/*.pem' in project['tool']['setuptools']['package-data']['bdt']
-    assert project['project']['requires-python'] == '==3.14.7'
+    assert project['project']['requires-python'] == '==3.14.8'
     assert (ROOT / 'backend/bdt/certificates/rnp-icpedu-gr46-2025.pem').is_file()

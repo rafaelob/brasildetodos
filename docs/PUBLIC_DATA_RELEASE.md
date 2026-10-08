@@ -24,7 +24,7 @@ O município do órgão comprador não é atribuído como local da entrega.
 ## Verificação antes de usar
 
 Baixe `public-data.zip`, `public-data.sha256` e `verification.json` da mesma release.
-Com o código deste repositório, Python 3.14.7 e dependências instaladas:
+Com o código deste repositório, Python 3.14.8 e dependências instaladas:
 
 ```sh
 sha256sum --check public-data.sha256

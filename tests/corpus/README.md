@@ -24,7 +24,7 @@ do verificador segue a licença do software; isso não relicencia fontes externa
 
 ## Verificação e recuperação
 
-Com Python 3.14.7 e dependências do projeto instaladas:
+Com Python 3.14.8 e dependências do projeto instaladas:
 
 ```sh
 python ops/archive_ocr_evidence.py verify tests/corpus/ocr-reviewed

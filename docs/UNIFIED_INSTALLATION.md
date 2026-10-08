@@ -7,7 +7,7 @@ modifica os pacotes originais ou um banco existente. Funciona sem LLM.
 
 ## Instalar
 
-Use Python 3.14.7 com `python ops/install_locked.py --editable` e Node 24.20.0
+Use Python 3.14.8 com `python ops/install_locked.py --editable` e Node 24.20.0
 com `npm ci` e `npm run build` na pasta web. Baixe de Releases os dois arquivos:
 `public-data-20260906-v1/public-data.zip` e
 `education-2025-20260907-v1/education-catalog.zip`.

@@ -93,7 +93,7 @@ jobs:
               'read_only_container':True,'public_deployment':False},indent=2))
           PY
           test "$(docker exec bdt-runtime id -u)" = "10001"
-          docker exec bdt-runtime python -c "import sys; assert sys.version_info[:3] == (3,14,7); print(sys.version)"
+          docker exec bdt-runtime python -c "import sys; assert sys.version_info[:3] == (3,14,8); print(sys.version)"
       - name: Record container result and stop it
         if: always()
         run: |

@@ -29,7 +29,7 @@ A verdade ao vivo desta instalação é `GET /api/coverage` (`national_catalog_c
 
 ## Iniciar localmente
 
-Requer **Python 3.14.7** e **Node.js 24.20.0**, fixados em `.python-version`,
+Requer **Python 3.14.8** e **Node.js 24.20.0**, fixados em `.python-version`,
 `.nvmrc` e `.node-version`. CI, containers e desenvolvimento usam esses mesmos
 runtimes; não há fallback silencioso para outra versão.
 

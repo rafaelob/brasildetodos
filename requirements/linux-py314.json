@@ -1,14 +1,13 @@
 {
   "schema": "bdt.python-lock.v1",
-  "python": "3.14.7",
+  "python": "3.14.8",
   "system": "Linux",
   "architecture": "x86_64",
-  "pyproject_sha256": "32975f95a2caea78363bdee8ba97a465e26db6c5c7a3e8870a67dd17900db7e1",
+  "pyproject_sha256": "22037b2982354b4f9e467e84bf513b7e691222f1027cc3f35b0e1e7b6f4e7352",
   "lock_sha256": "7a2b0871796b3b71bda0483afae8be8c32ff650afe315095e8417d11a144609a",
   "packages": 37,
   "scope": "runtime_test_postgres_and_build_dependencies",
-  "installed_versions_verified": false,
+  "installed_versions_verified": true,
   "hash_checked_installation_required": true,
-  "not_a_vulnerability_audit": true,
-  "dependency_change": "Pillow 12.3.0 promoted from existing locked dependency; exact-runtime installation must be rerun."
+  "not_a_vulnerability_audit": true
 }

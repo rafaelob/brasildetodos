@@ -28,7 +28,7 @@ Hash SHA-256 do arquivo `education-catalog.zip`:
 Tamanho: 23.807.757 bytes. O arquivo é idêntico ao artefato selecionado; a release
 não altera nem substitui `public-data-20260906-v1`.
 
-Com Python 3.14.7 e as dependências travadas instaladas:
+Com Python 3.14.8 e as dependências travadas instaladas:
 
 ```sh
 python ops/education_release.py education-catalog.zip --selection data/releases/education-2025-20260907-v1.json
