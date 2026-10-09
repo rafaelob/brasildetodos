@@ -10,7 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import re
-from decimal import Decimal
+from datetime import date
 from typing import Iterable, Iterator
 
 from .domain import MoneyEvent, Source, digest, fold, now
@@ -44,49 +44,54 @@ def public_finance_payload(raw: MoneyEvent | dict) -> dict:
 
 
 def parse_date_to_iso(text: str | None, fallback_year: str | None = None) -> str:
-    """Strict date conversion to YYYY-MM-DD or YYYY-MM."""
-    if text:
-        raw = text.strip()
-        # Format DD/MM/YYYY
-        match_br = re.fullmatch(r'(\d{2})/(\d{2})/(\d{4})', raw)
+    """Validate calendar dates; use the year fallback only when a date is absent."""
+    if text is not None and not isinstance(text, str):
+        raise ValueError('invalid_date_format')
+    raw = (text or '').strip()
+    if not raw and isinstance(fallback_year, str):
+        raw = fallback_year.strip()
+    try:
+        match_br = re.fullmatch(r'([0-9]{2})/([0-9]{2})/([0-9]{4})', raw)
         if match_br:
-            d, m, y = match_br.groups()
-            return f'{y}-{m}-{d}'
-        # Format YYYY-MM-DD
-        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', raw):
+            day, month, year = map(int, match_br.groups())
+            return date(year, month, day).isoformat()
+        if re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', raw):
+            return date.fromisoformat(raw).isoformat()
+        if re.fullmatch(r'[0-9]{4}-[0-9]{2}', raw):
+            date.fromisoformat(raw + '-01')
             return raw
-        # Format YYYY-MM
-        if re.fullmatch(r'\d{4}-\d{2}', raw):
-            return raw
-        # Format YYYY
-        if re.fullmatch(r'\d{4}', raw):
-            return f'{raw}-01-01'
-    if fallback_year and re.fullmatch(r'\d{4}', fallback_year.strip()):
-        return f'{fallback_year.strip()}-01-01'
-    raise ValueError(f'invalid_date_format:{text}')
+        if re.fullmatch(r'[0-9]{4}', raw):
+            return date(int(raw), 1, 1).isoformat()
+    except ValueError:
+        pass
+    raise ValueError('invalid_date_format')
 
 
-def parse_brl_cents(value: str | int | float | None) -> int:
-    """Parse Brazilian currency string into integer cents. Supports negative amounts."""
+def parse_brl_cents(value: str | int | None) -> int:
+    """Convert exact source text to cents without Decimal context or binary floats."""
     if value is None:
         return 0
+    if type(value) not in (str, int):
+        raise ValueError('ambiguous_brl_amount')
     raw = str(value).replace('\u00a0', ' ').strip()
-    if not raw or raw == '0' or raw == '0,00' or raw == '0.00':
+    if not raw:
         return 0
     raw = re.sub(r'^R\$\s*', '', raw).strip()
-    # Match standard Brazilian format: -?123.456,78 or -?123456,78
-    if re.fullmatch(r'-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}', raw):
-        cleaned = raw.replace('.', '').replace(',', '.')
-        return int(Decimal(cleaned) * 100)
-    # Match plain integer or decimal without thousand separator: -?123456 or -?123456.78
-    if re.fullmatch(r'-?\d+(?:\.\d{1,2})?', raw):
-        return int(Decimal(raw) * 100)
-    raise ValueError(f'ambiguous_brl_amount:{value}')
+    if re.fullmatch(r'-?(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]+),[0-9]{2}', raw):
+        raw = raw.replace('.', '').replace(',', '.')
+    elif not re.fullmatch(r'-?[0-9]+(?:\.[0-9]{1,2})?', raw):
+        raise ValueError('ambiguous_brl_amount')
+    negative = raw.startswith('-')
+    whole, _, fraction = raw.lstrip('-').partition('.')
+    cents = int(whole) * 100 + int(fraction.ljust(2, '0'))
+    return -cents if negative else cents
 
 
 def load_municipality_crosswalk(rows: Iterable[dict[str, str]], lookup: dict[str, tuple[str, str]] | None = None) -> dict[str, tuple[str, str]]:
     """Load mapping from NR_CONVENIO to (municipality_id, recipient_name)."""
     crosswalk: dict[str, tuple[str, str]] = {}
+    # Compare full source names before projecting the bounded display label.
+    identities: dict[str, tuple[str, str]] = {}
     for row in rows:
         if not REQUIRED_CROSSWALK.issubset(row):
             raise ValueError('missing_crosswalk_required_columns')
@@ -102,6 +107,10 @@ def load_municipality_crosswalk(rows: Iterable[dict[str, str]], lookup: dict[str
             continue
         if lookup and code not in lookup:
             continue
+        identity = (code, recipient)
+        if nr in identities and identities[nr] != identity:
+            raise ValueError('conflicting_municipality_crosswalk')
+        identities[nr] = identity
         clean_recipient = recipient[:200] if recipient else 'Município'
         crosswalk[nr] = (code, clean_recipient)
     return crosswalk
