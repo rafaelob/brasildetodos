@@ -13,7 +13,7 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import Query
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, case, func, select
 
 from .catalog_release import consistent_read
 from .domain import now
@@ -86,12 +86,12 @@ def _reference(value):
         return None
 
 
-def public_run(row) -> dict:
+def public_run(row, *, cutoff: str | None = None) -> dict:
     """Project recorded attempt counters, never infer publication from a failed tx."""
     source = next((key for key, (_, aliases) in SOURCES.items() if row['dataset'] in aliases), 'other')
     status = next((key for key, aliases in STATUS_ALIASES.items() if row['status'] in aliases), 'unknown')
     started_at = _timestamp(row['started_at'])
-    if status == 'running' and (started_at is None or started_at < _run_cutoff()):
+    if status == 'running' and (started_at is None or started_at < (cutoff or _run_cutoff())):
         status = 'interrupted'
     raw = row['counts'] if isinstance(row['counts'], dict) else {}
     counts = {key: _count(raw.get(key)) for key in ('read', 'source_read', 'excluded', 'quarantined', 'unchanged', 'without_geometry')}
@@ -132,37 +132,43 @@ def _run_columns():
             Ingestion.counts, Ingestion.source['reference_date'].as_string().label('reference_date'))
 
 
-def read_imports(connection, source: str = 'all', status: str = 'all', page: int = 1, limit: int = 10) -> dict:
+def read_imports(connection, source: str = 'all', status: str = 'all', page: int = 1, limit: int = 10,
+                 *, cutoff: str | None = None) -> dict:
+    cutoff = cutoff or _run_cutoff()
     filters = []
     if source != 'all':
         filters.append(source_group(Ingestion.dataset) == source)
     if status != 'all':
         if status in ('running', 'interrupted'):
-            # The projection classifies an unparseable start as interrupted; the filter
-            # must not rely on raw string order to disagree with it.
-            cutoff = _run_cutoff()
+            # Offset-bearing timestamps must be compared as UTC instants, just
+            # like public_run. Correct only disagreements with the SQL predicate
+            # so ordinary UTC logs do not become an unbounded IN parameter list.
             filters.append(status_group(Ingestion.status) == 'running')
-            legacy = [started for started in connection.scalars(select(Ingestion.started_at))
-                      if _timestamp(started) is None]
-            if status == 'running':
-                filters.append(Ingestion.started_at >= cutoff)
-                if legacy:
-                    filters.append(Ingestion.started_at.not_in(legacy))
-            else:
-                filters.append(or_(Ingestion.started_at < cutoff,
-                                   Ingestion.started_at.in_(legacy)) if legacy
-                               else Ingestion.started_at < cutoff)
+            raw_running = Ingestion.started_at >= cutoff
+            corrections = {True: [], False: []}
+            starts = connection.execute(select(Ingestion.started_at, raw_running)
+                                        .where(*filters).distinct())
+            for started, raw_matches in starts:
+                normalized = _timestamp(started)
+                running = normalized is not None and normalized >= cutoff
+                if running != raw_matches:
+                    corrections[running].append(started)
+            cases = [(Ingestion.started_at.in_(values), running)
+                     for running, values in corrections.items() if values]
+            running_filter = case(*cases, else_=raw_running) if cases else raw_running
+            filters.append(running_filter if status == 'running' else ~running_filter)
         else:
             filters.append(status_group(Ingestion.status) == status)
     total = connection.scalar(select(func.count()).select_from(Ingestion).where(*filters))
     records = connection.execute(select(*_run_columns()).where(*filters)
         .order_by(Ingestion.started_at.desc(), Ingestion.id.desc()).offset((page - 1) * limit).limit(limit)).mappings()
-    return {'items': [public_run(row) for row in records], 'total': total, 'page': page, 'limit': limit,
+    return {'items': [public_run(row, cutoff=cutoff) for row in records], 'total': total, 'page': page, 'limit': limit,
             'has_more': page * limit < total, 'source': source, 'status': status,
             'scope': 'recorded_import_attempts_in_this_installation', 'national_catalog_certified': False}
 
 
 def build_coverage(connection) -> dict:
+    cutoff = _run_cutoff()
     family = source_group(Place.dataset)
     state = case((Place.state.in_(STATES), Place.state), else_='unknown')
     located = and_(Place.latitude.is_not(None), Place.longitude.is_not(None))
@@ -182,12 +188,12 @@ def build_coverage(connection) -> dict:
     ranked = select(*_run_columns(), func.row_number().over(partition_by=source_group(Ingestion.dataset),
         order_by=(Ingestion.started_at.desc(), Ingestion.id.desc())).label('rank')).subquery()
     for row in connection.execute(select(ranked).where(ranked.c.rank == 1)).mappings():
-        projected = public_run(row)
+        projected = public_run(row, cutoff=cutoff)
         sources[projected['source_id']]['last_attempt'] = projected
     municipalities = connection.scalar(select(func.count()).select_from(Municipality))
     municipalities_with_places = connection.scalar(select(func.count(func.distinct(Place.municipality_id)))
         .where(Place.catalogue_eligible.is_(True)))
-    source_read = read_imports(connection, limit=5)
+    source_read = read_imports(connection, limit=5, cutoff=cutoff)
     loaded = sum(row['records'] for row in partitions)
     geocoded = sum(row['geocoded'] for row in partitions)
     for key, value in sources.items():
