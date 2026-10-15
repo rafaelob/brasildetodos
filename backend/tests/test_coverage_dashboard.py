@@ -197,6 +197,70 @@ def test_non_canonical_start_agrees_between_projection_and_filter(database, clie
     assert client.get('/api/imports', params={'status': 'running'}).json()['total'] == 0
 
 
+@pytest.mark.parametrize('started_at,expected', [
+    ('2026-10-14T22:00:00-03:00', 'running'),
+    ('2026-10-15T01:00:00+03:00', 'interrupted'),
+    ('2026-10-14T21:00:00-03:00', 'running'),
+    ('2026-10-15T00:00:00Z', 'running'),
+    ('2026-10-14T23:59:59.999999Z', 'interrupted'),
+])
+def test_running_filter_uses_instant_not_local_clock(database, client, monkeypatch, started_at, expected):
+    monkeypatch.setattr('bdt.coverage_dashboard._run_cutoff', lambda: '2026-10-15T00:00:00+00:00')
+    identity = save_run(database, status='running', started_at=started_at, finished_at=None)
+    projected = client.get('/api/imports').json()['items'][0]
+    assert projected['status'] == expected
+    for status in ('running', 'interrupted'):
+        result = client.get('/api/imports', params={'status': status}).json()
+        assert result['total'] == (1 if status == expected else 0)
+        assert [row['id'] for row in result['items']] == ([identity] if status == expected else [])
+        assert all(row['status'] == status for row in result['items'])
+
+
+def test_running_filter_and_projection_share_one_cutoff(database, client, monkeypatch):
+    # A request at the six-hour boundary must not select a running record and
+    # return that same record as interrupted after the clock advances.
+    cutoffs = iter(('2026-10-15T00:00:00+00:00', '2026-10-15T00:00:00.000001+00:00'))
+    monkeypatch.setattr('bdt.coverage_dashboard._run_cutoff', lambda: next(cutoffs))
+    identity = save_run(database, status='running', started_at='2026-10-15T00:00:00+00:00', finished_at=None)
+    result = client.get('/api/imports', params={'status': 'running'}).json()
+    assert result['total'] == 1 and result['items'][0]['id'] == identity
+    assert result['items'][0]['status'] == 'running'
+
+
+def test_timezone_corrections_preserve_source_filter_pagination_and_totals(database, client, monkeypatch):
+    monkeypatch.setattr('bdt.coverage_dashboard._run_cutoff', lambda: '2026-10-15T00:00:00.000001+00:00')
+    expected = set()
+    for started in ('2026-10-14T22:00:00-03:00', '2026-10-15T02:00:00+00:00',
+                    '2026-10-15T03:00:00Z'):
+        expected.add(save_run(database, status='running', started_at=started, finished_at=None))
+    for started in ('2026-10-15T01:00:00+03:00', '2026-10-15T00:00:00Z',
+                    'unparseable-legacy-date'):
+        save_run(database, status='running', started_at=started, finished_at=None)
+    save_run(database, dataset='pncp', status='running', started_at='2026-10-14T22:00:00-03:00', finished_at=None)
+    save_run(database, status='success', started_at='2026-10-14T22:00:00-03:00')
+    pages = [client.get('/api/imports', params={'source': 'cnes', 'status': 'running',
+                                             'limit': 2, 'page': page}).json() for page in (1, 2)]
+    assert all(page['total'] == 3 for page in pages)
+    assert pages[0]['has_more'] is True and pages[1]['has_more'] is False
+    items = [row for page in pages for row in page['items']]
+    assert {row['id'] for row in items} == expected and len(items) == 3
+    assert all(row['status'] == 'running' and row['source_id'] == 'cnes' for row in items)
+    interrupted = client.get('/api/imports', params={'source': 'cnes', 'status': 'interrupted'}).json()
+    assert interrupted['total'] == 3 and all(row['status'] == 'interrupted' for row in interrupted['items'])
+
+
+def test_coverage_uses_one_cutoff_for_last_attempt_and_history(database, client, monkeypatch):
+    cutoffs = iter(('2026-10-15T00:00:00+00:00',))
+    monkeypatch.setattr('bdt.coverage_dashboard._run_cutoff', lambda: next(cutoffs))
+    identity = save_run(database, status='running', started_at='2026-10-15T00:00:00+00:00', finished_at=None)
+    coverage = client.get('/api/coverage').json()
+    latest = next(row for row in coverage['sources'] if row['id'] == 'cnes')['last_attempt']
+    history = coverage['runs'][0]
+    assert latest['id'] == history['id'] == identity
+    assert latest['status'] == history['status'] == 'running'
+    assert coverage['national_catalog_certified'] is False
+
+
 def test_partial_quality_is_visible_and_not_national_completion(database, client):
     save_run(database, status='partial_quality', counts={'source_read': 100, 'read': 20,
         'inserted': 18, 'unchanged': 2, 'quarantined': 1, 'without_geometry': 3})
