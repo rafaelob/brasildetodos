@@ -1,28 +1,95 @@
-# Contribuir
+# Contribuir com o Brasil de Todos
 
-Contribuições de código entram sob AGPL-3.0-or-later; documentação original sob CC-BY-4.0. Use commits com sign-off (`git commit -s`) para declarar o Developer Certificate of Origin: https://developercertificate.org/ . O sign-off declara o direito de submeter a contribuição, não transfere direitos autorais e não é assinatura criptográfica.
+Obrigado por querer ajudar. O projeto separa **fato oficial**, **observação
+cidadã**, **candidato extraído** e **vínculo revisado**. Uma contribuição é
+bem-vinda quando preserva essa separação e deixa claro o que foi verificado.
 
-Descreva problema, fonte, comportamento esperado e como testar. Conectores novos exigem fonte oficial, condições de uso, amostra minimizada, perfil de campos, critérios de cobertura e falha. Dados pessoais e documentos originais não devem ser anexados a issues públicas. Não inclua senhas, tokens, rostos ou imagens de crianças/pacientes.
+## Antes de abrir uma issue
 
-Execute os testes e o build. A aplicação deve continuar funcionando sem LLM. Precisão de dados vale mais que quantidade de conectores. Não relaxe validações para fazer um arquivo passar: documente a diferença e adicione um perfil testado.
+1. Procure issues abertas e a documentação em `docs/`.
+2. Para uma falha, descreva reprodução, comportamento esperado, comportamento
+   atual, ambiente (SQLite/PostgreSQL, Docker/local) e logs **sem dados
+   pessoais ou segredos**.
+3. Para uma fonte de dados, informe URL oficial, licença/condições de uso,
+   data de referência, campos, cobertura, periodicidade e uma amostra mínima.
+4. Para segurança, **não** abra issue pública com detalhes de exploração. Use
+   [SECURITY.md](SECURITY.md).
 
-Seja respeitoso. Divergência técnica e dados conflitantes são bem-vindos; perseguição, exposição pessoal e acusações sem verificação não são. Revisão de contribuição não certifica a situação física de uma instituição.
+## Formas de contribuir
 
-## Trabalho no main
+- corrigir documentação, exemplos e traduções pt-BR/en/es;
+- adicionar testes de comportamento, restauração, acessibilidade ou regressão;
+- revisar fontes oficiais, licenças e perfis de importação;
+- melhorar a interface sem esconder ausência de dados;
+- revisar código, segurança e desempenho;
+- reproduzir falhas em ambiente limpo e relatar o resultado.
 
-Por decisão explícita do proprietário em 05/09/2026, esta implementação trabalha exclusivamente em `main`. Não abrir nova branch ou PR para continuar a missão. Ler a referência mais recente, preservar trabalho concorrente, testar e publicar commits pequenos sem force push. Não sobrescrever versões remotas com ZIPs de sessões anteriores.
+Tarefas marcadas com `good first issue` são um bom começo. Tarefas de dados ou
+privacidade podem exigir revisão de um mantenedor antes do código.
 
-## Publicação pelo conector GitHub
+## Ambiente local
 
-Uma falha de DNS ou autenticação do Git no terminal não determina as permissões do conector. Verifique as ações e permissões efetivamente disponíveis.
+Requisitos fixados: Python **3.14.8** e Node.js **24.20.0**.
 
-Quando a escrita pela API Git Data estiver disponível:
+```bash
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install -e '.[test]'
+bdt init-db
+cd web
+npm ci
+npm run build
+cd ..
+python -m pytest
+```
 
-1. Leia `main`, sua árvore, `AGENTS.md` e os arquivos afetados.
-2. Use `create_tree` com a árvore-base atual e os arquivos novos ou modificados. Preserve os demais arquivos.
-3. Crie o commit com `create_commit`, tendo o main lido como pai.
-4. Publique em `main` com `update_ref` e `force=false`.
-5. Se houver concorrência, releia e integre as mudanças; não force a referência.
-6. Confirme novamente a referência, os arquivos publicados e os testes daquele SHA.
+Para PostgreSQL local:
 
-Commit criado sem atualização de referência não é publicação. Publicação não comprova CI, importação nacional ou deploy. Registre os resultados separadamente.
+```bash
+docker compose -f docker-compose.postgres.yml up --build -d
+curl http://127.0.0.1:8009/api/health
+```
+
+O stack local não é produção. Leia [Operação](docs/OPERATIONS.md) e
+[Migrações](docs/MIGRATIONS.md).
+
+## Testes e evidência
+
+- Rode `python -m pytest` e, em `web/`, `npm test` e `npm run build`.
+- Inclua um teste comportamental para a mudança; não apenas um teste de forma.
+- Não baixe validações, cobertura, autorização ou limites para fazer um teste
+  passar. Se um dado oficial não fecha, deixe a falha visível.
+- Relate o SHA testado e se algum teste não foi executado.
+
+## Dados, privacidade e conduta
+
+- Nunca anexe senhas, tokens, CPF, prontuários, fotos de crianças/pacientes ou
+  documentos originais em issue/PR pública.
+- Não invente coordenadas, vínculos, valores, datas ou cobertura.
+- Preserve fonte, ID do registro, data de referência, data de coleta e hash.
+- Não publique extração de PDF ou foto automaticamente; moderação é separada.
+- Seja respeitoso. Divergência técnica é bem-vinda; perseguição, exposição
+  pessoal e acusação sem verificação não são. Leia o
+  [Código de Conduta](CODE_OF_CONDUCT.md).
+
+## Fluxo de contribuição
+
+O mantenedor atual integra o trabalho em `main` por decisão do proprietário.
+Contribuições externas podem começar por uma issue focada e, se houver código,
+por um PR pequeno ou patch anexado. Não faça force-push em `main` e não
+sobrescreva trabalho concorrente. Agentes automatizados devem seguir
+`AGENTS.md` (somente `main`, sem branches/PRs).
+
+Use commits com sign-off (`git commit -s`) para declarar o
+[Developer Certificate of Origin](https://developercertificate.org/). O sign-off
+declara o direito de submeter a contribuição; não transfere direitos autorais.
+
+Um PR deve explicar problema, mudança, riscos, rollback, testes executados e
+impacto em dados/privacidade. Mudanças grandes devem ser divididas em fatias
+revisáveis.
+
+## Revisão
+
+A revisão verifica correção, testes, segurança, privacidade, acessibilidade e
+honestidade dos dados. A aprovação de uma contribuição não certifica a situação
+física de uma instituição nem transforma uma release histórica em catálogo vivo.

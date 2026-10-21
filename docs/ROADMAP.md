@@ -1,7 +1,21 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Roadmap reconciliado — Brasil de Todos
 
-Revisão funcional: `8324b762`. Estado de execução: Issues #2–#5 no GitHub.
+## Atualização de 21/10/2026
+
+O `main` agora tem Alembic `0001_baseline`, `bdt.migrate`, stack PostgreSQL
+local durável com migração/backup, worker documental em Python 3.14.8 com
+Poppler, documentos PNCP privados, originais documentais, sinais de privacidade
+e correções de alvo de migração/store. A suíte local está em **2.189 aprovados,
+17 ignorados** e a web em **243 aprovados** com build Vite 8.2.4.
+
+O que continua aberto não é uma única feature: dados nacionais reconciliados,
+corpus oficial de OCR, produção/PITR/offsite, acessibilidade assistiva,
+fotos compartilhadas em grupos, panoramas licenciados e locks Windows/macOS.
+O quadro de gates está em [Prontidão](READINESS.md); não há declaração de 100%
+nem de deploy público.
+
+Revisão funcional histórica: `8324b762`. Estado de execução: Issues #2–#5 no GitHub.
 Matriz por capacidade: `FEATURE_MATRIX.md`. Evidências: `STATUS.md`,
 `reports/20260906-verified-closeout.json` (fechamento 06/09) e
 `data/releases/education-2025-20260907-v1.json` (catálogo escolar posterior).

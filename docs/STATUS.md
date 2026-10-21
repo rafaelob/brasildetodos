@@ -1,6 +1,25 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Estado verificado — fechamento de grupos, OCR e distribuição
 
+## Snapshot de 21/10/2026
+
+- Código de referência: `04e6aff`; suíte local **2.189 aprovados, 17
+  ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
+- Alembic `0001_baseline` (41 tabelas), `bdt.migrate` e lock Linux de 51
+  pacotes.
+- Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com
+  migração one-shot, backup lógico, volume de dados/originais e health em
+  `:8009`.
+- Worker documental em Python 3.14.8 com Poppler/Tesseract; renderização real
+  de uma página sintética validada em container.
+- Correções recentes: `--database` vence `BDT_DATABASE_URL`; `prune --apply`
+  recusa banco sem referências; `store_file` não apaga o próprio target.
+- Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,
+  produção/PITR/offsite, acessibilidade assistiva, fotos em grupos, panoramas
+  licenciados e locks Windows/macOS. Veja [Prontidão](READINESS.md).
+
+O texto abaixo é o histórico do fechamento de 20/10/2026.
+
 Atualizado em 20/10/2026 (America/Sao_Paulo). Somente main; sem force push.
 Código verificado do fechamento de grupos/OCR/`public-data`:
 `8324b7620021e1c5bb3a32e7439026a3a0067af2`.

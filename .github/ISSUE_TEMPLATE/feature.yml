@@ -1,0 +1,49 @@
+name: Proposta
+description: Propor uma capacidade, melhoria ou mudança de produto
+title: "[proposta] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+      description: Quem é afetado e por quê?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: O menor resultado observável que resolve o problema.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Aceite observável
+      description: Como saberemos que funciona, sem depender de opinião?
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Dados, fonte e licença
+      description: Se envolver dados oficiais, informe fonte, referência e licença.
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacidade, segurança e acessibilidade
+      description: Riscos, dados pessoais, moderação, teclado/leitor de tela.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmações
+      options:
+        - label: Não estou pedindo dados inventados nem cobertura sem fonte.
+          required: true
+        - label: Não incluí dados pessoais ou segredos.
+          required: true

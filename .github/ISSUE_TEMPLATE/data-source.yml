@@ -1,0 +1,68 @@
+name: Fonte de dados oficial
+description: Propor ou revisar uma fonte, edição ou perfil de importação
+title: "[dados] "
+labels: ["data-source", "help wanted"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Nome da fonte
+      placeholder: IBGE, Inep, CNES, PNCP, Transferegov, Obrasgov...
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL oficial
+      description: HTTPS, documentação e endpoint de download.
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: Licença/condições de uso
+      description: Link para a licença ou termos; não presuma reutilização.
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Data/competência de referência
+    validations:
+      required: true
+  - type: textarea
+    id: fields
+    attributes:
+      label: Campos e perfil
+      description: Chave estável, campos obrigatórios, tipos, valores ausentes.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Amostra minimizada
+      description: Poucas linhas sintéticas ou sem PII; nunca anexe documento original.
+    validations:
+      required: true
+  - type: textarea
+    id: coverage
+    attributes:
+      label: Cobertura e limites
+      description: O que a fonte cobre, o que não cobre e como falhas aparecem.
+    validations:
+      required: true
+  - type: textarea
+    id: cadence
+    attributes:
+      label: Periodicidade e revisita
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmações
+      options:
+        - label: A fonte é oficial ou a licença permite o uso pretendido.
+          required: true
+        - label: A amostra não contém dados pessoais nem segredos.
+          required: true
+        - label: Não estou tratando a primeira página como cobertura nacional.
+          required: true

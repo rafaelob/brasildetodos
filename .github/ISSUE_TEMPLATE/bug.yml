@@ -1,0 +1,70 @@
+name: Bug
+description: Reportar comportamento incorreto ou regressão
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Não inclua dados pessoais, segredos, documentos originais ou exploits públicos.
+        Para vulnerabilidades, use Security → Report a vulnerability.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: O que aconteceu, em uma ou duas frases?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Comandos, URL e dados sintéticos mínimos.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Atual
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Ambiente
+      options:
+        - SQLite local
+        - PostgreSQL local (Compose)
+        - Container de teste
+        - Outro (descreva abaixo)
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: SHA/versão
+      description: Commit ou release observada.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes (sem PII/segredos)
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmações
+      options:
+        - label: Removi dados pessoais, segredos e documentos originais.
+          required: true
+        - label: Não estou divulgando uma vulnerabilidade em público.
+          required: true
