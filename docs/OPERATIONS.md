@@ -68,6 +68,23 @@ O comando não publica, não extrai texto e não cria vínculo. O download em
 novamente e responde como anexo com `no-store`. A pasta deve ficar fora de
 `BDT_STATIC_DIR`; hash não substitui backup.
 
+Órfãos do store podem ser listados sem remoção e, com decisão explícita do
+operador, removidos após a janela de retenção. Hashes referenciados pelo
+documento atual, por qualquer revisão PNCP ou por um original são preservados:
+
+```bash
+# dry-run: não apaga nada
+python -m bdt.private_store_admin prune \
+  --database sqlite:///data/bdt.db \
+  --folder data/document-originals \
+  --older-than-days 30
+
+# somente após revisar o relatório
+python -m bdt.private_store_admin prune ... --apply
+```
+
+O comando não substitui backup nem expurgo legal de documento referenciado.
+
 ## Recuperação
 
 Backup do banco e do armazenamento de originais são operações distintas. SQLite ativo requer backup consistente via sqlite backup API, não cópia isolada do arquivo ignorando WAL. PostgreSQL exige backup/restauração testados. Nunca tratar hash como cópia de segurança. Testar upgrade de schema em clone antes de produção.
