@@ -19,6 +19,7 @@ validação do pacote de extração na leitura de página e registro de
 publica automaticamente; o Workbench permite enfileirar, cancelar e repetir com
 i18n pt-BR/en/es.
 
+Código deste lote: `c585ef12d22009e316722ed6000a725210900455`.
 Evidência local em Python 3.14.8 e Node 24.20.0: suíte Python integral com
 **2.137 aprovados, 17 ignorados e zero falhas**; web com **243 aprovados**;
 build TypeScript/Vite aprovado; `npm audit --audit-level=high` com zero

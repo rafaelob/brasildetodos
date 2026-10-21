@@ -41,6 +41,9 @@ por merge local, sem force push e sem reescrever o histórico publicado.
 
 ## Evidência local
 
+Código testado: `c585ef12d22009e316722ed6000a725210900455`. Esta nota foi
+atualizada em commit documental posterior; nenhum código mudou depois da suíte.
+
 Python **3.14.8** (`.venv`), Node.js **24.20.0**.
 
 - Fatias corretivas focadas: **276 aprovados, 5 ignorados**.
