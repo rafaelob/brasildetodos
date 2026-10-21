@@ -41,6 +41,8 @@ def store_file(source: Path, folder: Path, sha256: str) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.parent.is_symlink():
         raise ValueError("private_store_cannot_be_a_symlink")
+    if source.resolve() == target.resolve():
+        return target
     if target.exists():
         if target.is_symlink() or not target.is_file() or file_hash(target) != sha256:
             raise ValueError("content_address_collision")

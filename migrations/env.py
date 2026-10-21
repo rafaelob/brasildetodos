@@ -42,7 +42,10 @@ target_metadata = Base.metadata
 
 
 def _database_url() -> str:
-    url = os.getenv("BDT_DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    # A programmatic --database/--sqlalchemy-url choice must win over an
+    # inherited environment variable; otherwise stamp/upgrade can target the
+    # wrong database while reporting success for the requested one.
+    url = config.get_main_option("sqlalchemy.url") or os.getenv("BDT_DATABASE_URL")
     if not url:
         raise RuntimeError("BDT_DATABASE_URL or sqlalchemy.url is required")
     return url

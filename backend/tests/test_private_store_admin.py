@@ -10,7 +10,7 @@ from sqlalchemy import select
 from bdt.document_originals import DocumentOriginal
 from bdt.domain import now
 from bdt.evidence import DocumentInput, initialize_extensions, register_document
-from bdt.private_store import content_path
+from bdt.private_store import content_path, store_file
 from bdt.private_store_admin import main, prune_orphans, verify_store
 from bdt.pncp_documents import PncpContractDocument, PncpDocumentRevision
 from bdt.storage import User
@@ -111,6 +111,25 @@ def test_verify_checks_current_revision_and_original_bytes(database, source, tmp
     current.write_bytes(b"corrupt")
     corrupt = verify_store(database, folder)
     assert corrupt["status"] == "failed" and corrupt["corrupt"] == 1
+
+
+def test_store_file_does_not_delete_its_own_target(tmp_path):
+    data = b"%PDF-1.4 already stored"
+    sha = hashlib.sha256(data).hexdigest()
+    folder = tmp_path / "private-store"
+    target = content_path(folder, sha)
+    target.parent.mkdir(parents=True)
+    target.write_bytes(data)
+    assert store_file(target, folder, sha) == target
+    assert target.read_bytes() == data
+
+
+def test_apply_refuses_an_empty_reference_database(database, tmp_path):
+    folder = tmp_path / "private-store"
+    _, orphan = put(folder, b"%PDF-1.4 orphan", 0)
+    with pytest.raises(ValueError, match="private_store_has_no_references_refusing_apply"):
+        prune_orphans(database, folder, apply=True)
+    assert orphan.exists()
 
 
 def test_missing_store_and_bad_retention_are_rejected(database, tmp_path):

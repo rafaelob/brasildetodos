@@ -86,6 +86,10 @@ def prune_orphans(database: Database, folder: Path, *, older_than_days: int = 30
     if not root.is_dir():
         raise ValueError("private_store_missing")
     references = referenced_hashes(database)
+    if apply and not references:
+        # An empty reference set usually means the wrong database was passed.
+        # Never let --apply erase the whole private store in that case.
+        raise ValueError("private_store_has_no_references_refusing_apply")
     cutoff = (time.time() if now is None else now) - older_than_days * 86400
     scanned = referenced = young = invalid = deleted = 0
     orphan_candidates = 0

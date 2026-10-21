@@ -32,6 +32,18 @@ def test_empty_database_upgrades_to_the_full_baseline(tmp_path):
     Database(url).initialize()
 
 
+def test_explicit_database_wins_over_inherited_environment(tmp_path, monkeypatch):
+    environment_url = _url(tmp_path, "environment.db")
+    requested_url = _url(tmp_path, "requested.db")
+    monkeypatch.setenv("BDT_DATABASE_URL", environment_url)
+
+    migrate.upgrade(requested_url)
+
+    assert (tmp_path / "requested.db").is_file()
+    assert "users" in _tables(tmp_path / "requested.db")
+    assert not (tmp_path / "environment.db").exists()
+
+
 def test_existing_bootstrap_is_stamped_and_upgrade_is_idempotent(tmp_path):
     url = _url(tmp_path)
     database = Database(url)
