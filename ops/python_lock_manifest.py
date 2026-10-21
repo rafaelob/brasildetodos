@@ -44,40 +44,55 @@ def locked_versions(text: str) -> dict[str, str]:
     return versions
 
 
-def record(root: Path = ROOT, check_environment: bool = True) -> dict:
-    if check_environment and (platform.python_version() != '3.14.8' or platform.system() != 'Linux'):
-        raise ValueError('lock_requires_linux_python_3_14_8')
-    packages = locked_versions((root / LOCK).read_text(encoding='utf-8'))
+def record(root: Path = ROOT, check_environment: bool = True, *, lock: Path = LOCK,
+           manifest: Path = MANIFEST, system: str = 'Linux',
+           architecture: str | None = None) -> dict:
+    if check_environment and (platform.python_version() != '3.14.8' or platform.system() != system):
+        raise ValueError(f'lock_requires_{system.lower()}_python_3_14_8')
+    packages = locked_versions((root / lock).read_text(encoding='utf-8'))
     for name, expected in packages.items():
         if version(name) != expected:
             raise ValueError(f'installed_version_mismatch:{name}')
-    result = {'schema': 'bdt.python-lock.v1', 'python': '3.14.8', 'system': 'Linux',
-              'architecture': platform.machine(), 'pyproject_sha256': fingerprint(root / 'pyproject.toml'),
-              'lock_sha256': fingerprint(root / LOCK), 'packages': len(packages),
+    result = {'schema': 'bdt.python-lock.v1', 'python': '3.14.8', 'system': system,
+              'architecture': architecture or platform.machine(),
+              'pyproject_sha256': fingerprint(root / 'pyproject.toml'),
+              'lock_sha256': fingerprint(root / lock), 'packages': len(packages),
               'scope': 'runtime_test_postgres_and_build_dependencies',
               'installed_versions_verified': True, 'hash_checked_installation_required': True,
               'not_a_vulnerability_audit': True}
-    (root / MANIFEST).write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+    (root / manifest).write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     return result
 
 
-def verify(root: Path = ROOT) -> dict:
-    manifest = json.loads((root / MANIFEST).read_text(encoding='utf-8'))
-    if (manifest.get('schema') != 'bdt.python-lock.v1' or manifest.get('python') != '3.14.8'
-            or manifest.get('system') != 'Linux'
-            or manifest.get('pyproject_sha256') != fingerprint(root / 'pyproject.toml')
-            or manifest.get('lock_sha256') != fingerprint(root / LOCK)):
+def verify(root: Path = ROOT, *, lock: Path = LOCK, manifest: Path = MANIFEST,
+           system: str = 'Linux') -> dict:
+    data = json.loads((root / manifest).read_text(encoding='utf-8'))
+    if (data.get('schema') != 'bdt.python-lock.v1' or data.get('python') != '3.14.8'
+            or data.get('system') != system
+            or data.get('pyproject_sha256') != fingerprint(root / 'pyproject.toml')
+            or data.get('lock_sha256') != fingerprint(root / lock)):
         raise ValueError('python_lock_manifest_mismatch')
-    if manifest.get('packages') != len(locked_versions((root / LOCK).read_text(encoding='utf-8'))):
+    if data.get('packages') != len(locked_versions((root / lock).read_text(encoding='utf-8'))):
         raise ValueError('python_lock_count_mismatch')
-    return manifest
+    return data
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('record', 'verify'))
+    parser.add_argument('--lock', type=Path)
+    parser.add_argument('--manifest', type=Path)
+    parser.add_argument('--system', default='Linux')
+    parser.add_argument('--architecture')
     args = parser.parse_args()
-    print(json.dumps(record() if args.command == 'record' else verify(), indent=2))
+    lock = args.lock or LOCK
+    manifest = args.manifest or MANIFEST
+    if args.command == 'record':
+        result = record(lock=lock, manifest=manifest, system=args.system,
+                        architecture=args.architecture)
+    else:
+        result = verify(lock=lock, manifest=manifest, system=args.system)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == '__main__':

@@ -41,6 +41,21 @@ def test_manifest_roundtrip(root):
     assert module.verify(root)['packages'] == 1
 
 
+def test_platform_manifest_roundtrip(tmp_path, monkeypatch):
+    (tmp_path / 'requirements').mkdir()
+    (tmp_path / 'pyproject.toml').write_text('synthetic manifest')
+    lock = Path('requirements/windows-py314.lock')
+    manifest = Path('requirements/windows-py314.json')
+    (tmp_path / lock).write_text(GOOD)
+    monkeypatch.setattr(module, 'version', lambda _: '1.2.3')
+    module.record(tmp_path, check_environment=False, lock=lock, manifest=manifest,
+                  system='Windows', architecture='AMD64')
+    result = module.verify(tmp_path, lock=lock, manifest=manifest, system='Windows')
+    assert result['system'] == 'Windows' and result['architecture'] == 'AMD64'
+    with pytest.raises(ValueError, match='manifest_mismatch'):
+        module.verify(tmp_path, lock=lock, manifest=manifest, system='Linux')
+
+
 @pytest.mark.parametrize('path', ['pyproject.toml', str(module.LOCK)])
 def test_changed_input_or_lock_rejected(root, path):
     p = root / path
