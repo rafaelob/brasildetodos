@@ -1,9 +1,11 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `7d849431`; execuções e hashes anteriores em
-`reports/20260906-verified-closeout.json` e evidência do lote documental em
-`docs/changes/2026-10-20-document-structure-and-link-field.md`. Catálogo escolar posterior:
+Referência de código deste lote: `968a749`; execuções e hashes anteriores em
+`reports/20260906-verified-closeout.json`, evidência do lote documental em
+`docs/changes/2026-10-20-document-structure-and-link-field.md` e evidência dos
+documentos PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`.
+Catálogo escolar posterior:
 `education-2025-20260907-v1`, seleção
 `data/releases/education-2025-20260907-v1.json`. Nenhum status significa
 conclusão integral do projeto. Implementação, aceite do software, cobertura e
@@ -19,7 +21,7 @@ em testes.
 | Cobertura e importações | Painel e histórico paginado integrados; contadores `read`/`accepted`/`excluded`; filtro `has_geometry` | Denominadores oficiais reconciliados para certificação nacional |
 | CNES | Pacote com 96.123 elegíveis, sete sem coordenadas, consulta aceita | Nova competência e validação do perfil/denominadores |
 | Educação | Leitor nacional e validações; `education-2025-20260907-v1` com 138.086 escolas públicas ativas, 0 geometria, 27 UFs; seleção `data/releases/education-2025-20260907-v1.json` | Incidente Inep 06/09/2026: `SSLCertVerificationError` código 20 (`reports/20260906-inep-tls-cb873ed.json`); TLS não desabilitado. 27 UFs não é completude; denominadores abertos |
-| Recursos PNCP | Janela de 6.677 contratos importada; precisão e objetos preservados | Histórico nacional completo, atualização recorrente e reconciliação |
+| Recursos PNCP | Janela de 6.677 contratos importada; precisão e objetos preservados; coletor privado de documentos oficiais com bytes content-addressed, SHA-256, revisões e `not_listed` em listagem completa | Histórico nacional completo, atualização recorrente, retenção/limpeza operacional, publicação revisada e reconciliação |
 | Transferegov/Obrasgov | Perfis de plano especial e projeto; um registro real de cada aceito | Demais módulos, pagamentos, execução física e geometrias |
 | Histórico e exportação | Versões, antes/depois, links, CSV/JSON/texto e seleção limitada; quatro percursos específicos | Valores de metadados não constituem pagamento |
 | Observação guiada | Escola/saúde/obra, gravação privada, revisão/retirada e cópia; browser guided | Processo operacional de moderação e recurso |
@@ -40,4 +42,7 @@ A operação no núcleo não usa chatbot, embeddings nem chave paga de mapas.
 Nomes semelhantes ou proximidade espacial não criam vínculos financeiros.
 Famílias documentais são marcadores lexicais sujeitos a revisão, não uma
 classificação jurídica. Unir tabelas por cabeçalho repetido não prova que o
-documento ou a tabela esteja completo.
+documento ou a tabela esteja completo. Documentos PNCP coletados ficam em pasta
+privada, sem rota pública e sem vínculo automático com lugar ou recurso; um
+documento ausente de listagem completa é marcado `not_listed`, não como
+cancelado.
