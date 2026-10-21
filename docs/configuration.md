@@ -11,6 +11,7 @@
 | `BDT_DATABASE_URL` | ambiente do processo; padrão local em `compose.yaml` | Seleciona o banco. O serviço local usa SQLite; produção exige uma URL PostgreSQL injetada por infraestrutura autorizada. |
 | `BDT_DOCUMENT_STORE` | ambiente do processo; padrão `BDT_DATA_DIR/document-originals` | Pasta privada content-addressed dos PDFs originais de evidência. Deve ficar fora de `BDT_STATIC_DIR` e não é servida diretamente; o download exige revisor autenticado. |
 | `BDT_PORT` | ambiente consumido por `compose.yaml` | Altera somente o bind local em `127.0.0.1`; o padrão é `8008`. |
+| `BDT_POSTGRES_PORT` e `BDT_POSTGRES_ORIGIN` | ambiente consumido por `compose.postgres.yaml` | Porta/origem do stack PostgreSQL local; padrão `8009`. Não são produção. |
 | `BDT_PUBLIC_ORIGIN` e `BDT_ALLOWED_HOSTS` | ambiente consumido por `bdt.api` e valores locais em `compose.yaml` | Delimitam origem e host aceitos. Produção recusa origem sem HTTPS. |
 | perfil Compose `test` | `compose.yaml` | Sobe PostgreSQL efêmero em `tmpfs` e rede interna, sem porta publicada, e conecta o runner pelo papel `bdt_ci` sem privilégios administrativos. |
 | `territory_run_id` e `territory_artifact_id` | inputs obrigatórios de `.github/workflows/resource-intake.yml` | Selecionam o snapshot territorial exato, ainda legível e pertencente a este repositório. O intake é iniciado deliberadamente por `workflow_dispatch`; pushes não escolhem nem reutilizam artefatos temporários. |
@@ -22,6 +23,7 @@ produção pertencem ao gerenciador de segredos da infraestrutura e não entram 
 
 | Data | Mudança e motivo | Reversão |
 |---|---|---|
+| 2026-10-21 | `compose.postgres.yaml` adiciona um stack local PostgreSQL durável com migração one-shot, volume de dados/originais e backup lógico. `BDT_POSTGRES_PORT`/`BDT_POSTGRES_ORIGIN` são apenas locais. | Parar o stack e remover `compose.postgres.yaml`/`ops/postgres-local-init.sql`; `down -v` apaga os volumes locais de prova, não dados de produção. |
 | 2026-10-21 | `BDT_DOCUMENT_STORE` separa os originais de evidência do diretório estático e permite download somente por revisor autenticado. O padrão fica dentro de `BDT_DATA_DIR`, que é volume persistente no Compose. | Remover a variável e as rotas/modelo de originais no mesmo commit; os bytes já gravados permanecem na pasta privada e devem ser removidos por operador, pois hash não é backup. |
 | 2026-09-12 | O perfil `test` passou a ser a única configuração local da prova PostgreSQL; o workflow usa o mesmo perfil para impedir deriva entre CI e Compose. | Reverter `compose.yaml`, `docker-compose.yml`, `ops/postgres-test-init.sql` e `.github/workflows/runtime-validation.yml` no mesmo commit; a aplicação local SQLite não precisa de migração ou remoção de volume. |
 | 2026-09-13 | O intake oficial deixou de rodar automaticamente em pushes com IDs fixos de artefatos que expiram. Cada execução agora exige o par exato de run e artefato no dispatch manual. | Reverter `.github/workflows/resource-intake.yml`; isso restaura a execução automática e também o risco de falha quando o artefato fixo expirar. |

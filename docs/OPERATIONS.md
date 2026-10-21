@@ -15,7 +15,7 @@ Ler README. `.env.example` é referência; CLI/uvicorn leem variáveis do proces
 
 Para um serviço público autorizado: BDT_ENV=production; BDT_PUBLIC_ORIGIN=https://DOMINIO; BDT_ALLOWED_HOSTS=DOMINIO,127.0.0.1; BDT_REVISION=SHA completo do commit implantado. BDT_ALLOW_REGISTRATION=0 até operação responsável. Mesma origem para web/API. Não servir sem TLS com cookies de produção.
 
-Use PostgreSQL e instalação `.[postgres]` para replicação/concorrência; BDT_DATABASE_URL=postgresql+psycopg://... via gerenciador de segredos. A conexão não deve ser impressa nos logs. O perfil Compose `test` prova o esquema e a jornada de moderação em um PostgreSQL efêmero; ele não cobre durabilidade, PostGIS, migrações de versões anteriores nem múltiplas réplicas, que continuam como gates posteriores.
+Use PostgreSQL e instalação `.[postgres]` para replicação/concorrência; BDT_DATABASE_URL=postgresql+psycopg://... via gerenciador de segredos. A conexão não deve ser impressa nos logs. O perfil Compose `test` prova o esquema e a jornada de moderação em um PostgreSQL efêmero; `compose.postgres.yaml` prova durabilidade local, migração one-shot e backup lógico. Nenhum dos dois cobre TLS/PITR, backup offsite, PostGIS, migração de banco produtivo ou múltiplas réplicas, que continuam gates posteriores.
 
 ## Prova PostgreSQL local
 
@@ -31,6 +31,28 @@ schema vazio, executa a inicialização duas vezes, inspeciona chaves estrangeir
 confirma rollback após violação de constraint e percorre contribuição → moderação → leitura pública.
 O recibo fica em `test-results/runtime/postgres.json`. Indisponibilidade do serviço falha a prova;
 não existe fallback para SQLite. Consulte o [registro de configuração](configuration.md).
+
+## Stack PostgreSQL local durável
+
+Para operar localmente com PostgreSQL persistente, use o Compose separado. Ele
+cria `bdt_app` sem privilégios administrativos, roda a migração Alembic em um
+serviço one-shot e só então inicia a aplicação em `127.0.0.1:8009`:
+
+```bash
+docker compose -f compose.postgres.yaml up --build -d
+curl http://127.0.0.1:8009/api/health
+```
+
+Backup lógico local (volume `bdt-postgres-backups`):
+
+```bash
+docker compose -f compose.postgres.yaml --profile ops run --rm postgres-backup
+```
+
+`down` preserva os volumes `bdt-postgres-data` e `bdt-postgres-originals`;
+`down -v` apaga ambos. A autenticação `trust` é limitada à rede interna, sem
+porta publicada do PostgreSQL; isso é **somente local**, nunca produção. O
+backup ainda precisa de restauração testada e retenção fora do host.
 
 ## Processamento
 
