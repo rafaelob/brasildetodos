@@ -68,6 +68,10 @@ O comando não publica, não extrai texto e não cria vínculo. O download em
 novamente e responde como anexo com `no-store`. A pasta deve ficar fora de
 `BDT_STATIC_DIR`; hash não substitui backup.
 
+A prévia de uma página usa o `pdftoppm` local do Poppler. Sem ele, a rota
+`/api/workbench/documents/{id}/pages/{page}/image` responde 503 e o Workbench
+mantém texto e candidatos; a prévia nunca é publicada.
+
 Antes de limpar ou restaurar, verifique cada referência atual e histórica. O
 comando não altera arquivos e separa ausente, corrompido e verificado:
 
