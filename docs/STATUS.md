@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `a3dd943`; suíte local **2.189 aprovados, 17
+- Código de referência: `244df19`; suíte local **2.192 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental (GHSA-6q48/GHSA-8g5g).
@@ -14,6 +14,8 @@
   `:8009`.
 - Worker documental em Python 3.14.8 com Poppler/Tesseract; renderização real
   de uma página sintética validada em container.
+- Fotos aprovadas de uma observação compartilhada aparecem somente para
+  membros do grupo; retirada/retratação/expulsão encerram o acesso.
 - Correções recentes: `--database` vence `BDT_DATABASE_URL`; `prune --apply`
   recusa banco sem referências; `store_file` não apaga o próprio target.
 - Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,

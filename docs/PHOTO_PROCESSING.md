@@ -26,20 +26,25 @@ A saída só é criada em caminho inexistente, com publicação sem sobrescrita.
 O original permanece inalterado. O recibo contém tamanho, dimensões e hash do
 **derivado**, não caminho do arquivo, identificação de cidadão ou inferência de GPS.
 
-## O que não foi integrado
+## Integração HTTP e revisão
 
-A escrita do arquivo central `backend/bdt/api.py` com a integração fotográfica foi
-bloqueada pela verificação de segurança da plataforma nesta execução. A alteração
-não foi reenviada por outra ferramenta, formato ou mecanismo. O frontend preparado,
-as rotas e os hooks de retirada não são apresentados como recurso disponível.
-A configuração pública existente mantém `photo_uploads=false`; não há botão novo
-que prometa um upload inexistente.
+O upload fica desligado por padrão (`BDT_PHOTO_UPLOADS=1` habilita). Quando
+habilitado, a rota autenticada `POST /api/photos` aceita imagem JPEG/PNG e cria
+um derivado privado; o autor vê metadados/imagem em `/api/photos/{id}` e
+`/api/photos/{id}/image`. Um revisor diferente do autor aprova ou rejeita em
+`POST /api/photos/{id}/review`, com conferência de privacidade explícita.
 
-O módulo inclui os modelos e operações transacionais preparados para o fluxo futuro,
-mas essas operações não representam uma rota HTTP instalada. A integração completa
-continua aberta: envio autenticado, revisão independente, remoção em retirada da
-observação/conta, interface nos três idiomas e aceite do navegador. O código do
-processador e seu CLI são utilizáveis independentemente dessa integração.
+`GET /api/public/photos/{id}/image` só serve foto aprovada cuja observação
+também esteja publicada. A retirada da observação, a retratação da foto e a
+desativação da conta removem bytes e metadados pela mesma transação. O export
+da conta inclui os próprios metadados, nunca bytes de outra pessoa.
+
+Fotos aprovadas de uma observação compartilhada também podem ser lidas por
+membros do grupo em `/api/groups/{group}/tasks/{task}/photos/{photo}/image`,
+sem torná-las públicas. A rota exige membro ativo, vínculo com a tarefa e foto
+aprovada; retirada/retratação/expulsão encerram o acesso. O consentimento
+`share_with_group` cobre a observação e suas fotos aprovadas. Detalhes em
+[Grupos](GROUPS.md).
 
 ## Testes e evidência
 
@@ -48,5 +53,6 @@ orientação, remoção de metadados, máscaras, limites, corrupção e validaç
 `test_prepare_photo.py` exercita os arquivos, falhas e corrida de destino do CLI.
 A aprovação em runtimes-alvo é conferida na CI, separada dos testes auxiliares.
 
-Este componente não substitui o corpus de OCR, não fornece panorama e não encerra
-a tarefa de fotografias cidadãs do produto completo.
+Este componente não substitui o corpus de OCR, não fornece panorama e não
+encerra a política de retenção, moderação operacional ou licenciamento de
+imagens de terceiros.

@@ -7,7 +7,7 @@ O `main` agora tem Alembic `0001_baseline`, `bdt.migrate`, stack PostgreSQL
 local durável com migração/backup, worker documental em Python 3.14.8 com
 Poppler, documentos PNCP privados, originais documentais, sinais de privacidade
 e correções de alvo de migração/store, além dos pins `certifi==2026.10.19` e
-`Pillow==13.0.0`. A suíte local está em **2.189 aprovados, 17 ignorados** e a
+`Pillow==13.0.0`. A suíte local está em **2.192 aprovados, 17 ignorados** e a
 web em **243 aprovados** com build Vite 8.2.4.
 
 O que continua aberto não é uma única feature: dados nacionais reconciliados,

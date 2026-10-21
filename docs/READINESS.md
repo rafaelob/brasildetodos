@@ -29,12 +29,14 @@ outros três ainda têm gates abertos.
   `current` e `check`.
 - Compose PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico e health em `:8009`.
-- Suíte local: **2.189 testes Python aprovados, 17 ignorados**; web **243
+- Suíte local: **2.192 testes Python aprovados, 17 ignorados**; web **243
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
   `education-2025-20260907-v1`, com hashes e limites documentados.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
+- Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
+  membros do grupo, com rota privada e sem publicação automática.
 
 Evidências: [Status](STATUS.md), [Matriz de capacidades](FEATURE_MATRIX.md),
 [Operação](OPERATIONS.md), [Migrações](MIGRATIONS.md) e
@@ -94,8 +96,6 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 
 ### 5. Produto ainda não entregue
 
-- Compartilhamento explícito de fotos revisadas em grupos (o upload privado já
-  existe, mas não a leitura por membros do grupo).
 - Panoramas opcionais com licença/data e provedor definidos.
 - Auditoria de acessibilidade com leitor de tela, teclado e dispositivos
   físicos.

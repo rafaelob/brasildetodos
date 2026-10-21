@@ -24,6 +24,27 @@ A entrega exige observação própria, do mesmo lugar, ainda disponível, e conf
 explícita de compartilhamento com o grupo. A revisão requer outra pessoa e nota.
 **Aceitar no grupo NÃO aprova nem publica a observação na plataforma.**
 
+## Fotos revisadas em grupo
+
+Quando a observação compartilhada tem fotos aprovadas por revisão independente,
+os membros do grupo podem vê-las dentro da tarefa. A regra é separada da
+publicação pública: a observação pode continuar pendente e as fotos ainda
+aparecem para o grupo. Somente `state == approved`, bytes presentes, autor ativo
+e vínculo com a mesma observação são elegíveis; foto pendente, rejeitada,
+retirada, expurgada ou de outra observação nunca aparece.
+
+A imagem é servida por
+`GET /api/groups/{group}/tasks/{task}/photos/{photo}/image`, exige sessão de
+membro, confere a observação e a foto a cada requisição e responde
+`image/jpeg` com `no-store`. Não há rota pública para essa imagem. Retirada da
+observação, retratação da foto, saída/remoção do membro ou desativação da conta
+fazem a foto desaparecer imediatamente. O `share_with_group` da entrega é o
+consentimento explícito para observação e fotos aprovadas; não existe upload
+anônimo nem publicação automática.
+
+Membros ainda podem salvar ou fotografar a tela; `no-store` não impede cópia
+local. O grupo não é canal de denúncia, laudo ou publicação oficial.
+
 ## Retirada e privacidade
 
 A projeção consulta a observação vigente. Retirada, retratação ou desativação do
@@ -52,14 +73,17 @@ externo obrigatório. Convites não alteram o papel de revisor da plataforma.
 GET/POST `/api/groups`; POST `/api/groups/join`; GET `/api/groups/{id}`.
 POST `/{id}/edit`, `/invites`, `/invites/{invite}/revoke`, `/leave`,
 `/members/remove`, `/transfer`, `/archive`, `/tasks` e `/tasks/{task}`.
-Todas as mutações sobre grupo existente incluem `expected_revision`.
+GET `/api/groups/{id}/tasks/{task}/photos/{photo}/image` serve somente foto
+aprovada para membro. Todas as mutações sobre grupo existente incluem
+`expected_revision`.
 Exportação/desativação usam as rotas de conta já existentes.
 
 ## Evidência deste incremento
 
-32 regressões de API/SQLite reais: acesso, CSRF, expiração/revogação, uso único,
+37 regressões de API/SQLite reais: acesso, CSRF, expiração/revogação, uso único,
 revisão independente, rollback, quotas, paginação, dupla disputa simultânea,
-retirada/desativação, exportação própria e restauração. Fixtures sintéticos ficam
+retirada/desativação, exportação própria, restauração e fotos aprovadas em
+grupo (incluindo retirada, retratação e uploads desligados). Fixtures sintéticos ficam
 somente em testes temporários. A suíte auxiliar integrada passou com 834 testes
 Python e 95,59% de cobertura; confirmação nos runtimes-alvo cabe à CI publicada.
 

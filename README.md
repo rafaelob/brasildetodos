@@ -84,7 +84,7 @@ completo está em [Migrações](docs/MIGRATIONS.md).
 - **Participação:** favoritos locais, cadastro opcional, sessões, observações
   guiadas, fila de revisão e publicação somente após decisão independente.
 - **Grupos privados:** convites, tarefas, compartilhamento explícito de
-  observação, revisão por outra pessoa e retirada.
+  observação e fotos aprovadas, revisão por outra pessoa e retirada.
 - **Documentos:** extração PDF nativa, tabelas multipágina conservadoras,
   famílias/datas/valores candidatos, OCR seletivo, fila privada, sinais de
   privacidade, originais content-addressed e prévia de página com Poppler.
@@ -118,7 +118,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Estado local recente: **2.189 testes Python aprovados, 17 ignorados**, web
+Estado local recente: **2.192 testes Python aprovados, 17 ignorados**, web
 **243 aprovados** e build Vite 8.2.4. Testes usam dados sintéticos; não provam
 atualidade, completude nacional ou deploy. Evidências e limites:
 [Status](docs/STATUS.md) e [changes/](docs/changes/).
