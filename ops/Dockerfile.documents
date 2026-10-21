@@ -1,9 +1,12 @@
-FROM python:3.13-slim-bookworm
+FROM python:3.14.8-slim-bookworm
 WORKDIR /app
+RUN python -c "import sys; assert sys.version_info[:3] == (3,14,8)"
 RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr tesseract-ocr-por tesseract-ocr-eng tesseract-ocr-spa && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml README.md LICENSE ./
 COPY backend/ backend/
-RUN pip install --no-cache-dir . && useradd --uid 10001 --create-home worker && mkdir /app/data && chown worker:worker /app/data
+COPY requirements/ requirements/
+COPY ops/install_locked.py ops/python_lock_manifest.py ops/
+RUN python ops/install_locked.py && useradd --uid 10001 --create-home worker && mkdir /app/data && chown worker:worker /app/data
 USER worker
 ENV BDT_DATA_DIR=/tmp/data
 ENTRYPOINT ["bdt","extract-pdf"]
