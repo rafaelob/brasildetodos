@@ -147,5 +147,5 @@ test('main.tsx skip link uses skipToContent', () => {
   const main = read(mainPath);
   assert.match(main, /<a className="skip" href="#main">\{t\('skipToContent'\)\}<\/a>/);
   assert.equal(/<a className="skip" href="#main">\{t\('explore'\)\}<\/a>/.test(main), false);
-  assert.match(main, /<main id="main">/);
+  assert.match(main, /<main id="main" tabIndex=\{-1\}>/);
 });

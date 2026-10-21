@@ -19,7 +19,23 @@ from bdt.storage import Database, Municipality, User, upsert_place
 
 def main():
     out = Path('test-results/browser'); out.mkdir(parents=True, exist_ok=True)
-    report = {'synthetic_test_only': True, 'checks': [], 'live_map_verified': False}
+    report = {'synthetic_test_only': True, 'checks': [], 'axe': [], 'live_map_verified': False}
+    axe_url = os.environ.get('BDT_AXE_URL')
+
+    def scan(page, label):
+        if not axe_url:
+            return
+        page.add_script_tag(url=axe_url)
+        result = page.evaluate("""async () => await axe.run(document, {runOnly: {type: 'tag',
+            values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']}})""")
+        violations = [{'id': item['id'], 'impact': item.get('impact'), 'help': item['help'],
+                       'nodes': [node['target'] for node in item['nodes']]}
+                      for item in result['violations']]
+        report['axe'].append({'page': label, 'violations': violations})
+        if os.environ.get('BDT_AXE_FAIL') == '1':
+            severe = [item for item in violations if item['impact'] in ('serious', 'critical')]
+            assert not severe, (label, severe)
+
     password = secrets.token_urlsafe(24)
     with tempfile.TemporaryDirectory(prefix='bdt-browser-', ignore_cleanup_errors=True) as temp:
         url = f'sqlite:///{Path(temp) / "test.db"}'
@@ -54,6 +70,11 @@ def main():
                         # UI assertions, not network-idle, establish application readiness.
                         page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
                         page.get_by_role('button', name=item.name, exact=True).wait_for()
+                        page.keyboard.press('Tab')
+                        expect(page.locator('a.skip')).to_be_focused()
+                        expect(page.locator('a.skip')).to_be_visible()
+                        page.keyboard.press('Enter')
+                        expect(page.locator('#main')).to_be_focused()
                         assert not page.evaluate('document.documentElement.scrollWidth > window.innerWidth'), f'Horizontal overflow at {width}'
                         place_card = page.locator('.place-card')
                         expect(place_card).to_have_count(1)
@@ -61,6 +82,7 @@ def main():
                         for locale, heading in [('en','A living map of public services.'), ('es','El mapa vivo de lo público.'), ('pt-BR','O mapa vivo do que é público.')]:
                             page.get_by_label('Idioma / Language / Idioma').select_option(locale)
                             page.get_by_role('heading', name=heading, exact=True).wait_for()
+                        scan(page, f'explore-{width}')
                         page.screenshot(path=str(out/f'explore-{width}.png'), full_page=True)
                         page.get_by_role('button', name='Acompanhar '+item.name, exact=True).click()
                         page.get_by_role('button', name='Meus lugares', exact=True).click()
@@ -69,12 +91,13 @@ def main():
                         page.get_by_role('button', name='Meus lugares', exact=True).click()
                         page.get_by_role('button', name=item.name, exact=True).click()
                         page.get_by_role('heading', name=item.name, exact=True).wait_for()
+                        scan(page, f'detail-{width}')
                         page.get_by_role('tab', name='Melhorias e recursos', exact=True).click()
                         page.get_by_role('heading', name=re.compile(r'1\.000,00')).wait_for()
                         page.get_by_role('heading', name=re.compile(r'300,00')).wait_for()
                         assert page.get_by_role('heading', name=re.compile(r'1\.300,00')).count() == 0
                         assert not errors, errors
-                        report['checks'].append({'viewport':width, 'languages':3, 'favorites_persisted':True, 'financial_stages_separate':True, 'javascript_errors':errors})
+                        report['checks'].append({'viewport':width, 'skip_link':True, 'languages':3, 'favorites_persisted':True, 'financial_stages_separate':True, 'javascript_errors':errors})
                         page.close()
                     page = browser.new_page(viewport={'width':1440, 'height':1000})
                     page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
@@ -108,12 +131,16 @@ def main():
                     page.get_by_text('Nenhuma contribuição pendente.', exact=True).wait_for()
                     community(); page.get_by_text(text, exact=True).wait_for()
                     page.screenshot(path=str(out/'collaboration-approved.png'), full_page=True)
+                    scan(page, 'collaboration-approved')
                     report['checks'].append({'collaboration':'submitted_private_then_independently_approved_and_public'})
                     browser.close()
                     browser = None
             finally:
-                if browser is not None and browser.is_connected():
-                    browser.close()
+                try:
+                    if browser is not None and browser.is_connected():
+                        browser.close()
+                except Exception:
+                    pass
                 if server.poll() is None:
                     server.terminate()
                     try:
