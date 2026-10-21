@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `968a749`; execuções e hashes anteriores em
+Referência de código deste lote: `ea21f1d`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
-`docs/changes/2026-10-20-document-structure-and-link-field.md` e evidência dos
-documentos PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`.
+`docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
+PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md` e dos
+originais documentais em `docs/changes/2026-10-21-document-originals.md`.
 Catálogo escolar posterior:
 `education-2025-20260907-v1`, seleção
 `data/releases/education-2025-20260907-v1.json`. Nenhum status significa
@@ -26,7 +27,7 @@ em testes.
 | Histórico e exportação | Versões, antes/depois, links, CSV/JSON/texto e seleção limitada; quatro percursos específicos | Valores de metadados não constituem pagamento |
 | Observação guiada | Escola/saúde/obra, gravação privada, revisão/retirada e cópia; browser guided | Processo operacional de moderação e recurso |
 | Grupos | Membros, convites, tarefas, compartilhamento explícito, revisão independente e retirada; browser groups | Fotos, recuperação de conta e gestão operacional não são resolvidas pelo grupo |
-| Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; famílias lexicais de convênio/plano de trabalho/contrato/aditivo; datas e valores com papéis separados; tabelas multipágina somente com cabeçalho idêntico repetido; orientação por rotação; página híbrida e campo do trecho; browser extended | Corpus oficial diversificado e métricas por família |
+| Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; famílias lexicais de convênio/plano de trabalho/contrato/aditivo; datas e valores com papéis separados; tabelas multipágina somente com cabeçalho idêntico repetido; orientação por rotação; página híbrida e campo do trecho; PDF original privado com SHA-256 e download de revisor; browser extended | Corpus oficial diversificado, métricas por família e editor visual sobre a página original |
 | OCR seletivo | Integração local; uma página sintética PT processada anteriormente; fila persistente com quotas, lease, retry, cancelamento, retenção, CLI e rotas de revisor; rotas híbrida/orientação usam elegibilidade explícita; nenhum byte/texto na fila | Avaliação com corpus oficial e operação em produção |
 | Preservação OCR | Quatro originais sintéticos + dois derivados + manifesto no Git; conferência offline obrigatória | Não chamar de convênios oficiais nem usá-los como dados reais |
 | Distribuição de dados | Releases v1 de saúde/recursos e educação com hashes e entrada fixada; instalação e API reverificadas em 20/10/2026 (96.123 lugares/6.679 recursos; 138.086 escolas elegíveis/76.106 excluídas) | Renovação periódica, nova seleção de dados e deploy público |

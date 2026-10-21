@@ -49,6 +49,25 @@ docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-
 
 OCR selecionado adiciona `--ocr-page N --language por`. O pipeline não foi avaliado em corpus oficial digitalizado neste ambiente. Faça benchmark de tempo, qualidade por campo e revisão humana antes de dimensionar lotes.
 
+### Originais de evidência
+
+Depois de registrar o documento, o operador armazena o PDF original em pasta privada
+content-addressed. O hash precisa ser idêntico ao `snapshot_sha256` da fonte:
+
+```bash
+python -m bdt.document_originals store \
+  --database sqlite:///data/bdt.db \
+  --folder data/document-originals \
+  --document-id <id-de-64-hex> \
+  --path /caminho/arquivo.pdf \
+  --operator <revisor-existente>
+```
+
+O comando não publica, não extrai texto e não cria vínculo. O download em
+`/api/workbench/documents/{id}/original` exige revisor autenticado, confere o hash
+novamente e responde como anexo com `no-store`. A pasta deve ficar fora de
+`BDT_STATIC_DIR`; hash não substitui backup.
+
 ## Recuperação
 
 Backup do banco e do armazenamento de originais são operações distintas. SQLite ativo requer backup consistente via sqlite backup API, não cópia isolada do arquivo ignorando WAL. PostgreSQL exige backup/restauração testados. Nunca tratar hash como cópia de segurança. Testar upgrade de schema em clone antes de produção.
