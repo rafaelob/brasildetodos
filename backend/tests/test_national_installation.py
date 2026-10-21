@@ -10,7 +10,7 @@ import sys
 import pytest
 from sqlalchemy.exc import IntegrityError
 from bdt.catalog_release import TABLES, remember_source
-from bdt.domain import PlaceInput, digest
+from bdt.domain import PlaceInput, digest, place_semantic
 from bdt.storage import upsert_place
 from test_public_data_bundle import bundler, bundle_input
 from test_education_release import package, pack, encode
@@ -237,8 +237,7 @@ def test_school_identity_collision_does_not_overwrite_health(inputs, tmp_path):
     rows = [json.loads(line) for line in school[1]['public-catalog/places.jsonl'].splitlines()]
     rows[0]['id'] = rows[0]['payload']['id'] = 'test:health'
     payload = rows[0]['payload']
-    rows[0]['fingerprint'] = digest(payload | {'source': {k: v for k, v in payload['source'].items()
-                                                   if k not in {'collected_at', 'snapshot_sha256'}}})
+    rows[0]['fingerprint'] = digest(place_semantic(payload))
     update_school_member(school, 'public-catalog/places.jsonl', rows_bytes(rows))
     before = inputs[0].read_bytes()
     with pytest.raises(IntegrityError): run(inputs, tmp_path / 'out.db')

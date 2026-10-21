@@ -2,13 +2,9 @@ name: Public catalog API acceptance
 on:
   workflow_dispatch:
     inputs:
-      source_run_id:
-        description: Same-repository run containing a verified public catalog
-        default: '34007758949'
-        required: true
-      source_artifact_id:
-        description: Exact retained artifact ID (not a URL or an arbitrary repository)
-        default: '9981549978'
+      source_release_tag:
+        description: Published release containing the hash-pinned public catalog
+        default: 'public-data-20260906-v1'
         required: true
   push:
     branches: [main]
@@ -24,7 +20,6 @@ on:
       - .python-version
 permissions:
   contents: read
-  actions: read
 concurrency:
   group: public-catalog-acceptance-main
   cancel-in-progress: false
@@ -32,6 +27,8 @@ jobs:
   installed-catalog-api:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      SOURCE_RELEASE_TAG: ${{ inputs.source_release_tag || 'public-data-20260906-v1' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,13 +38,33 @@ jobs:
           python-version-file: '.python-version'
       - name: Verify exact Python runtime and configuration
         run: python ops/check_toolchain.py --runtime python
-      - uses: actions/download-artifact@v4
-        with:
-          artifact-ids: ${{ inputs.source_artifact_id || '9981549978' }}
-          run-id: ${{ inputs.source_run_id || '34007758949' }}
-          github-token: ${{ github.token }}
-          path: official-public-catalog
-          merge-multiple: true
+      - name: Download and verify the published catalog bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release-data official-public-catalog
+          gh release download "$SOURCE_RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --dir release-data --pattern public-data.zip
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          tag = os.environ['SOURCE_RELEASE_TAG']
+          selection = json.loads(Path(f'data/releases/{tag}.json').read_text(encoding='utf-8'))
+          archive = Path('release-data/public-data.zip')
+          raw = archive.read_bytes()
+          assert len(raw) == selection['archive']['bytes'], 'published archive size mismatch'
+          assert hashlib.sha256(raw).hexdigest() == selection['archive']['sha256'], 'published archive hash mismatch'
+          PY
+          unzip -q release-data/public-data.zip -d official-public-catalog
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          tag = os.environ['SOURCE_RELEASE_TAG']
+          selection = json.loads(Path(f'data/releases/{tag}.json').read_text(encoding='utf-8'))
+          expected = selection['selected_inputs']['catalog_manifest_sha256']
+          actual = hashlib.sha256(Path('official-public-catalog/catalog/manifest.json').read_bytes()).hexdigest()
+          assert actual == expected, 'published catalog manifest mismatch'
+          PY
       - run: python -m pip install -e '.[test]'
       - run: python -m pytest backend/tests/test_catalog_acceptance.py -q
       - name: Verify, install and query the real catalog with no model or remote data request
@@ -58,5 +75,5 @@ jobs:
           name: public-catalog-api-acceptance-evidence
           retention-days: 7
           path: test-results/catalog-api-acceptance.json
-# Inputs reference expiring evidence, not a permanent production data service.
-# Replace IDs with a retained same-repository release for later manual executions.
+# The input is the immutable published release, verified against its selection file.
+# This is an acceptance check, not a permanent production data service or deployment.

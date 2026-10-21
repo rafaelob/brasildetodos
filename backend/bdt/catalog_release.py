@@ -18,7 +18,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 from sqlalchemy import inspect, select
-from .domain import MoneyEvent, PlaceInput, Source, digest, fold, now
+from .domain import (MoneyEvent, PlaceInput, SOURCE_OPTIONAL_METADATA, Source, digest, fold, now,
+                     place_semantic, source_metadata)
 from .evidence import Resource, ResourceInput, initialize_extensions
 from .json_codec import decode
 from .storage import Change, Database, Finance, Municipality, Place, SchemaVersion
@@ -47,8 +48,7 @@ LEGACY_EXCLUDED_BY_REVISION = {
 }
 SOURCE_ID_FIELDS = ('dataset', 'url', 'snapshot_sha256', 'reference_date')
 SOURCE_FIELDS = SOURCE_ID_FIELDS + ('collected_at',)
-OPTIONAL_SOURCE_FIELDS = ('edition', 'dictionary_url', 'dictionary_sha256',
-                          'license', 'license_url', 'published_at')
+OPTIONAL_SOURCE_FIELDS = SOURCE_OPTIONAL_METADATA
 
 
 def canonical(value) -> bytes:
@@ -85,9 +85,7 @@ def validate_record(table, row: dict) -> dict:
                 raise ValueError('inconsistent_place_columns')
         if row['dataset'] != place.source.dataset or row['search_name'] != fold(place.name + ' ' + place.address):
             raise ValueError('inconsistent_place_index')
-        semantic = payload | {'source': {k: v for k, v in payload['source'].items()
-                                        if k not in {'collected_at', 'snapshot_sha256'}}}
-        if row['fingerprint'] != digest(semantic):
+        if row['fingerprint'] != digest(place_semantic(row['payload'])):
             raise ValueError('inconsistent_place_fingerprint')
         timestamp(row['updated_at'])
     elif table is Finance.__table__:
@@ -99,7 +97,7 @@ def validate_record(table, row: dict) -> dict:
         item = ResourceInput.model_validate(row['payload'])
         if any(row[k] != getattr(item, k) for k in ('id', 'kind', 'municipality_id', 'title')):
             raise ValueError('inconsistent_resource_columns')
-        if row['source'] != item.source.model_dump(mode='json'):
+        if source_metadata(row['source']) != source_metadata(item.source.model_dump(mode='json')):
             raise ValueError('inconsistent_resource_source')
     elif table is Change.__table__:
         timestamp(row['at'])

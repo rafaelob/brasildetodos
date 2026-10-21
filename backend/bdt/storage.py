@@ -6,7 +6,7 @@ from uuid import uuid4
 from sqlalchemy import JSON, BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, Text, create_engine, event, inspect as inspect_state, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.schema import CreateColumn
-from .domain import PlaceInput, digest, fold, now
+from .domain import PlaceInput, digest, fold, now, place_semantic
 
 Base = declarative_base()
 
@@ -225,8 +225,7 @@ def upsert_place(session, incoming: PlaceInput) -> str:
     if municipality is None or municipality.state != incoming.state:
         raise ValueError("Unknown or inconsistent municipality: import IBGE first")
     payload = incoming.model_dump(mode="json")
-    semantic = payload | {"source": {k: v for k, v in payload["source"].items() if k not in {"collected_at", "snapshot_sha256"}}}
-    fingerprint = digest(semantic)
+    fingerprint = digest(place_semantic(payload))
     row = session.get(Place, incoming.id)
     if row is None:
         row = Place(id=incoming.id)

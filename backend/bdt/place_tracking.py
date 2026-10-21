@@ -13,7 +13,7 @@ from pydantic import Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .domain import PlaceInput, Source, StrictModel, digest, now
+from .domain import PlaceInput, Source, StrictModel, digest, now, place_semantic
 from .catalog_release import consistent_read
 from .coverage_dashboard import _timestamp as public_timestamp
 from .storage import Change, Place
@@ -42,8 +42,7 @@ def public_place(raw: dict, expected_id: str) -> dict:
 
 def semantic_place(value: dict) -> dict:
     """Match the stored content fingerprint, excluding collection-only changes."""
-    return value | {'source': {key: item for key, item in value['source'].items()
-                              if key not in {'collected_at', 'snapshot_sha256'}}}
+    return place_semantic(value)
 
 
 def public_version(row: Change) -> dict:

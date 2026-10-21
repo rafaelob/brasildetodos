@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import func, select
 from bdt.catalog_release import (EXCLUDED, FILES, TABLES, canonical, export_catalog, install_catalog,
     load_manifest, records, timestamp, validate_record, verify_catalog)
-from bdt.domain import MoneyEvent, now, digest
+from bdt.domain import MoneyEvent, SOURCE_OPTIONAL_METADATA, now, digest
 from bdt.evidence import Resource, ResourceInput, initialize_extensions
 from bdt.ingest import import_finance
 from bdt.storage import (Change, Database, Finance, LoginSession, Municipality, Observation, Place,
@@ -73,6 +73,24 @@ def test_municipal_partition_tampering_is_rejected(full,tmp_path):
     with pytest.raises(ValueError,match='municipal_partition_mismatch'):verify_catalog(folder)
     with pytest.raises(ValueError,match='municipal_partition_mismatch'):install_catalog(folder,tmp_path/'bad.db')
     assert not (tmp_path/'bad.db').exists()
+
+
+def test_legacy_rows_without_optional_source_metadata_still_verify(full,tmp_path):
+    with full.session() as session:
+        place_row=session.get(Place,'test:school')
+        payload=dict(place_row.payload)
+        payload['source']={k:v for k,v in payload['source'].items() if k not in SOURCE_OPTIONAL_METADATA}
+        place_row.payload=payload
+        place_row.fingerprint=digest(payload|{'source':{k:v for k,v in payload['source'].items()
+            if k not in {'collected_at','snapshot_sha256'}}})
+        resource_row=session.get(Resource,'synthetic:contract')
+        resource_row.source={k:v for k,v in resource_row.source.items() if k not in SOURCE_OPTIONAL_METADATA}
+        resource_payload=dict(resource_row.payload)
+        resource_payload['source']={k:v for k,v in resource_payload['source'].items()
+                                    if k not in SOURCE_OPTIONAL_METADATA}
+        resource_row.payload=resource_payload
+    folder=tmp_path/'legacy'; manifest=export_catalog(full,folder,'a'*40)
+    assert verify_catalog(folder)==manifest
 
 
 def test_install_roundtrip_preserves_public_state_not_accounts(full,tmp_path):

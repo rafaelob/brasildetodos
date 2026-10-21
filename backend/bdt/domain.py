@@ -138,6 +138,32 @@ class Source(StrictModel):
         return parsed.isoformat()
 
 
+SOURCE_OPTIONAL_METADATA = (
+    "edition", "dictionary_url", "dictionary_sha256", "license", "license_url", "published_at",
+)
+
+
+def source_metadata(source: object) -> object:
+    """Keep legacy source dicts byte-compatible when optional metadata is absent."""
+    if not isinstance(source, dict):
+        return source
+    return {key: value for key, value in source.items()
+            if not (key in SOURCE_OPTIONAL_METADATA and value is None)}
+
+
+def place_semantic(payload: dict) -> dict:
+    """Fingerprint payload: ignore collection bytes and absent optional metadata.
+
+    Published rows created before the optional source fields existed must keep
+    verifying after the contract expands. Present metadata still participates.
+    """
+    source = payload.get("source")
+    if isinstance(source, dict):
+        source = {key: value for key, value in source.items()
+                  if key not in {"collected_at", "snapshot_sha256"}}
+    return payload | {"source": source_metadata(source)}
+
+
 class PlaceInput(StrictModel):
     id: str = Field(pattern=r"^[a-z0-9_-]+:[A-Za-z0-9._/-]+$", max_length=180)
     kind: Kind

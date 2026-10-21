@@ -122,7 +122,8 @@ def main() -> None:
                                 for _ in range(12):
                                     page.locator('.maplibregl-ctrl-zoom-in').click()
                                     page.wait_for_timeout(330)
-                                page.wait_for_function("document.querySelector('.map-count-pill') && !document.querySelector('.map-loading-pill')")
+                                expect(panel.locator('.map-count-pill')).to_be_visible()
+                                expect(panel.locator('.map-loading-pill')).to_have_count(0)
                                 # Wait for the final moveend, not an unrelated network-idle event.
                                 for _ in range(50):
                                     if requests and int(requests[-1].get('zoom',['0'])[0])>=15:break
