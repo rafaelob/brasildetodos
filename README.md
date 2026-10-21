@@ -134,7 +134,7 @@ sustentabilidade comunitária. O quadro honesto está em
 - edição nacional oficial reconciliada e denominadores;
 - corpus oficial de OCR e revisão jurídica/privacidade;
 - domínio/HTTPS, PostgreSQL durável/PITR, backup offsite e restauração ensaiada;
-- acessibilidade assistiva e dispositivos físicos;
+- leitor de tela e dispositivos físicos;
 - panoramas licenciados e lockfile macOS.
 
 ## Como contribuir
@@ -157,7 +157,7 @@ issue pública com detalhes de exploração.
 
 ## Documentação
 
-[Prontidão](docs/READINESS.md) · [Fontes](docs/SOURCES.md) ·
+[Prontidão](docs/READINESS.md) · [Acessibilidade](docs/ACCESSIBILITY.md) · [Fontes](docs/SOURCES.md) ·
 [Dados](docs/DATA.md) · [Arquitetura](docs/ARCHITECTURE.md) ·
 [Operação](docs/OPERATIONS.md) · [Migrações](docs/MIGRATIONS.md) ·
 [Roadmap](docs/ROADMAP.md) · [Matriz de capacidades](docs/FEATURE_MATRIX.md)

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `ed1a770`; execuções e hashes anteriores em
+Referência de código deste lote: `e8703ce`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -43,7 +43,7 @@ em testes.
 | Instalação do pacote | Um comando; staging privado; banco novo atômico; baseline Alembic 0001; 35 regressões novas | Migração de dados históricos e downgrade de produção; não sobrescreve banco ativo com usuários |
 | Mapa/WebGL | Worker empacotado, mapa opcional e teste de renderização isolada | Fonte de tiles/3D externa e aparelhos limitados |
 | Panoramas e fotos | Fotos privadas com upload opcional, revisão, retirada e compartilhamento em grupo; panorama não entregue | Provedor/licença/captura de panorama, política de retenção e moderação operacional |
-| Idiomas e layout | pt-BR/en/es, 320/390/1440 pixels nos percursos Chromium | Revisão assistiva/Safari/aparelhos físicos |
+| Idiomas e layout | pt-BR/en/es, 320/390/1440 pixels nos percursos Chromium; axe A/AA e skip link focável | Leitor de tela/Safari/dispositivos físicos e reflow/zoom manual |
 | Banco e container | SQLite; PostgreSQL 16 efêmero provado via Compose e stack local durável com volume, migração one-shot, backup lógico, restore em banco novo e health em `:8009`; baseline Alembic 0001 e `check` sem deriva em SQLite/PostgreSQL; worker documental 3.14.8 com Poppler/Tesseract; container não-root/read-only | Produção com TLS/PITR, backup offsite, restauração automatizada, migração de dados histórica, multi-réplica e failover |
 | Dependências | Pins exatos, locks Linux (51) e Windows (54), certifi 2026.10.19/Pillow 13.0.0 corrigidos, instalação hash-checked | Auditoria completa, imagem/browser por digest, lock macOS |
 | Implantação pública | Não comprovada | URL, HTTPS, dados duráveis, atualizações, backups e rollback reais |

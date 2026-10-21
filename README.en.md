@@ -133,7 +133,7 @@ operations and community sustainability. The full checklist is in
 - a reconciled national official edition and denominators;
 - an official OCR corpus and legal/privacy review;
 - domain/HTTPS, durable PostgreSQL/PITR, offsite backup and a rehearsed restore;
-- assistive-technology and physical-device accessibility;
+- screen-reader and physical-device accessibility;
 - licensed panoramas and a macOS lockfile.
 
 ## Contributing
@@ -156,7 +156,7 @@ issue with exploit details.
 
 ## Documentation
 
-[Readiness](docs/READINESS.md) · [Sources](docs/SOURCES.md) ·
+[Readiness](docs/READINESS.md) · [Accessibility](docs/ACCESSIBILITY.md) · [Sources](docs/SOURCES.md) ·
 [Data](docs/DATA.md) · [Architecture](docs/ARCHITECTURE.md) ·
 [Operations](docs/OPERATIONS.md) · [Migrations](docs/MIGRATIONS.md) ·
 [Roadmap](docs/ROADMAP.md) · [Capability matrix](docs/FEATURE_MATRIX.md)

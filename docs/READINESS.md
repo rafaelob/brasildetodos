@@ -11,7 +11,7 @@ outros três ainda têm gates abertos.
 
 | Resultado | O que significa | Estado |
 |---|---|---|
-| Software | percursos cidadãos e de revisão funcionam, com testes locais e builds | **Forte localmente**; falta validação em dispositivos físicos e acessibilidade assistiva |
+| Software | percursos cidadãos e de revisão funcionam, com testes locais e builds | **Forte localmente**; falta leitor de tela e dispositivos físicos; axe A/AA e skip link cobertos no Chromium |
 | Dados | ingestão oficial atual, denominadores reconciliados e cobertura nacional explícita | **Parcial**: releases certificadas existem, mas não são um catálogo nacional vivo |
 | Operação | domínio/HTTPS, PostgreSQL durável, PITR, backup offsite, restauração ensaiada, monitoramento e rollback | **Não iniciado em produção** |
 | Comunidade | licença, conduta, contribuição, triagem, moderação, segurança e cadência de releases | **Em formação** |
@@ -37,6 +37,8 @@ outros três ainda têm gates abertos.
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Lock Windows CPython 3.14.8/AMD64 com 54 pacotes, manifesto e suíte integral
   validada; o lock Linux permanece em 51 pacotes.
+- Auditoria axe-core 4.10.3 (WCAG A/AA) sem violações em exploração, ficha e
+  colaboração a 320/390/1440 px; skip link com foco real em `#main`.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
   membros do grupo, com rota privada e sem publicação automática.
 - Backup lógico local e restore em banco novo validados (`0001_baseline`, 42
@@ -101,8 +103,8 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 ### 5. Produto ainda não entregue
 
 - Panoramas opcionais com licença/data e provedor definidos.
-- Auditoria de acessibilidade com leitor de tela, teclado e dispositivos
-  físicos.
+- Auditoria com leitor de tela, Safari/dispositivos físicos e reflow/zoom;
+  axe A/AA, contraste, alvos de toque e skip link já estão cobertos no Chromium.
 - Lockfile macOS e validação nessa plataforma; o lock Windows já foi validado
   localmente, mas não em CI Windows.
 - Tiles vetoriais nacionais/3D com fonte licenciada; o mapa atual é
