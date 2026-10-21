@@ -12,7 +12,7 @@ import os
 import re
 import shutil
 import tempfile
-from collections import Counter
+from collections import Counter, defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -47,6 +47,8 @@ LEGACY_EXCLUDED_BY_REVISION = {
 }
 SOURCE_ID_FIELDS = ('dataset', 'url', 'snapshot_sha256', 'reference_date')
 SOURCE_FIELDS = SOURCE_ID_FIELDS + ('collected_at',)
+OPTIONAL_SOURCE_FIELDS = ('edition', 'dictionary_url', 'dictionary_sha256',
+                          'license', 'license_url', 'published_at')
 
 
 def canonical(value) -> bytes:
@@ -141,7 +143,12 @@ def public_row_source(table, row):
 def remember_source(sources: dict, table, row) -> None:
     source = public_row_source(table, row)
     source_key = digest({key: source.get(key) for key in SOURCE_ID_FIELDS})
-    sources[source_key] = {key: source.get(key) for key in SOURCE_FIELDS}
+    entry = {key: source.get(key) for key in SOURCE_FIELDS}
+    # Only declare edition/dictionary/license metadata that was actually recorded.
+    for key in OPTIONAL_SOURCE_FIELDS:
+        if source.get(key) is not None:
+            entry[key] = source[key]
+    sources[source_key] = entry
 
 
 def check_sources(manifest: dict, sources: dict) -> None:
@@ -160,6 +167,7 @@ def export_catalog(database: Database, destination: Path, revision: str = 'devel
     staging = Path(tempfile.mkdtemp(prefix='.bdt-catalog-', dir=destination.parent))
     try:
         files, counts, sources = {}, Counter(), {}
+        municipal = defaultdict(municipal_bucket)
         total_bytes = 0
         with consistent_read(database) as connection:
             present = set(inspect(connection).get_table_names())
@@ -184,16 +192,17 @@ def export_catalog(database: Database, destination: Path, revision: str = 'devel
                                 raise ValueError('catalog_export_budget')
                             stream.write(line); h.update(line)
                             remember_source(sources, table, row)
-                            if table is Place.__table__:
-                                counts[(row['dataset'], row['state'], row['catalogue_eligible'], row['latitude'] is not None)] += 1
+                            count_partition(counts, table, row, municipal)
                     stream.flush(); os.fsync(stream.fileno())
                 files[name] = {'sha256': h.hexdigest(), 'bytes': size, 'records': count}
         partitions = [{'dataset': k[0], 'state': k[1], 'eligible': k[2], 'with_geometry': k[3], 'records': v}
                       for k, v in sorted(counts.items())]
         manifest = {'format': FORMAT, 'generated_at': now(), 'revision': revision, 'files': files,
-            'partitions': partitions, 'sources': list(sources.values()), 'excluded': EXCLUDED,
+            'partitions': partitions, 'municipal_partitions': municipal_partitions(municipal),
+            'sources': list(sources.values()), 'excluded': EXCLUDED,
             'national_catalog_certified': False,
             'scope': 'only records included in this release; counts do not certify nationwide completeness',
+            'municipal_invalid_note': 'invalid is zero because export aborts on any invalid record; import rejections are reported by /api/imports',
             'hashes_prove_integrity_not_authenticity': True}
         manifest_bytes = canonical(manifest)
         if len(manifest_bytes) > 8*1024*1024:
@@ -274,19 +283,63 @@ def check_partitions(manifest, counts):
         raise ValueError('catalog_partition_mismatch')
 
 
-def count_partition(counts, table, row):
+MAX_REFERENCE_PERIODS = 12
+
+
+def municipal_bucket():
+    return {'read': 0, 'accepted': 0, 'excluded': 0, 'invalid': 0,
+            'with_geometry': 0, 'without_geometry': 0, 'periods': set()}
+
+
+def count_partition(counts, table, row, municipal=None):
     if table is Place.__table__:
         counts[(row['dataset'], row['state'], row['catalogue_eligible'], row['latitude'] is not None)] += 1
+        if municipal is not None:
+            key = (row['dataset'], row['state'], row.get('municipality_id'))
+            bucket = municipal[key]
+            bucket['read'] += 1
+            bucket['accepted' if row['catalogue_eligible'] else 'excluded'] += 1
+            located = row['latitude'] is not None and row['longitude'] is not None
+            bucket['with_geometry' if located else 'without_geometry'] += 1
+            source = public_row_source(table, row)
+            period = source.get('reference_date') if isinstance(source, dict) else None
+            if isinstance(period, str) and period:
+                bucket['periods'].add(period)
+
+
+def municipal_partitions(municipal) -> list[dict]:
+    """Per-source/state/municipality counters. Invalid stays 0 because export aborts on invalid rows."""
+    partitions = []
+    for (dataset, state, municipality_id), bucket in sorted(municipal.items()):
+        periods = sorted(bucket['periods'])
+        partitions.append({'dataset': dataset, 'state': state, 'municipality_id': municipality_id,
+            'read': bucket['read'], 'accepted': bucket['accepted'], 'excluded': bucket['excluded'],
+            'invalid': bucket['invalid'], 'with_geometry': bucket['with_geometry'],
+            'without_geometry': bucket['without_geometry'],
+            'reference_periods': periods[:MAX_REFERENCE_PERIODS],
+            'reference_periods_truncated': len(periods) > MAX_REFERENCE_PERIODS})
+    return partitions
+
+
+def check_municipal_partitions(manifest, municipal) -> None:
+    declared = manifest.get('municipal_partitions')
+    if declared is None:
+        # Releases exported before this contract remain verifiable.
+        return
+    if declared != municipal_partitions(municipal):
+        raise ValueError('catalog_municipal_partition_mismatch')
 
 
 def verify_catalog(folder: Path) -> dict:
     folder = Path(folder); manifest = load_manifest(folder)
     counts, sources = Counter(), {}
+    municipal = defaultdict(municipal_bucket)
     for table in TABLES:
         for row in records(folder, table, manifest):
-            count_partition(counts, table, row)
+            count_partition(counts, table, row, municipal)
             remember_source(sources, table, row)
     check_partitions(manifest, counts)
+    check_municipal_partitions(manifest, municipal)
     check_sources(manifest, sources)
     return manifest
 
@@ -303,11 +356,12 @@ def install_catalog(folder: Path, destination: Path) -> dict:
     try:
         database.initialize(); initialize_extensions(database)
         counts, sources = Counter(), {}
+        municipal = defaultdict(municipal_bucket)
         with database.engine.begin() as connection:
             for table in TABLES:
                 batch = []
                 for row in records(folder, table, manifest):
-                    count_partition(counts, table, row)
+                    count_partition(counts, table, row, municipal)
                     remember_source(sources, table, row)
                     batch.append(row)
                     if len(batch) == 500:
@@ -315,6 +369,7 @@ def install_catalog(folder: Path, destination: Path) -> dict:
                 if batch:
                     connection.execute(table.insert(), batch)
             check_partitions(manifest, counts)
+            check_municipal_partitions(manifest, municipal)
             check_sources(manifest, sources)
             # Relationship consistency is checked in the same transaction.
             mismatch = connection.execute(select(Place.id).join(Municipality, Place.municipality_id == Municipality.id)

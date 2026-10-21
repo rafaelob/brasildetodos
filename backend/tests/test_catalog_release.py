@@ -59,6 +59,20 @@ def test_public_export_never_contains_private_tables(full,tmp_path):
     assert manifest['files']['changes.jsonl']['records']==2
     assert verify_catalog(folder)==manifest
     assert manifest['partitions']==[{'dataset':'synthetic','state':'BA','eligible':True,'with_geometry':False,'records':1}]
+    municipal=manifest['municipal_partitions']
+    assert municipal==[{'dataset':'synthetic','state':'BA','municipality_id':'1234567','read':1,'accepted':1,
+        'excluded':0,'invalid':0,'with_geometry':0,'without_geometry':1,
+        'reference_periods':['2025'],'reference_periods_truncated':False}]
+
+
+def test_municipal_partition_tampering_is_rejected(full,tmp_path):
+    folder=tmp_path/'release';export_catalog(full,folder)
+    path=folder/'manifest.json';manifest=json.loads(path.read_text(encoding='utf-8'))
+    manifest['municipal_partitions'][0]['read']=999
+    path.write_bytes(canonical(manifest))
+    with pytest.raises(ValueError,match='municipal_partition_mismatch'):verify_catalog(folder)
+    with pytest.raises(ValueError,match='municipal_partition_mismatch'):install_catalog(folder,tmp_path/'bad.db')
+    assert not (tmp_path/'bad.db').exists()
 
 
 def test_install_roundtrip_preserves_public_state_not_accounts(full,tmp_path):

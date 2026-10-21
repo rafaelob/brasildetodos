@@ -151,7 +151,8 @@ class Database:
             inspector = inspect_state(connection)
             existing_tables = set(inspector.get_table_names())
             version_names = ('schema_version', 'extension_version',
-                             'photo_schema_version', 'group_schema_version')
+                             'photo_schema_version', 'group_schema_version',
+                             'ocr_queue_version')
             unversioned = []
             # Validate every loaded module BEFORE create_all can mutate any table.
             for name in version_names:

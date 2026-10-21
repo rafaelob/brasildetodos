@@ -1,12 +1,34 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Estado verificado — fechamento de grupos, OCR e distribuição
 
-Atualizado em 06/09/2026 (America/Sao_Paulo). Somente main; sem force push.
+Atualizado em 20/10/2026 (America/Sao_Paulo). Somente main; sem force push.
 Código verificado do fechamento de grupos/OCR/`public-data`:
 `8324b7620021e1c5bb3a32e7439026a3a0067af2`.
 Plano inicial deste fechamento: `ec753635779d473c16105832ee36302c92352451`.
 Reconciliação educacional em 09/09/2026: o fechamento acima não inclui escolas;
 a release `education-2025-20260907-v1` é posterior e está na seção escolar.
+
+## Lote de 20/10/2026 — integridade e fila OCR
+
+O `main` integrou, por merges locais sem force push, as nove fatias corretivas das
+Issues #2–#5. O lote acrescentou fila OCR persistente e privada, metadados
+opcionais de edição/licença no catálogo, partições municipais verificáveis,
+contadores de leitura/aceitos/excluídos na cobertura, filtro `has_geometry`,
+validação do pacote de extração na leitura de página e registro de
+`public_excerpt_checked` na auditoria. A fila não armazena bytes nem texto e não
+publica automaticamente; o Workbench permite enfileirar, cancelar e repetir com
+i18n pt-BR/en/es.
+
+Evidência local em Python 3.14.8 e Node 24.20.0: suíte Python integral com
+**2.137 aprovados, 17 ignorados e zero falhas**; web com **243 aprovados**;
+build TypeScript/Vite aprovado; `npm audit --audit-level=high` com zero
+vulnerabilidades. O checkout Windows também preserva os bytes de
+`pyproject.toml`, do lock Linux e do corpus OCR versionado.
+
+Este lote não executou ingestão oficial, avaliação de corpus oficial, PostgreSQL
+durável, migração Alembic, navegador nesta rodada nem deploy. A certificação
+nacional continua **falsa** e as Issues #2–#5 continuam abertas. Detalhes em
+`changes/2026-10-20-integrity-and-ocr-queue.md`.
 
 ## Resultado
 

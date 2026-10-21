@@ -91,6 +91,34 @@ class Source(StrictModel):
     reference_date: str | None = Field(default=None, max_length=80)
     collected_at: str
     snapshot_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    # Official edition metadata is optional for legacy sources but must be coherent
+    # when present. Absence is never treated as evidence of a verified edition.
+    edition: str | None = Field(default=None, max_length=80)
+    dictionary_url: str | None = Field(default=None, max_length=2000)
+    dictionary_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    license: str | None = Field(default=None, max_length=200)
+    license_url: str | None = Field(default=None, max_length=2000)
+    published_at: str | None = Field(default=None, max_length=80)
+
+    @field_validator("dictionary_url", "license_url")
+    @classmethod
+    def metadata_url_http(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        from urllib.parse import urlsplit
+        parsed = urlsplit(value)
+        if (parsed.scheme not in {"http", "https"} or not parsed.hostname
+                or parsed.username or parsed.password):
+            raise ValueError("Public HTTP(S) reference required")
+        return value
+
+    @model_validator(mode="after")
+    def coherent_edition_metadata(self):
+        if (self.dictionary_url is None) != (self.dictionary_sha256 is None):
+            raise ValueError("Dictionary URL and SHA-256 must be provided together")
+        if self.license_url is not None and self.license is None:
+            raise ValueError("License URL requires a license name")
+        return self
 
     @field_validator("url")
     @classmethod

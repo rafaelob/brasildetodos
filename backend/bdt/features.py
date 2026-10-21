@@ -8,7 +8,8 @@ from pydantic import Field
 from sqlalchemy import delete, func, select, update
 from .domain import StrictModel, now
 from .evidence import (Audit, Decision, Document, DocumentInput, Link, LinkInput, Resource,
-    ResourceInput, audit, initialize_extensions, link_payload, register_document, validate_excerpt)
+    ResourceInput, audit, initialize_extensions, link_payload, register_document,
+    validate_excerpt, validated_extraction_pages)
 from .geo import viewport
 from .storage import LoginSession, Municipality, Observation, Place, User
 from . import photos
@@ -23,8 +24,20 @@ class DeleteAccount(StrictModel):
     confirmed: Literal[True]
 
 
+class OcrJobInput(StrictModel):
+    document_id: str = Field(min_length=1, max_length=64)
+    pages: list[int] = Field(min_length=1, max_length=10)
+    language: str = Field(default='por', max_length=32)
+    timeout: int = Field(default=90, ge=1, le=300)
+    max_attempts: int = Field(default=2, ge=1, le=3)
+
+
 def install(app, database, current_user, reviewer, rate_limit, check_password):
     initialize_extensions(database)
+    from .ocr_queue import (cancel as cancel_ocr_job, enqueue as enqueue_ocr_job,
+                            initialize_ocr_queue, list_jobs as list_ocr_jobs,
+                            retry as retry_ocr_job)
+    initialize_ocr_queue(database)
     from .groups import account_export as export_groups, install as install_groups
     install_groups(app, database, current_user, rate_limit)
     from .resource_routes import install as install_resource_routes
@@ -93,10 +106,51 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             row = session.get(Document, document_id)
             if not row:
                 raise HTTPException(404, 'document_not_found')
-            value = next((p for p in (row.extraction or {}).get('pages', []) if p['page'] == page), None)
+            if not row.extraction:
+                raise HTTPException(404, 'page_not_found')
+            expected = row.source.get('snapshot_sha256') if isinstance(row.source, dict) else ''
+            try:
+                pages = validated_extraction_pages(row.extraction, expected)
+            except ValueError as error:
+                raise HTTPException(409, str(error)) from None
+            value = next((p for p in pages if p['page'] == page), None)
             if value is None:
                 raise HTTPException(404, 'page_not_found')
             return {'document_id': document_id, 'source': row.source, 'page': value, 'public': False}
+
+    @app.get('/api/workbench/ocr/jobs')
+    def ocr_jobs(status: Literal['queued', 'running', 'succeeded', 'failed', 'cancelled'] | None = None,
+                 limit: int = Query(50, ge=1, le=100), user=Depends(reviewer)):
+        try:
+            return list_ocr_jobs(database, status=status, limit=limit)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+
+    @app.post('/api/workbench/ocr/jobs', status_code=201)
+    def ocr_enqueue(body: OcrJobInput, request: Request, user=Depends(reviewer)):
+        rate_limit(request, 'evidence_write', 100)
+        try:
+            return enqueue_ocr_job(database, body.document_id, operator=user['username'],
+                                   pages=body.pages, language=body.language,
+                                   timeout=body.timeout, max_attempts=body.max_attempts)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
+
+    @app.post('/api/workbench/ocr/jobs/{job_id}/cancel')
+    def ocr_cancel(job_id: str, request: Request, user=Depends(reviewer)):
+        rate_limit(request, 'evidence_write', 100)
+        try:
+            return cancel_ocr_job(database, job_id, operator=user['username'])
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
+
+    @app.post('/api/workbench/ocr/jobs/{job_id}/retry')
+    def ocr_retry(job_id: str, request: Request, user=Depends(reviewer)):
+        rate_limit(request, 'evidence_write', 100)
+        try:
+            return retry_ocr_job(database, job_id, operator=user['username'])
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
 
     @app.get('/api/workbench/links')
     def link_queue(status: Literal['candidate', 'reviewed', 'rejected', 'retracted'] = 'candidate',
@@ -149,7 +203,9 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                 review_note=body.note, revision=body.expected_revision + 1))
             if result.rowcount != 1:
                 raise HTTPException(409, 'review_conflict')
-            audit(session, user['id'], 'link', link_id, body.decision, revision=body.expected_revision + 1)
+            audit(session, user['id'], 'link', link_id, body.decision,
+                  revision=body.expected_revision + 1,
+                  public_excerpt_checked=bool(body.public_excerpt_checked))
             session.refresh(row)
             return link_payload(row)
 

@@ -15,14 +15,14 @@
     "check:runtime": "node ../ops/check-node.mjs"
   },
   "dependencies": {
+    "maplibre-gl": "6.7.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "maplibre-gl": "6.7.0"
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "typescript": "5.9.3",
-    "vite": "8.2.2"
+    "vite": "8.2.4"
   }
 }

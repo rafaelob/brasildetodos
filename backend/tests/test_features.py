@@ -96,8 +96,13 @@ def test_document_register_metadata_and_pages_private(client, source, database):
     assert client.get('/api/workbench/documents/missing/pages/1').status_code == 404
     assert client.get(f'/api/workbench/documents/{identity}/pages/1').status_code == 404
     with database.session() as session:
-        session.get(Document, identity).extraction = {'pages': [{'page': 1, 'text': 'restricted test text'}]}
+        session.get(Document, identity).extraction = {'sha256': source.snapshot_sha256,
+            'pages': [{'page': 1, 'text': 'restricted test text'}]}
     assert client.get(f'/api/workbench/documents/{identity}/pages/1').json()['public'] is False
+    with database.session() as session:
+        session.get(Document, identity).extraction = {'sha256': 'f' * 64,
+            'pages': [{'page': 1, 'text': 'restricted test text'}]}
+    assert client.get(f'/api/workbench/documents/{identity}/pages/1').status_code == 409
     client.post('/api/auth/logout', headers=HEAD)
     assert client.get(f'/api/workbench/documents/{identity}/pages/1').status_code == 401
 
@@ -156,7 +161,9 @@ def test_link_review_publication_and_retraction(client, database, source):
     assert client.get('/api/place-links/test:school').json() == []
     assert client.get('/api/workbench/links?status=retracted').json()[0]['revision'] == 3
     with database.session() as session:
-        assert [x.action for x in session.scalars(select(Audit).where(Audit.entity_id == identity).order_by(Audit.at))] == ['proposed', 'reviewed', 'retracted']
+        events = list(session.scalars(select(Audit).where(Audit.entity_id == identity).order_by(Audit.at)))
+        assert [x.action for x in events] == ['proposed', 'reviewed', 'retracted']
+        assert events[1].detail['public_excerpt_checked'] is True
 
 
 def test_link_review_revalidates_excerpt_against_current_extraction(client, database, source):

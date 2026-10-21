@@ -8,6 +8,22 @@ Matriz por capacidade: `FEATURE_MATRIX.md`. Evidências: `STATUS.md`,
 A versão anterior está preservada em `history/ROADMAP_89584b82.md`; não usar
 seus bloqueios antigos como estado atual.
 
+## Lote de 20/10/2026 — integridade e fila OCR
+
+As nove fatias corretivas das Issues #2–#5 foram integradas ao `main` por merge
+local. O lote adiciona fila OCR com quotas, lease, retry, cancelamento e retenção;
+metadados opcionais de edição/dicionário/licença no catálogo; partições municipais
+verificáveis; cobertura com `read`/`accepted`/`excluded`; filtro `has_geometry`;
+validação do pacote de extração na leitura de página; e auditoria explícita da
+revisão de trecho público. Nada disso publica texto ou foto automaticamente.
+
+A suíte Python integral local passou com **2.137 aprovados, 17 ignorados e zero
+falhas**; a web passou com **243 aprovados**, build Vite 8.2.4 e auditoria de
+dependências sem vulnerabilidades altas. Permanecem fora deste lote: corpus
+oficial de OCR, denominadores nacionais, PostgreSQL durável/PITR, migração
+Alembic, backup de produção, navegador/dispositivos físicos e deploy público.
+`national_catalog_certified` continua falso.
+
 ## Base já publicada
 
 O núcleo funciona sem LLM: busca e fichas com proveniência; mapa progressivo;

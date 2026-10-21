@@ -173,9 +173,16 @@ def build_coverage(connection) -> dict:
     state = case((Place.state.in_(STATES), Place.state), else_='unknown')
     located = and_(Place.latitude.is_not(None), Place.longitude.is_not(None))
     groups = connection.execute(select(family.label('source_id'), state.label('state'),
-        func.count().label('records'), func.sum(case((located, 1), else_=0)).label('geocoded'))
-        .where(Place.catalogue_eligible.is_(True)).group_by(family, state).order_by(family, state)).mappings()
-    partitions = [{'dataset': row['source_id'], **row, 'without_geometry': row['records'] - row['geocoded']} for row in groups]
+        func.count().label('read'),
+        func.sum(case((Place.catalogue_eligible.is_(True), 1), else_=0)).label('accepted'),
+        func.sum(case((Place.catalogue_eligible.is_(False), 1), else_=0)).label('excluded'),
+        func.sum(case((and_(located, Place.catalogue_eligible.is_(True)), 1), else_=0)).label('geocoded'))
+        .group_by(family, state).order_by(family, state)).mappings()
+    # Excluded records stay visible; only accepted records count as loaded places.
+    partitions = [{'source_id': row['source_id'], 'dataset': row['source_id'], 'state': row['state'], 'read': row['read'],
+        'accepted': row['accepted'], 'excluded': row['excluded'], 'records': row['accepted'],
+        'geocoded': row['geocoded'], 'without_geometry': row['accepted'] - row['geocoded']}
+        for row in groups]
     sources = {key: {'id': key, 'documentation_url': url, 'places': 0, 'geocoded': 0,
         'without_geometry': 0, 'resources': 0, 'last_attempt': None} for key, (url, _) in SOURCES.items()}
     for row in partitions:
@@ -202,7 +209,8 @@ def build_coverage(connection) -> dict:
     return {'schema_version': 1, 'generated_at': now(), 'scope': 'loaded_records_in_this_installation',
         'national_catalog_certified': False, 'municipalities': municipalities,
         'summary': {'places': loaded, 'geocoded': geocoded, 'without_geometry': loaded - geocoded,
-                    'states_with_places': len({row['state'] for row in partitions if row['state'] in STATES}),
+                    'states_with_places': len({row['state'] for row in partitions
+                                                if row['state'] in STATES and row['accepted']}),
                     'municipalities_with_places': municipalities_with_places,
                     'resources': sum(row['resources'] for row in sources.values())},
         'sources': list(sources.values()), 'partitions': partitions, 'runs': source_read['items'],

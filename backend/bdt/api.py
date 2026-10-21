@@ -15,7 +15,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from . import __version__, photos
@@ -257,13 +257,17 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
                state: str | None = Query(None, pattern=r'^[A-Z]{2}$'),
                municipality_id: str | None = Query(None, pattern=r'^[0-9]{7}$'),
                bbox: str | None = Query(None, max_length=150), page: int = Query(1, ge=1, le=100000),
-               limit: int = Query(30, ge=1, le=100)):
+               limit: int = Query(30, ge=1, le=100), has_geometry: bool | None = None):
         statement = select(Place).where(Place.catalogue_eligible.is_(True))
         if q:
             statement = statement.where(Place.search_name.contains(fold(q), autoescape=True))
         for column, value in ((Place.kind, kind), (Place.state, state), (Place.municipality_id, municipality_id)):
             if value:
                 statement = statement.where(column == value)
+        if has_geometry is True:
+            statement = statement.where(Place.latitude.is_not(None), Place.longitude.is_not(None))
+        elif has_geometry is False:
+            statement = statement.where(or_(Place.latitude.is_(None), Place.longitude.is_(None)))
         if bbox:
             from .geo import parse_bbox
             try:

@@ -69,6 +69,8 @@ def test_loaded_totals_are_independent_of_last_failure(database, place, client):
     assert payload['summary']['without_geometry'] == 1
     assert payload['summary']['municipalities_with_places'] == 1
     assert sum(row['records'] for row in payload['partitions']) == 2
+    hidden = next(row for row in payload['partitions'] if row['dataset'] == 'other')
+    assert hidden['read'] == 1 and hidden['accepted'] == 0 and hidden['excluded'] == 1
     cnes = next(row for row in payload['sources'] if row['id'] == 'cnes')
     assert cnes['places'] == 1 and cnes['data_state'] == 'loaded'
     assert cnes['last_attempt']['id'] == failed
@@ -77,6 +79,21 @@ def test_loaded_totals_are_independent_of_last_failure(database, place, client):
     assert cnes['last_attempt']['publication'] == 'not_published'
     with database.session() as session:
         assert len(list(session.scalars(select(Place).where(Place.catalogue_eligible.is_(True))))) == 2
+
+
+def test_excluded_only_state_is_not_counted_as_covered(database, place, source, client):
+    hidden = place.model_copy(update={'id': 'test:hidden-sp', 'municipality_id': '6543210',
+                                      'state': 'SP', 'catalogue_eligible': False})
+    with database.session() as session:
+        session.add(Municipality(id='6543210', name='Município Sintético SP', state='SP',
+                                 source=source.model_dump()))
+        upsert_place(session, place)
+        upsert_place(session, hidden)
+    payload = client.get('/api/coverage').json()
+    assert payload['summary']['places'] == 1
+    assert payload['summary']['states_with_places'] == 1
+    partition = next(row for row in payload['partitions'] if row['state'] == 'SP')
+    assert partition['read'] == 1 and partition['accepted'] == 0 and partition['excluded'] == 1
 
 
 def test_incomplete_coordinate_pair_is_not_counted_as_geocoded(database, place, client):

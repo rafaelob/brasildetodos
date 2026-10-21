@@ -1,0 +1,11 @@
+# >>> fleet-template >>>
+scripts/ops/** linguist-generated=true
+control_docs/AGENT_PROTOCOL.md linguist-generated=true
+control_docs/MIGRACAO_FLEET.md linguist-generated=true
+# <<< fleet-template <<<
+
+# Fingerprinted inputs must keep the exact bytes recorded in their manifests.
+pyproject.toml text eol=lf
+requirements/*.lock text eol=lf
+requirements/*.json text eol=lf
+tests/corpus/ocr-reviewed/** -text

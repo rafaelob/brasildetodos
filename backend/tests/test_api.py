@@ -30,6 +30,14 @@ def test_empty_geometry_is_in_list(client):
     response=client.get('/api/places').json()
     assert response['total']==1 and response['items'][0]['latitude'] is None
 
+def test_geometry_filter_lists_records_with_and_without_coordinates(client,database):
+    assert client.get('/api/places',params={'has_geometry':False}).json()['total']==1
+    assert client.get('/api/places',params={'has_geometry':True}).json()['total']==0
+    with database.session() as s:
+        row=s.get(Place,'test:school');row.latitude=-12.5;row.longitude=-41.5
+    assert client.get('/api/places',params={'has_geometry':True}).json()['total']==1
+    assert client.get('/api/places',params={'has_geometry':False}).json()['total']==0
+
 def test_search_accent_and_literal_wildcard(client):
     assert client.get('/api/places',params={'q':'arvore'}).json()['total']==1
     assert client.get('/api/places',params={'q':'%'}).json()['total']==0

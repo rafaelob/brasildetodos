@@ -54,6 +54,30 @@ def main():
     docs.add_argument("--output", type=Path, required=True)
     docs.add_argument("--ocr-page", type=int)
     docs.add_argument("--language", default="por")
+    ocr = sub.add_parser("ocr-queue")
+    ocr_sub = ocr.add_subparsers(dest="ocr_command", required=True)
+    ocr_enqueue = ocr_sub.add_parser("enqueue")
+    ocr_enqueue.add_argument("document")
+    ocr_enqueue.add_argument("--operator", required=True)
+    ocr_enqueue.add_argument("--pages", type=int, nargs="+", required=True)
+    ocr_enqueue.add_argument("--language", default="por")
+    ocr_enqueue.add_argument("--timeout", type=int, default=90)
+    ocr_enqueue.add_argument("--max-attempts", type=int, default=2)
+    ocr_run = ocr_sub.add_parser("run")
+    ocr_run.add_argument("--operator", required=True)
+    ocr_run.add_argument("--path", type=Path, required=True)
+    ocr_run.add_argument("--lease-seconds", type=int, default=300)
+    ocr_list = ocr_sub.add_parser("list")
+    ocr_list.add_argument("--status")
+    ocr_list.add_argument("--limit", type=int, default=50)
+    for name in ("cancel", "retry"):
+        item = ocr_sub.add_parser(name)
+        item.add_argument("job")
+        item.add_argument("--operator", required=True)
+    ocr_sub.add_parser("reap")
+    ocr_purge = ocr_sub.add_parser("purge")
+    ocr_purge.add_argument("--days", type=int, default=30)
+    ocr_purge.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     Path(os.getenv("BDT_DATA_DIR", "data")).mkdir(parents=True, exist_ok=True)
     if args.command == "download":
@@ -104,6 +128,25 @@ def main():
                 raise ValueError('cli_plan_differs_from_collection')
             result = import_resources(database, args.folder)
             atomic_json(args.folder / 'import-result.json', result)
+        elif args.command == "ocr-queue":
+            from . import ocr_queue
+            if args.ocr_command == "enqueue":
+                result = ocr_queue.enqueue(database, args.document, operator=args.operator,
+                                           pages=args.pages, language=args.language,
+                                           timeout=args.timeout, max_attempts=args.max_attempts)
+            elif args.ocr_command == "run":
+                result = ocr_queue.run_once(database, args.path, operator=args.operator,
+                                            lease_seconds=args.lease_seconds)
+            elif args.ocr_command == "list":
+                result = ocr_queue.list_jobs(database, status=args.status, limit=args.limit)
+            elif args.ocr_command == "cancel":
+                result = ocr_queue.cancel(database, args.job, operator=args.operator)
+            elif args.ocr_command == "retry":
+                result = ocr_queue.retry(database, args.job, operator=args.operator)
+            elif args.ocr_command == "reap":
+                result = ocr_queue.reap_expired(database)
+            else:
+                result = ocr_queue.purge(database, older_than_days=args.days, dry_run=args.dry_run)
         else:
             dataset = args.command.removeprefix("import-")
             source = file_source(args.path, dataset, args.url, args.reference_date)

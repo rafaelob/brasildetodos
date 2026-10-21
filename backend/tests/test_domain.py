@@ -73,6 +73,20 @@ def test_source_links_schemes(source,url):
 def test_source_timestamp_requires_zone(source):
     with pytest.raises(ValidationError):Source.model_validate(source.model_dump()|{'collected_at':'2025-01-01T12:00:00'})
 
+def test_source_edition_metadata_is_optional_and_coherent(source):
+    complete = Source.model_validate(source.model_dump()|{
+        'edition':'2025','dictionary_url':'https://example.org/dictionary.pdf',
+        'dictionary_sha256':'b'*64,'license':'CC-BY-4.0',
+        'license_url':'https://example.org/license','published_at':'2025-01-01'})
+    assert complete.edition=='2025' and complete.license=='CC-BY-4.0'
+    assert Source.model_validate(source.model_dump()).edition is None
+    for patch in ({'dictionary_url':'https://example.org/d.pdf'},
+                  {'dictionary_sha256':'b'*64},
+                  {'license_url':'https://example.org/license'},
+                  {'license_url':'javascript:alert(1)','license':'CC-BY-4.0'}):
+        with pytest.raises(ValidationError):
+            Source.model_validate(source.model_dump()|patch)
+
 @pytest.mark.parametrize('patch',[{'mode':'document'},{'consent':False},{'observed_on':'2999-01-01'},{'body':'too short'},{'reference_url':'javascript:bad()'}])
 def test_observation_validation(patch):
     data={'place_id':'test:school','mode':'field','observed_on':'2025-01-01','body':'Synthetic observation of an exterior sign.','consent':True}|patch
