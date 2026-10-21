@@ -26,7 +26,7 @@ em testes.
 | Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; browser extended | Corpus oficial diversificado e métricas por família |
 | OCR seletivo | Integração local; uma página sintética PT processada anteriormente; fila persistente com quotas, lease, retry, cancelamento, retenção, CLI e rotas de revisor; nenhum byte/texto na fila | Avaliação com corpus oficial e operação em produção |
 | Preservação OCR | Quatro originais sintéticos + dois derivados + manifesto no Git; conferência offline obrigatória | Não chamar de convênios oficiais nem usá-los como dados reais |
-| Distribuição de dados | Release v1 com hashes e entrada fixada; aceite real repetido | Renovação periódica e nova seleção de dados |
+| Distribuição de dados | Releases v1 de saúde/recursos e educação com hashes e entrada fixada; instalação e API reverificadas em 20/10/2026 (96.123 lugares/6.679 recursos; 138.086 escolas elegíveis/76.106 excluídas) | Renovação periódica, nova seleção de dados e deploy público |
 | Instalação do pacote | Um comando; staging privado; banco novo atômico; 35 regressões novas | Não migra nem sobrescreve banco ativo com usuários |
 | Mapa/WebGL | Worker empacotado, mapa opcional e teste de renderização isolada | Fonte de tiles/3D externa e aparelhos limitados |
 | Panoramas e fotos | Não entregues como funcionalidade de produção | Provedor/licença/captura, minimização, upload e moderação |

@@ -17,11 +17,15 @@ verificáveis; cobertura com `read`/`accepted`/`excluded`; filtro `has_geometry`
 validação do pacote de extração na leitura de página; e auditoria explícita da
 revisão de trecho público. Nada disso publica texto ou foto automaticamente.
 
-A suíte Python integral local passou com **2.137 aprovados, 17 ignorados e zero
+A suíte Python integral local passou com **2.138 aprovados, 17 ignorados e zero
 falhas**; a web passou com **243 aprovados**, build Vite 8.2.4 e auditoria de
-dependências sem vulnerabilidades altas. Permanecem fora deste lote: corpus
-oficial de OCR, denominadores nacionais, PostgreSQL durável/PITR, migração
-Alembic, backup de produção, navegador/dispositivos físicos e deploy público.
+dependências sem vulnerabilidades altas. Os releases `public-data-20260906-v1` e
+`education-2025-20260907-v1` foram baixados e reverificados: 96.123 lugares e
+6.679 recursos no primeiro; 138.086 escolas elegíveis, 76.106 excluídas e 27 UFs
+no segundo, com `browser_checked` falso. A compatibilidade do fingerprint com
+releases legados foi corrigida. Permanecem fora deste lote: corpus oficial de OCR,
+denominadores nacionais, PostgreSQL durável/PITR, migração Alembic, backup de
+produção, navegador/dispositivos físicos e deploy público.
 `national_catalog_certified` continua falso.
 
 ## Base já publicada

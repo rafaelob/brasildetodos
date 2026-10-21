@@ -997,8 +997,12 @@
         "Fila OCR persistente com quotas por documento/operador, lease, retry, cancelamento, reap e retenção; rotas de revisor no Workbench e CLI bdt ocr-queue; auditoria em cada transição.",
         "Source ganhou edition, dictionary_url, dictionary_sha256, license, license_url e published_at opcionais e coerentes; manifesto ganhou municipal_partitions; /api/coverage expõe read/accepted/excluded; /api/places aceita has_geometry.",
         "Leitura de página valida o pacote de extração e devolve 409 se corrompido; revisão de vínculo registra public_excerpt_checked.",
+        "Fingerprint de lugares e comparação de Source de recursos ignoram apenas metadados opcionais ausentes; valores presentes continuam no hash e releases legados voltam a verificar.",
+        "O teste de mapa trocou page.wait_for_function com string por expectativas de locator, mantendo a CSP sem unsafe-eval ou bypass_csp.",
+        "Os aceites Public catalog API acceptance e Combined public resource release passam a baixar o ZIP imutável da release e a conferir tamanho/SHA-256 contra data/releases/*.json, em vez de artifacts expirados; ambos passaram localmente sobre os bytes publicados.",
         "Vite 8.2.4, npm audit bloqueante para high/critical, atributos de checkout preservam bytes de pyproject/lock/corpus.",
-        "Testes: suíte Python integral 2.137 aprovados, 17 ignorados, zero falhas; web 243 aprovados; build aprovado; npm audit 0.",
+        "Releases publicados reverificados: public-data-20260906-v1 passou com 96.123 lugares, 6.679 recursos, 0 finanças, 0 usuários e 0 observações; education-2025-20260907-v1 passou com 214.192 lidos, 138.086 elegíveis, 76.106 excluídos e 27 UFs, browser_checked false.",
+        "Testes: suíte Python integral 2.138 aprovados, 17 ignorados, zero falhas; web 243 aprovados; build aprovado; npm audit 0.",
         "Limites: sem ingestão oficial, corpus oficial de OCR, PostgreSQL durável, Alembic, navegador ou deploy; national_catalog_certified false."
       ]
     }

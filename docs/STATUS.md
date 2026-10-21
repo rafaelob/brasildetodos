@@ -19,12 +19,27 @@ validação do pacote de extração na leitura de página e registro de
 publica automaticamente; o Workbench permite enfileirar, cancelar e repetir com
 i18n pt-BR/en/es.
 
-Código deste lote: `c585ef12d22009e316722ed6000a725210900455`.
+Código deste lote: `59a02f2bdabefdbeeac4e1f757a903084d9525ef`.
 Evidência local em Python 3.14.8 e Node 24.20.0: suíte Python integral com
-**2.137 aprovados, 17 ignorados e zero falhas**; web com **243 aprovados**;
+**2.138 aprovados, 17 ignorados e zero falhas**; web com **243 aprovados**;
 build TypeScript/Vite aprovado; `npm audit --audit-level=high` com zero
 vulnerabilidades. O checkout Windows também preserva os bytes de
 `pyproject.toml`, do lock Linux e do corpus OCR versionado.
+
+A verificação dos releases publicados também foi repetida com o código deste lote.
+`public-data-20260906-v1` (28.096.042 bytes, SHA-256 `6d62f9ca...cc1639`) passou
+com 96.123 lugares, 6.679 recursos, 0 eventos financeiros, 0 usuários e 0
+observações; `education-2025-20260907-v1` (23.807.757 bytes, SHA-256
+`483bba3a...5fcfe7`) passou com 214.192 lidos, 138.086 elegíveis, 76.106
+excluídos e 27 UFs. Nos dois casos a API foi consultada, o banco existente não foi
+modificado e `public_deployment` ficou **falso**; a verificação escolar manteve
+`browser_checked` **falso** e `national_completeness_certified` **falso**. O ZIP
+de saúde/recursos também passou nos aceites de catálogo público e de recursos
+combinados, com replay idempotente e 55 registros de valores subcent.
+
+O lote corrigiu ainda a compatibilidade do fingerprint com releases legados e
+removeu do teste de mapa o `page.wait_for_function` com string, bloqueado pela CSP
+`script-src 'self'`. Nenhuma dessas correções certifica cobertura nacional.
 
 Este lote não executou ingestão oficial, avaliação de corpus oficial, PostgreSQL
 durável, migração Alembic, navegador nesta rodada nem deploy. A certificação
