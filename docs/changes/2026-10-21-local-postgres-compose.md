@@ -38,8 +38,11 @@ Lote de 21/10/2026. Base de integração no `main`: `d3f03e2`. O Compose está e
   `0001_baseline` e o health voltou a responder.
 - Ao final, `down -v --remove-orphans` removeu containers, redes e volumes de
   prova.
-- Nenhum código Python mudou; a suíte integral anterior permanece **2.186
-  aprovados, 17 ignorados**, e a web **243 aprovados** com build Vite 8.2.4.
+- Nenhum código Python mudou. Verificação local final em `41df005`:
+  `python -m pytest -q` → **2.186 aprovados, 17 ignorados, 2 avisos**;
+  `npm test` → **243 aprovados**; `npm run build` → Vite 8.2.4 aprovado;
+  `docker compose -f compose.postgres.yaml config --quiet` e o perfil `test` do
+  Compose base também foram validados.
 
 ## Limites
 
