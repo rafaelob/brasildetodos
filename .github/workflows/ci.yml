@@ -20,6 +20,10 @@ on:
       # database schema, migrations and backup
       - backend/bdt/storage.py
       - backend/bdt/backup.py
+      - backend/bdt/migrate.py
+      - backend/tests/test_migrations.py
+      - alembic.ini
+      - migrations/**
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py
@@ -70,6 +74,10 @@ on:
       # database schema, migrations and backup
       - backend/bdt/storage.py
       - backend/bdt/backup.py
+      - backend/bdt/migrate.py
+      - backend/tests/test_migrations.py
+      - alembic.ini
+      - migrations/**
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py

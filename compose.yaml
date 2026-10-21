@@ -8,6 +8,7 @@ services:
       BDT_ENV: development
       BDT_DATABASE_URL: sqlite:////app/data/bdt.db
       BDT_DATA_DIR: /app/data
+      BDT_PROJECT_ROOT: /app
       BDT_PUBLIC_ORIGIN: ${BDT_PUBLIC_ORIGIN:-http://127.0.0.1:8008,http://localhost:8008}
       BDT_ALLOWED_HOSTS: localhost,127.0.0.1
       BDT_ALLOW_REGISTRATION: "0"
@@ -59,6 +60,7 @@ services:
       BDT_RUNTIME_TEST_DATABASE_URL: postgresql+psycopg://bdt_ci@postgres-test:5432/bdt_ci
       BDT_RUNTIME_TEST_OUTPUT: /evidence
       BDT_DATA_DIR: /tmp/bdt-data
+      BDT_PROJECT_ROOT: /app
       PYTHONDONTWRITEBYTECODE: "1"
     command: ["python", "-m", "pytest", "-p", "no:cacheprovider", "-q", "tests/runtime/test_postgres_runtime.py"]
     working_dir: /workspace

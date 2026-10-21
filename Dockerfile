@@ -13,6 +13,8 @@ RUN python -c "import sys; assert sys.version_info[:3] == (3,14,8)"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 BDT_STATIC_DIR=/app/web/dist BDT_DATA_DIR=/app/data
 COPY pyproject.toml README.md LICENSE ./
 COPY backend/ backend/
+COPY alembic.ini ./
+COPY migrations/ migrations/
 COPY requirements/ requirements/
 COPY ops/install_locked.py ops/python_lock_manifest.py ops/
 RUN python ops/install_locked.py && useradd --uid 10001 --create-home app && mkdir -p /app/data && chown app:app /app/data

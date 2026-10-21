@@ -4,7 +4,11 @@ on:
   pull_request:
     paths:
       - backend/bdt/storage.py
+      - backend/bdt/migrate.py
       - backend/tests/test_schema*.py
+      - backend/tests/test_migrations.py
+      - alembic.ini
+      - migrations/**
       - Dockerfile
       - compose.yaml
       - docker-compose.yml
@@ -23,7 +27,10 @@ on:
       - compose.yaml
       - docker-compose.yml
       - ops/postgres-test-init.sql
+      - alembic.ini
+      - migrations/**
       - backend/bdt/storage.py
+      - backend/bdt/migrate.py
       - backend/bdt/api.py
       - backend/bdt/features.py
       - pyproject.toml

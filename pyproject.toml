@@ -22,6 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest==8.4.2", "pytest-cov==6.2.1", "reportlab==4.4.3"]
 postgres = ["psycopg[binary]==3.2.10"]
+migration = ["alembic==1.20.0"]
 mcp-sources = ["mcp==1.13.1"]
 
 [project.scripts]
