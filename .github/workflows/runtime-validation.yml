@@ -11,9 +11,11 @@ on:
       - migrations/**
       - Dockerfile
       - compose.yaml
+      - compose.postgres.yaml
       - docker-compose.yml
       - pyproject.toml
       - ops/postgres-test-init.sql
+      - ops/postgres-local-init.sql
       - ops/postgres_smoke.py
       - tests/runtime/test_postgres_runtime.py
       - .github/workflows/runtime-validation.yml
@@ -25,8 +27,10 @@ on:
       - '**/Dockerfile*'
       - .dockerignore
       - compose.yaml
+      - compose.postgres.yaml
       - docker-compose.yml
       - ops/postgres-test-init.sql
+      - ops/postgres-local-init.sql
       - alembic.ini
       - migrations/**
       - backend/bdt/storage.py

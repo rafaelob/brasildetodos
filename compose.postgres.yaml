@@ -1,0 +1,103 @@
+name: brasildetodos-postgres
+
+# Local, PostgreSQL-backed stack. This is NOT production: it is bound to
+# 127.0.0.1, uses trust authentication only on an internal network, and keeps
+# data in named volumes. Production still needs TLS, secrets, backups/PITR,
+# resource limits and a reviewed deployment process.
+services:
+  postgres:
+    image: postgres:16-bookworm@sha256:bb3e1a57e5407e0a5280b4211980a5e537f4abd234a87014ac979849a78dd825
+    environment:
+      POSTGRES_USER: bdt_admin
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdt_app -d bdt_app"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - bdt-postgres-data:/var/lib/postgresql/data
+      - ./ops/postgres-local-init.sql:/docker-entrypoint-initdb.d/10-bdt-local.sql:ro
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 768m
+    pids_limit: 256
+    restart: unless-stopped
+
+  migrate:
+    build: .
+    command: ["python", "-m", "bdt.migrate", "upgrade"]
+    environment:
+      BDT_PROJECT_ROOT: /app
+      BDT_DATABASE_URL: postgresql+psycopg://bdt_app@postgres:5432/bdt_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    restart: "no"
+
+  app:
+    build: .
+    ports: ["127.0.0.1:${BDT_POSTGRES_PORT:-8009}:8000"]
+    environment:
+      BDT_ENV: development
+      BDT_DATABASE_URL: postgresql+psycopg://bdt_app@postgres:5432/bdt_app
+      BDT_DATA_DIR: /app/data
+      BDT_PROJECT_ROOT: /app
+      BDT_PUBLIC_ORIGIN: ${BDT_POSTGRES_ORIGIN:-http://127.0.0.1:8009,http://localhost:8009}
+      BDT_ALLOWED_HOSTS: localhost,127.0.0.1
+      BDT_ALLOW_REGISTRATION: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - bdt-postgres-originals:/app/data
+    networks: [backend, edge]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    restart: unless-stopped
+
+  postgres-backup:
+    profiles: ["ops"]
+    image: postgres:16-bookworm@sha256:bb3e1a57e5407e0a5280b4211980a5e537f4abd234a87014ac979849a78dd825
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: bdt_app
+      PGDATABASE: bdt_app
+    volumes:
+      - bdt-postgres-backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["pg_dump -Fc -f /backups/bdt-$$(date +%Y%m%dT%H%M%S).dump"]
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+networks:
+  backend:
+    internal: true
+  edge:
+
+volumes:
+  bdt-postgres-data:
+  bdt-postgres-originals:
+  bdt-postgres-backups:

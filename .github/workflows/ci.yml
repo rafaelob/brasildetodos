@@ -36,7 +36,9 @@ on:
       - '**/Dockerfile*'
       - .dockerignore
       - compose.yaml
+      - compose.postgres.yaml
       - docker-compose.yml
+      - ops/postgres-local-init.sql
       - .github/workflows/archive-reviewed-ocr.yml
       - .github/workflows/dependency-lock.yml
       - .github/workflows/education-release.yml
@@ -90,7 +92,9 @@ on:
       - '**/Dockerfile*'
       - .dockerignore
       - compose.yaml
+      - compose.postgres.yaml
       - docker-compose.yml
+      - ops/postgres-local-init.sql
       - .github/workflows/archive-reviewed-ocr.yml
       - .github/workflows/dependency-lock.yml
       - .github/workflows/education-release.yml
