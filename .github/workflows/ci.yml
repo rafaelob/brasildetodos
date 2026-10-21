@@ -17,8 +17,9 @@ on:
       - backend/bdt/features.py
       # money
       - backend/bdt/resource_money.py
-      # database schema and migrations
+      # database schema, migrations and backup
       - backend/bdt/storage.py
+      - backend/bdt/backup.py
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py
@@ -65,8 +66,9 @@ on:
       - backend/bdt/features.py
       # money
       - backend/bdt/resource_money.py
-      # database schema and migrations
+      # database schema, migrations and backup
       - backend/bdt/storage.py
+      - backend/bdt/backup.py
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py
