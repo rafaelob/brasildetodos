@@ -19,8 +19,8 @@
 - Correções recentes: `--database` vence `BDT_DATABASE_URL`; `prune --apply`
   recusa banco sem referências; `store_file` não apaga o próprio target.
 - Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,
-  produção/PITR/offsite, acessibilidade assistiva, fotos em grupos, panoramas
-  licenciados e locks Windows/macOS. Veja [Prontidão](READINESS.md).
+  produção/PITR/offsite, acessibilidade assistiva, panoramas licenciados e
+  locks Windows/macOS. Veja [Prontidão](READINESS.md).
 
 O texto abaixo é o histórico do fechamento de 20/10/2026.
 
