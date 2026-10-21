@@ -4,8 +4,10 @@ import os
 import secrets
 from typing import Literal
 from fastapi import Depends, HTTPException, Query, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import Field
 from sqlalchemy import delete, func, select, update
+from .document_originals import DocumentOriginal, get_original
 from .domain import StrictModel, now
 from .evidence import (Audit, Decision, Document, DocumentInput, Link, LinkInput, Resource,
     ResourceInput, audit, initialize_extensions, link_payload, register_document,
@@ -86,9 +88,14 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
     @app.get('/api/workbench/documents')
     def documents(page: int = Query(1, ge=1), user=Depends(reviewer)):
         with database.session() as session:
-            rows = session.scalars(select(Document).order_by(Document.created_at.desc(), Document.id).offset((page-1)*50).limit(50))
+            rows = list(session.scalars(select(Document).order_by(
+                Document.created_at.desc(), Document.id).offset((page-1)*50).limit(50)))
+            identities = [d.id for d in rows]
+            originals = set(session.scalars(select(DocumentOriginal.document_id).where(
+                DocumentOriginal.document_id.in_(identities)))) if identities else set()
             return [{'id': d.id, 'title': d.title, 'source': d.source, 'state': d.state,
-                     'pages': len((d.extraction or {}).get('pages', []))} for d in rows]
+                     'pages': len((d.extraction or {}).get('pages', [])),
+                     'has_original': d.id in originals} for d in rows]
 
     @app.post('/api/workbench/documents', status_code=201)
     def document_register(body: DocumentInput, request: Request, user=Depends(reviewer)):
@@ -120,7 +127,22 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                     'document_family': row.extraction.get('document_family'),
                     'multipage_table_count': (len(row.extraction.get('multipage_tables'))
                                               if isinstance(row.extraction.get('multipage_tables'), list) else 0),
+                    'original_available': session.get(DocumentOriginal, document_id) is not None,
                     'public': False}
+
+    @app.get('/api/workbench/documents/{document_id}/original')
+    def document_original(document_id: str, user=Depends(reviewer)):
+        try:
+            path, row = get_original(database, document_id, folder=app.state.document_store)
+        except ValueError as error:
+            code = str(error)
+            status = (422 if code == 'invalid_document_id' else
+                      404 if code in {'document_original_not_stored', 'document_original_missing'} else 409)
+            raise HTTPException(status, code) from None
+        return FileResponse(path, media_type=row.media_type,
+                            filename=f'document-{row.sha256[:12]}.pdf',
+                            headers={'Cache-Control': 'private, no-store',
+                                     'X-Content-Type-Options': 'nosniff'})
 
     @app.get('/api/workbench/ocr/jobs')
     def ocr_jobs(status: Literal['queued', 'running', 'succeeded', 'failed', 'cancelled'] | None = None,

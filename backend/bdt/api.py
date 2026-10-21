@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from . import __version__, photos
+from . import __version__, document_originals, photos
 from .domain import ObservationInput, financial_cells, fold, now
 from .storage import Change, Database, Finance, Ingestion, LoginSession, Municipality, Observation, Place, RateBucket, User
 
@@ -89,6 +89,8 @@ def create_app(database_url: str | None = None, *, testing: bool = False) -> Fas
     app = FastAPI(title='Brasil de Todos', version=__version__, docs_url=None, redoc_url=None,
                   openapi_url='/api/openapi.json', lifespan=lifespan)
     app.state.database = database
+    app.state.document_store = Path(os.getenv(
+        'BDT_DOCUMENT_STORE', str(folder / 'document-originals')))
     secure = os.getenv('BDT_ENV') == 'production'
     raw_origins = os.getenv('BDT_PUBLIC_ORIGIN', 'http://localhost:8000')
     allowed_origins = {orig.strip().rstrip('/') for orig in raw_origins.split(',') if orig.strip()}

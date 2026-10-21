@@ -13,7 +13,6 @@ claimed to be cancelled. A bounded listing changes no visibility state.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -30,6 +29,7 @@ from sqlalchemy import (BigInteger, Column, ForeignKey, Integer, JSON, String,
 from .domain import now
 from .ingest import safe_download
 from .json_codec import decode
+from .private_store import content_path, store_file
 from .storage import Base, Database
 from .sync import atomic_json, download_retry, file_hash
 
@@ -91,12 +91,6 @@ def document_id(cnpj: str, ano: int, sequencial: int, documento: int) -> str:
 def list_url(cnpj: str, ano: int, sequencial: int, page: int, page_size: int) -> str:
     query = urlencode({"pagina": page, "tamanhoPagina": page_size})
     return f"{API_ROOT}/{cnpj}/contratos/{ano}/{sequencial}/arquivos?{query}"
-
-
-def content_path(folder: Path, sha256: str) -> Path:
-    if not re.fullmatch(r"[a-f0-9]{64}", sha256):
-        raise ValueError("invalid_content_hash")
-    return Path(folder) / "sha256" / sha256[:2] / sha256
 
 
 def _validate_contract(cnpj: str, ano: int, sequencial: int, page_size: int, max_pages: int):
@@ -219,25 +213,6 @@ def _list_download(url: str, target: Path, max_bytes: int) -> dict:
     raise ValueError("retry_budget_must_be_positive")
 
 
-def _store_bytes(source: Path, folder: Path, sha256: str) -> Path:
-    if source.is_symlink() or not source.is_file():
-        raise ValueError("downloaded_document_not_regular")
-    target = content_path(folder, sha256)
-    hash_root = Path(folder) / "sha256"
-    if hash_root.is_symlink():
-        raise ValueError("pncp_content_folder_cannot_be_a_symlink")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if target.parent.is_symlink():
-        raise ValueError("pncp_content_folder_cannot_be_a_symlink")
-    if target.exists():
-        if target.is_symlink() or not target.is_file() or file_hash(target) != sha256:
-            raise ValueError("content_address_collision")
-        source.unlink()
-        return target
-    os.replace(source, target)
-    return target
-
-
 def _failed_report(path: Path, *, cnpj: str, ano: int, sequencial: int, error: Exception):
     try:
         atomic_json(path, {"schema": "bdt.pncp-contract-documents.v1",
@@ -332,7 +307,7 @@ def collect_contract_documents(database: Database, folder: Path, *, cnpj: str, a
             sha256 = file_hash(target)
             if metadata.get("sha256") not in (None, sha256):
                 raise ValueError("pncp_document_download_hash_mismatch")
-            _store_bytes(target, folder, sha256)
+            store_file(target, folder, sha256)
             row["sha256"] = sha256
             row["bytes"] = size
 

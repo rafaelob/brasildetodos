@@ -20,6 +20,10 @@ on:
       # database schema and migrations
       - backend/bdt/storage.py
       - ops/postgres-test-init.sql
+      # private evidence storage and reviewer-only downloads
+      - backend/bdt/document_originals.py
+      - backend/bdt/private_store.py
+      - backend/bdt/pncp_documents.py
       # deploy/infra (incl. the deploy and publish workflow files)
       - '**/Dockerfile*'
       - .dockerignore
@@ -62,6 +66,10 @@ on:
       # database schema and migrations
       - backend/bdt/storage.py
       - ops/postgres-test-init.sql
+      # private evidence storage and reviewer-only downloads
+      - backend/bdt/document_originals.py
+      - backend/bdt/private_store.py
+      - backend/bdt/pncp_documents.py
       # deploy/infra (incl. the deploy and publish workflow files)
       - '**/Dockerfile*'
       - .dockerignore
