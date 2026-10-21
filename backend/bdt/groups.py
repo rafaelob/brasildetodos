@@ -15,6 +15,7 @@ from fastapi import Depends, HTTPException, Query, Request
 from pydantic import Field, field_validator
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, delete, func, select, update
 from sqlalchemy.orm import Session
+from . import photos
 from .catalog_release import consistent_read
 from .domain import StrictModel, now
 from .evidence import audit
@@ -180,7 +181,7 @@ def group_for(session, group_id, user_id, *, revision=None, owner=False, allow_a
     return group
 
 
-def visible_observation(session, task):
+def _visible_observation_rows(session, task):
     row = session.get(Observation, task.observation_id) if task.observation_id else None
     if not row or row.author_id != task.assignee_id or row.place_id != task.place_id:
         return None
@@ -188,6 +189,10 @@ def visible_observation(session, task):
     if (row.status not in ('pending', 'approved') or not isinstance(row.payload, dict) or row.payload.get('erased') or
             not author or author.role == 'disabled' or not session.get(Member, (task.group_id, row.author_id))):
         return None
+    return row, author
+
+
+def _observation_payload(row):
     from .domain import ObservationInput
     try:
         body = ObservationInput.model_validate(row.payload).model_dump(mode='json')
@@ -197,8 +202,34 @@ def visible_observation(session, task):
             'shared_privately': True, 'created_at': row.created_at}
 
 
+def visible_observation(session, task):
+    pair = _visible_observation_rows(session, task)
+    return _observation_payload(pair[0]) if pair else None
+
+
+def group_task_evidence(session, group_id, task_id, user_id):
+    """Authorize one group task's private evidence; all failures hide existence."""
+    active_actor(session, user_id)
+    group_for(session, group_id, user_id, allow_archived=True)
+    task = session.get(Task, task_id)
+    if not task or task.group_id != group_id:
+        raise ValueError('photo_not_found')
+    pair = _visible_observation_rows(session, task)
+    if not pair:
+        raise ValueError('photo_not_found')
+    return task, pair[0], pair[1]
+
+
 def task_payload(session, task, user_id):
-    observation = visible_observation(session, task)
+    pair = _visible_observation_rows(session, task)
+    observation = _observation_payload(pair[0]) if pair else None
+    shared_photos = []
+    if pair:
+        row, author = pair
+        for photo in photos.approved_for(session, row.id):
+            item = photos.metadata(photo, row, author)
+            item['url'] = f'/api/groups/{task.group_id}/tasks/{task.id}/photos/{photo.id}/image'
+            shared_photos.append(item)
     unavailable = task.state in ('submitted', 'accepted') and observation is None
     place = session.get(Place, task.place_id)
     return {'id': task.id, 'place_id': task.place_id, 'place_name': place.name if place else None,
@@ -207,7 +238,8 @@ def task_payload(session, task, user_id):
         'revision': task.revision, 'created_at': task.created_at, 'updated_at': task.updated_at,
         'assigned_to_me': task.assignee_id == user_id, 'created_by_me': task.author_id == user_id,
         'can_review': task.state == 'submitted' and task.assignee_id != user_id and observation is not None,
-        'observation': observation, 'review_note': task.review_note if observation else None}
+        'observation': observation, 'photos': shared_photos,
+        'review_note': task.review_note if observation else None}
 
 
 def group_payload(group, user_id):

@@ -9,6 +9,7 @@ from bdt.api import create_app, password_hash
 from bdt.domain import PlaceInput, Source, now
 from bdt.storage import User, Observation, Municipality, upsert_place
 from bdt.groups import Group, Member, Invite, Task
+from test_photos import picture
 
 HEAD={'x-bdt-client':'web'}
 PASSWORD='test-only-password-2026'
@@ -68,6 +69,94 @@ def observation(c,place='test:school'):
     r=c.post('/api/observations',headers=HEAD,json={'place_id':place,'mode':'field','observed_on':'2026-09-06','body':'Synthetic field observation without personal details.','consent':True})
     assert r.status_code==201,r.text
     return r.json()['id']
+
+
+def upload_photo(client, observation_id, caption='Synthetic group photo'):
+    response = client.post('/api/photos', headers=HEAD, json={
+        'observation_id': observation_id, 'caption': caption, 'credit': 'Synthetic author',
+        'captured_on': '2026-09-06', 'license': 'CC-BY-4.0', 'privacy_confirmed': True,
+        'image_base64': picture()})
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def approve_photo(client, photo):
+    response = client.post(f"/api/photos/{photo['id']}/review", headers=HEAD, json={
+        'decision': 'approved', 'expected_revision': photo['revision'],
+        'sha256': photo['sha256'], 'note': 'Independent privacy review of synthetic evidence.',
+        'privacy_checked': True})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_private_group_photo_is_visible_only_to_members(team, monkeypatch):
+    monkeypatch.setenv('BDT_PHOTO_UPLOADS', '1')
+    _, _, c = team
+    g = new_group(c['owner'])
+    add_member(c['owner'], c['member'], g)
+    t = task(c['owner'], g)
+    action(c['member'], g, '/tasks/' + t, action='claim')
+    obs = observation(c['member'])
+    pending = upload_photo(c['member'], obs, 'Pending group photo')
+    approved = upload_photo(c['member'], obs, 'Approved group photo')
+    reviewed = approve_photo(c['reviewer'], approved)
+    action(c['member'], g, '/tasks/' + t, action='submit', observation_id=obs, share_with_group=True)
+
+    row = detail(c['owner'], g)['tasks']['items'][0]
+    assert [photo['id'] for photo in row['photos']] == [approved['id']]
+    assert row['photos'][0]['public'] is False
+    assert row['photos'][0]['url'] == f'/api/groups/{g}/tasks/{t}/photos/{approved["id"]}/image'
+
+    image = c['owner'].get(row['photos'][0]['url'])
+    assert image.status_code == 200 and image.headers['content-type'] == 'image/jpeg'
+    assert 'no-store' in image.headers['cache-control']
+    assert c['outsider'].get(row['photos'][0]['url']).status_code == 404
+    assert c['reviewer'].get(row['photos'][0]['url']).status_code == 404
+    assert c['owner'].get(f"/api/public/photos/{approved['id']}/image").status_code == 404
+    assert c['owner'].get(f'/api/groups/{g}/tasks/{t}/photos/{pending["id"]}/image').status_code == 404
+    assert reviewed['state'] == 'approved'
+
+
+def test_group_photo_disappears_after_withdrawal_or_retraction(team, monkeypatch):
+    monkeypatch.setenv('BDT_PHOTO_UPLOADS', '1')
+    _, _, c = team
+    g = new_group(c['owner'])
+    add_member(c['owner'], c['member'], g)
+    t = task(c['owner'], g)
+    action(c['member'], g, '/tasks/' + t, action='claim')
+    obs = observation(c['member'])
+    reviewed = approve_photo(c['reviewer'], upload_photo(c['member'], obs))
+    action(c['member'], g, '/tasks/' + t, action='submit', observation_id=obs, share_with_group=True)
+    photo_url = f'/api/groups/{g}/tasks/{t}/photos/{reviewed["id"]}/image'
+    assert c['owner'].get(photo_url).status_code == 200
+
+    retracted = c['reviewer'].post(f"/api/photos/{reviewed['id']}/review", headers=HEAD, json={
+        'decision': 'retracted', 'expected_revision': reviewed['revision'],
+        'sha256': reviewed['sha256'], 'note': 'Photo retracted after independent review.',
+        'privacy_checked': False})
+    assert retracted.status_code == 200, retracted.text
+    assert detail(c['owner'], g)['tasks']['items'][0]['photos'] == []
+    assert c['owner'].get(photo_url).status_code == 404
+
+    c['member'].post('/api/observations/' + obs + '/withdraw', headers=HEAD)
+    row = detail(c['owner'], g)['tasks']['items'][0]
+    assert row['photos'] == [] and row['observation'] is None
+
+
+def test_group_photo_route_is_disabled_with_uploads_off(team, monkeypatch):
+    monkeypatch.setenv('BDT_PHOTO_UPLOADS', '1')
+    _, _, c = team
+    g = new_group(c['owner'])
+    add_member(c['owner'], c['member'], g)
+    t = task(c['owner'], g)
+    action(c['member'], g, '/tasks/' + t, action='claim')
+    obs = observation(c['member'])
+    approved = approve_photo(c['reviewer'], upload_photo(c['member'], obs))
+    action(c['member'], g, '/tasks/' + t, action='submit', observation_id=obs, share_with_group=True)
+    monkeypatch.delenv('BDT_PHOTO_UPLOADS')
+    response = c['owner'].get(f'/api/groups/{g}/tasks/{t}/photos/{approved["id"]}/image')
+    assert response.status_code == 404
+    assert response.json() == {'detail': 'photo_uploads_disabled'}
 
 
 def test_private_group_persists_and_restricts_access(team):

@@ -8,7 +8,8 @@ import type {Locale,Observation,User} from './types';
 import './groups.css';
 type Group={id:string;name:string;description:string;status:string;revision:number;owner:boolean;visibility:'private';created_at:string};
 type Member={id:string;username:string;owner:boolean;me:boolean};
-type Task={id:string;place_id:string;place_name:string|null;title:string;instructions:string;state:string;effective_state:string;revision:number;assigned_to_me:boolean;created_by_me:boolean;can_review:boolean;observation:Observation|null;review_note:string|null};
+type GroupPhoto={id:string;caption:string;credit:string;captured_on:string|null;license:string;width:number;height:number;url:string;public:boolean};
+type Task={id:string;place_id:string;place_name:string|null;title:string;instructions:string;state:string;effective_state:string;revision:number;assigned_to_me:boolean;created_by_me:boolean;can_review:boolean;observation:Observation|null;photos:GroupPhoto[];review_note:string|null};
 type Detail={group:Group;members:Member[];invites:{id:string;expires_at:number}[];tasks:{items:Task[];total:number;page:number;limit:number};public:false};
 export default function GroupsPage({locale,user,onLogin,onOpenPlace}:{locale:Locale;user:User|null;onLogin:()=>void;onOpenPlace:(id:string)=>void}) {
  const t=(key:string)=>groupText(locale,key),[selected,setSelected]=useState(''),[items,setItems]=useState<Group[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[refresh,setRefresh]=useState(0),[busy,setBusy]=useState(false);
@@ -71,11 +72,17 @@ function GroupWorkspace({id,locale,onBack,onOpenPlace}:{id:string;locale:Locale;
   </>}
  </section>;
 }
+function GroupPhotoFigure({photo,locale}:{photo:GroupPhoto;locale:Locale}) {
+ const t=(key:string)=>groupText(locale,key),[failed,setFailed]=useState(false);
+ if(failed)return <p className="group-photo-fallback">{t('photoUnavailable')}</p>;
+ return <figure className="group-photo"><img src={photo.url} alt={photo.caption||t('photos')} loading="lazy" decoding="async" width={photo.width} height={photo.height} onError={()=>setFailed(true)}/><figcaption>{t('photoCredit')}: {photo.credit} · {t('photoCapturedOn')}: {photo.captured_on||t('none')} · {photo.license}</figcaption></figure>;
+}
+
 function GroupTask({task,owner,active,locale,disabled,action,onOpenPlace}:{task:Task;owner:boolean;active:boolean;locale:Locale;disabled:boolean;action:(body:Record<string,unknown>)=>Promise<boolean>;onOpenPlace:(id:string)=>void}) {
  const t=(key:string)=>groupText(locale,key),actions=taskActions(task,owner,active),[note,setNote]=useState('');
  return <article className="panel group-task"><span className="pill group-task-state">{t(task.effective_state)}</span><h3>{task.title}</h3><button className="text-button" onClick={()=>onOpenPlace(task.place_id)}>{t('openPlace')}: {task.place_name||task.place_id}</button><p className="group-prose">{task.instructions}</p>
   <div className="group-actions">{actions.filter(a=>['claim','release','reopen'].includes(a)).map(a=><button key={a} disabled={disabled} onClick={()=>action({action:a})}>{t(a)}</button>)}{actions.includes('cancel')&&<ConfirmAction locale={locale} label={t('cancel')} help={t('reviewDisclaimer')} disabled={disabled} run={()=>action({action:'cancel'})}/>}</div>
-  {task.observation&&<section className="group-evidence"><h4>{t('observation')}</h4><p className="group-prose">{task.observation.observation.body}</p><small>{task.observation.observation.observed_on} · {t(task.observation.status)}</small><p>{t('privateObservation')}</p></section>}
+  {task.observation&&<section className="group-evidence"><h4>{t('observation')}</h4><p className="group-prose">{task.observation.observation.body}</p><small>{task.observation.observation.observed_on} · {t(task.observation.status)}</small><p>{t('privateObservation')}</p>{task.photos?.length>0&&<div className="group-photos"><h4>{t('photos')}</h4><p>{t('privatePhotos')}</p><div className="group-photo-grid">{task.photos.map(photo=><GroupPhotoFigure key={photo.id} photo={photo} locale={locale}/>)}</div></div>}</section>}
   {task.review_note&&<p className="group-prose">{t('reviewNote')}: {task.review_note}</p>}
   {actions.includes('submit')&&<SubmitGroupTask locale={locale} placeId={task.place_id} disabled={disabled} submit={action}/>}
   {actions.includes('accept')&&<form className="group-review" onSubmit={e=>e.preventDefault()}><label>{t('reviewNote')}<textarea required minLength={10} maxLength={1000} value={note} onChange={e=>setNote(e.target.value)} rows={3}/></label><div className="group-actions">{['accept','request_changes'].map(a=><button key={a} type="button" disabled={disabled||note.trim().length<10} onClick={async()=>{if(await action({action:a,note}))setNote('');}}>{t(a)}</button>)}</div></form>}

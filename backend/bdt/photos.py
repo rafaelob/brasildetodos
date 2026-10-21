@@ -238,6 +238,21 @@ def visible(photo, observation, author) -> bool:
                 and not observation.payload.get('erased') and photo.bytes > 0)
 
 
+def group_visible(photo, observation, author) -> bool:
+    """A reviewed photo may be shared privately with a group before publication."""
+    return bool(photo.state == 'approved' and photo.bytes > 0
+                and observation.status in ('pending', 'approved')
+                and author.role != 'disabled'
+                and photo.author_id == observation.author_id
+                and not observation.payload.get('erased'))
+
+
+def approved_for(session, observation_id: str) -> list[Photo]:
+    return list(session.scalars(select(Photo).where(
+        Photo.observation_id == observation_id, Photo.state == 'approved',
+        Photo.bytes > 0).order_by(Photo.created_at, Photo.id).limit(MAX_PER_OBSERVATION)))
+
+
 def metadata(photo, observation, author, *, private=False) -> dict:
     result = {'id': photo.id, 'observation_id': photo.observation_id,
               'place_id': observation.place_id, 'caption': photo.caption,

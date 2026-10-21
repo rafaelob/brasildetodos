@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import Response
-from . import photos
+from . import groups, photos
 from .evidence import audit
 from .storage import Observation, User
 
@@ -81,6 +81,22 @@ def install(app, database, current_user, reviewer, rate_limit):
             with database.session() as session:
                 photo, observation, author = photos.load(session, photo_id)
                 if not photos.visible(photo, observation, author):
+                    raise ValueError('photo_not_found')
+                return _jpeg(photos.stored_bytes(session, photo))
+        except ValueError as error:
+            raise _http(error) from None
+
+    @app.get('/api/groups/{group_id}/tasks/{task_id}/photos/{photo_id}/image')
+    def group_photo_image(group_id: str, task_id: str, photo_id: str, request: Request,
+                          _=Depends(require_uploads), user=Depends(current_user)):
+        rate_limit(request, 'group_photo', 120)
+        try:
+            with database.session() as session:
+                task, observation, author = groups.group_task_evidence(
+                    session, group_id, task_id, user['id'])
+                photo, _photo_observation, _photo_author = photos.load(session, photo_id)
+                if (photo.observation_id != task.observation_id
+                        or not photos.group_visible(photo, observation, author)):
                     raise ValueError('photo_not_found')
                 return _jpeg(photos.stored_bytes(session, photo))
         except ValueError as error:
