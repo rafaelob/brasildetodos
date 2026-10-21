@@ -48,10 +48,17 @@ curl http://127.0.0.1:8009/api/health
 Backup lógico local (volume `bdt-postgres-backups`):
 
 ```bash
-docker compose -f compose.postgres.yaml --profile ops run --rm postgres-backup
+docker compose -f compose.postgres.yaml --profile ops run --rm \
+  -e BDT_BACKUP_NAME=bdt-local.dump postgres-backup
+
+# restaura em banco NOVO; recusa destino existente
+docker compose -f compose.postgres.yaml --profile ops run --rm \
+  -e BDT_RESTORE_BACKUP=bdt-local.dump \
+  -e BDT_RESTORE_DB=bdt_restore postgres-restore
 ```
 
-`down` preserva os volumes `bdt-postgres-data` e `bdt-postgres-originals`;
+O restore confere `alembic_version` e a contagem de tabelas; não sobrescreve
+banco existente. `down` preserva os volumes `bdt-postgres-data` e `bdt-postgres-originals`;
 `down -v` apaga ambos. A autenticação `trust` é limitada à rede interna, sem
 porta publicada do PostgreSQL; isso é **somente local**, nunca produção. O
 backup ainda precisa de restauração testada e retenção fora do host.

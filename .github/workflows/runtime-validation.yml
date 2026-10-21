@@ -158,7 +158,7 @@ jobs:
             -e BDT_BACKUP_NAME=bdt-ci.dump postgres-backup
           docker compose -f compose.postgres.yaml --profile ops run --rm \
             -e BDT_RESTORE_BACKUP=bdt-ci.dump -e BDT_RESTORE_DB=bdt_restore_ci \
-            postgres-restore | tee restore.log
+            postgres-restore > restore.log
           grep -q 0001_baseline restore.log
       - name: Clean the local stack and its volumes
         if: always()

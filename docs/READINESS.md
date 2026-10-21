@@ -37,6 +37,8 @@ outros três ainda têm gates abertos.
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
   membros do grupo, com rota privada e sem publicação automática.
+- Backup lógico local e restore em banco novo validados (`0001_baseline`, 42
+  tabelas); não é PITR nem backup offsite de produção.
 
 Evidências: [Status](STATUS.md), [Matriz de capacidades](FEATURE_MATRIX.md),
 [Operação](OPERATIONS.md), [Migrações](MIGRATIONS.md) e

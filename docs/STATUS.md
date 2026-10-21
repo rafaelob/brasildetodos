@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `244df19`; suíte local **2.192 aprovados, 17
+- Código de referência: `e199dc7`; suíte local **2.192 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental (GHSA-6q48/GHSA-8g5g).
