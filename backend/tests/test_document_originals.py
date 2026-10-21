@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from bdt import features as features_module
 from bdt.api import create_app, password_hash
 from bdt.document_originals import (DocumentOriginal, get_original, main, store_original)
 from bdt.evidence import Audit, Document, DocumentInput, initialize_extensions, register_document
@@ -151,6 +152,33 @@ def test_document_list_and_page_expose_original_availability(original_client, da
         f"/api/workbench/documents/{original_client.document_id}/pages/1")
     assert page.status_code == 200
     assert page.json()["original_available"] is True
+
+
+def test_reviewer_can_render_one_original_page(original_client, monkeypatch):
+    png = b"\x89PNG\r\n\x1a\nsynthetic"
+    monkeypatch.setattr(features_module, "render_page", lambda path, page: png)
+    anonymous = original_client.get(
+        f"/api/workbench/documents/{original_client.document_id}/pages/1/image")
+    assert anonymous.status_code == 401
+
+    login(original_client)
+    response = original_client.get(
+        f"/api/workbench/documents/{original_client.document_id}/pages/1/image")
+    assert response.status_code == 200 and response.content == png
+    assert response.headers["content-type"] == "image/png"
+    assert "no-store" in response.headers["cache-control"]
+
+
+def test_renderer_unavailable_is_visible(original_client, monkeypatch):
+    def unavailable(path, page):
+        raise ValueError("page_renderer_unavailable")
+
+    monkeypatch.setattr(features_module, "render_page", unavailable)
+    login(original_client)
+    response = original_client.get(
+        f"/api/workbench/documents/{original_client.document_id}/pages/1/image")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "page_renderer_unavailable"
 
 
 def test_contributor_is_refused_original_download(original_client, database):

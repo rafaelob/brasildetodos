@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import Field
 from sqlalchemy import delete, func, select, update
 from .document_originals import DocumentOriginal, get_original
+from .document_render import render_page
 from .domain import StrictModel, now
 from .evidence import (Audit, Decision, Document, DocumentInput, Link, LinkInput, Resource,
     ResourceInput, audit, initialize_extensions, link_payload, register_document,
@@ -143,6 +144,32 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
                             filename=f'document-{row.sha256[:12]}.pdf',
                             headers={'Cache-Control': 'private, no-store',
                                      'X-Content-Type-Options': 'nosniff'})
+
+    @app.get('/api/workbench/documents/{document_id}/pages/{page}/image')
+    def document_page_image(document_id: str, page: int, request: Request,
+                            user=Depends(reviewer)):
+        rate_limit(request, 'document_render', 30)
+        try:
+            path, _row = get_original(database, document_id, folder=app.state.document_store)
+            content = render_page(path, page)
+        except ValueError as error:
+            code = str(error)
+            if code == 'page_number_out_of_range':
+                status = 422
+            elif code in {'document_original_not_stored', 'document_original_missing'}:
+                status = 404
+            elif code == 'page_renderer_unavailable':
+                status = 503
+            elif code == 'page_render_timeout':
+                status = 504
+            elif code in {'document_original_corrupt', 'document_original_not_regular'}:
+                status = 409
+            else:
+                status = 422
+            raise HTTPException(status, code) from None
+        return Response(content=content, media_type='image/png',
+                        headers={'Cache-Control': 'private, no-store',
+                                 'X-Content-Type-Options': 'nosniff'})
 
     @app.get('/api/workbench/ocr/jobs')
     def ocr_jobs(status: Literal['queued', 'running', 'succeeded', 'failed', 'cancelled'] | None = None,

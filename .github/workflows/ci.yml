@@ -23,6 +23,7 @@ on:
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py
+      - backend/bdt/document_render.py
       - backend/bdt/private_store.py
       - backend/bdt/private_store_admin.py
       - backend/bdt/pncp_documents.py
@@ -72,6 +73,7 @@ on:
       - ops/postgres-test-init.sql
       # private evidence storage, extraction and reviewer-only downloads
       - backend/bdt/document_originals.py
+      - backend/bdt/document_render.py
       - backend/bdt/private_store.py
       - backend/bdt/private_store_admin.py
       - backend/bdt/pncp_documents.py

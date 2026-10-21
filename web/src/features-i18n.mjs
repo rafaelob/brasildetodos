@@ -26,7 +26,7 @@ export const featureMessages = {
     fieldAmendmentValue:'Valor do Aditivo', fieldInstallment:'Valor da Parcela', fieldPayment:'Valor Pago', fieldCounterpart:'Contrapartida',
     fieldCapacity:'Capacidade Planejada', fieldLegalBasis:'Base Legal',
     fieldSignatureDate:'Data de Assinatura', fieldStartDate:'Data de Início', fieldEndDate:'Data de Término', fieldPublicationDate:'Data de Publicação', fieldAmendmentDate:'Data do Aditivo', fieldDocumentText:'Texto do Documento',
-    openOriginal:'Abrir PDF original',
+    openOriginal:'Abrir PDF original', originalPage:'Página original',
     transcriptionNotice:'Conferir a transcrição não confirma o vínculo institucional: a decisão de revisão é separada e exige outra pessoa.'
   },
   en: {
@@ -56,7 +56,7 @@ export const featureMessages = {
     fieldAmendmentValue:'Amendment Value', fieldInstallment:'Installment Value', fieldPayment:'Paid Value', fieldCounterpart:'Counterpart',
     fieldCapacity:'Planned Capacity', fieldLegalBasis:'Legal Basis',
     fieldSignatureDate:'Signature Date', fieldStartDate:'Start Date', fieldEndDate:'End Date', fieldPublicationDate:'Publication Date', fieldAmendmentDate:'Amendment Date', fieldDocumentText:'Document Text',
-    openOriginal:'Open original PDF',
+    openOriginal:'Open original PDF', originalPage:'Original page',
     transcriptionNotice:'Checking the transcription does not confirm an institutional relationship: the review decision is separate and requires another person.'
   },
   es: {
@@ -86,7 +86,7 @@ export const featureMessages = {
     fieldAmendmentValue:'Valor de la Adenda', fieldInstallment:'Valor de la Cuota', fieldPayment:'Valor Pagado', fieldCounterpart:'Contrapartida',
     fieldCapacity:'Capacidad Planificada', fieldLegalBasis:'Base Legal',
     fieldSignatureDate:'Fecha de Firma', fieldStartDate:'Fecha de Inicio', fieldEndDate:'Fecha de Término', fieldPublicationDate:'Fecha de Publicación', fieldAmendmentDate:'Fecha de la Adenda', fieldDocumentText:'Texto del Documento',
-    openOriginal:'Abrir PDF original',
+    openOriginal:'Abrir PDF original', originalPage:'Página original',
     transcriptionNotice:'Comprobar la transcripción no confirma la relación institucional: la decisión de revisión es separada y requiere otra persona.'
   }
 };
