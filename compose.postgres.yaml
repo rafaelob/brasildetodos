@@ -85,10 +85,31 @@ services:
       PGHOST: postgres
       PGUSER: bdt_app
       PGDATABASE: bdt_app
+      BDT_BACKUP_NAME: ${BDT_BACKUP_NAME:-}
     volumes:
       - bdt-postgres-backups:/backups
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["pg_dump -Fc -f /backups/bdt-$$(date +%Y%m%dT%H%M%S).dump"]
+      - ./ops/postgres-backup.sh:/scripts/postgres-backup.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/postgres-backup.sh"]
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+  postgres-restore:
+    profiles: ["ops"]
+    image: postgres:16-bookworm@sha256:bb3e1a57e5407e0a5280b4211980a5e537f4abd234a87014ac979849a78dd825
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: bdt_admin
+      PGDATABASE: postgres
+      BDT_RESTORE_BACKUP: ${BDT_RESTORE_BACKUP:-}
+      BDT_RESTORE_DB: ${BDT_RESTORE_DB:-bdt_restore}
+    volumes:
+      - bdt-postgres-backups:/backups:ro
+      - ./ops/postgres-restore.sh:/scripts/postgres-restore.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/postgres-restore.sh"]
     networks: [backend]
     security_opt: ["no-new-privileges:true"]
     restart: "no"

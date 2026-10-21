@@ -140,7 +140,7 @@ jobs:
           persist-credentials: false
       - name: Start the durable local PostgreSQL stack
         run: docker compose -f compose.postgres.yaml up --build -d
-      - name: Verify migration, health and local backup
+      - name: Verify migration, health, backup and restore
         run: |
           for attempt in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8009/api/health > health.json; then break; fi
@@ -154,9 +154,12 @@ jobs:
           docker compose -f compose.postgres.yaml exec -T postgres \
             psql -U bdt_app -d bdt_app -c "select version_num from alembic_version" \
             | grep -q 0001_baseline
-          docker compose -f compose.postgres.yaml --profile ops run --rm postgres-backup
           docker compose -f compose.postgres.yaml --profile ops run --rm \
-            --entrypoint sh postgres-backup -c "test -n \"\$(ls -1 /backups/*.dump)\""
+            -e BDT_BACKUP_NAME=bdt-ci.dump postgres-backup
+          docker compose -f compose.postgres.yaml --profile ops run --rm \
+            -e BDT_RESTORE_BACKUP=bdt-ci.dump -e BDT_RESTORE_DB=bdt_restore_ci \
+            postgres-restore | tee restore.log
+          grep -q 0001_baseline restore.log
       - name: Clean the local stack and its volumes
         if: always()
         run: docker compose -f compose.postgres.yaml down -v --remove-orphans
