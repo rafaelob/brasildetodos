@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from uuid import uuid4
-from sqlalchemy import JSON, BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, Text, create_engine, event, inspect as inspect_state
+from sqlalchemy import JSON, BigInteger, Boolean, Column, Float, ForeignKey, Integer, String, Text, create_engine, event, inspect as inspect_state, text
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.schema import CreateColumn
 from .domain import PlaceInput, digest, fold, now
 
 Base = declarative_base()
@@ -134,59 +135,79 @@ class Database:
         self.session_factory = sessionmaker(self.engine, expire_on_commit=False)
 
     def initialize(self):
-        Base.metadata.create_all(self.engine)
-        with self.session() as session:
-            version = session.get(SchemaVersion, 1)
-            if version is not None and version.version != 1:
-                raise RuntimeError("Unsupported schema version; run a reviewed migration")
-            self._add_missing_columns()
-            if version is None:
-                session.add(SchemaVersion(id=1, version=1))
+        """Preflight and apply additive schema changes in one serialized transaction.
 
-    def _add_missing_columns(self):
-        """Reconcile additive columns on a database written by an earlier revision.
-
-        ``create_all`` creates missing tables but never alters an existing one, so an
-        installation upgraded in place would keep a stale table shape and fail at query
-        time (for example, observations written before the contest columns existed).
-        Only additive, defaulted columns are added here; removing, renaming or retyping
-        anything still requires a reviewed migration.
+        This is not a general migration engine: destructive/incompatible changes
+        still require a reviewed migration and a restore-tested backup.
         """
-        inspector = inspect_state(self.engine)
+        with self.engine.begin() as connection:
+            if connection.dialect.name == 'sqlite':
+                # sqlite3 legacy transaction mode does not begin on DDL. Without
+                # an explicit BEGIN, a later failure leaves earlier ALTERs committed.
+                connection.exec_driver_sql('BEGIN IMMEDIATE')
+            elif connection.dialect.name == 'postgresql':
+                # Database-local, transaction-scoped lock: BDT / schema initialization.
+                connection.execute(text('SELECT pg_advisory_xact_lock(4342868, 1)'))
+            inspector = inspect_state(connection)
+            existing_tables = set(inspector.get_table_names())
+            version_names = ('schema_version', 'extension_version',
+                             'photo_schema_version', 'group_schema_version')
+            unversioned = []
+            # Validate every loaded module BEFORE create_all can mutate any table.
+            for name in version_names:
+                table = Base.metadata.tables.get(name)
+                rows = []
+                if name in existing_tables:
+                    if not {'id', 'version'} <= {column['name'] for column in inspector.get_columns(name)}:
+                        raise RuntimeError('Unsupported schema version; run a reviewed migration')
+                    # Validate known persisted versions even before their module is loaded.
+                    quoted_name = connection.dialect.identifier_preparer.quote(name)
+                    rows = connection.execute(text(f'SELECT id, version FROM {quoted_name}')).fetchmany(2)
+                if rows and (len(rows) != 1 or rows[0].id != 1
+                             or type(rows[0].version) is not int or rows[0].version != 1):
+                    raise RuntimeError('Unsupported schema version; run a reviewed migration')
+                if not rows and table is not None:
+                    unversioned.append(table)
+            statements = self._plan_additive_columns(connection)
+            Base.metadata.create_all(connection)
+            for statement in statements:
+                connection.exec_driver_sql(statement)
+            for table in unversioned:
+                connection.execute(table.insert().values(id=1, version=1))
+
+    def _plan_additive_columns(self, connection) -> list[str]:
+        """Plan against the locked connection, before any table or column is added."""
+        inspector = inspect_state(connection)
         existing_tables = set(inspector.get_table_names())
-        dialect = self.engine.dialect
+        dialect = connection.dialect
+        quote = dialect.identifier_preparer.quote
         statements = []
         for table in Base.metadata.sorted_tables:
             if table.name not in existing_tables:
                 continue
-            present = {column["name"] for column in inspector.get_columns(table.name)}
+            present = {column['name'] for column in inspector.get_columns(table.name)}
             for column in table.columns:
                 if column.name in present:
                     continue
-                if not column.nullable and column.server_default is None:
+                if (not column.nullable and column.server_default is None
+                        or column.primary_key or column.unique or column.computed is not None
+                        or column.identity is not None or column.index):
                     raise RuntimeError(
-                        f"{table.name}.{column.name} is missing and has no server default; run a reviewed migration"
+                        f'{table.name}.{column.name} cannot be added safely; run a reviewed migration'
                     )
-                definition = f'"{column.name}" {column.type.compile(dialect=dialect)}'
-                if column.server_default is not None:
-                    default = column.server_default.arg
-                    default = default if isinstance(default, str) else getattr(default, "text", None)
-                    if default is None:
-                        raise RuntimeError(
-                            f"{table.name}.{column.name} has a default that cannot be rendered; run a reviewed migration"
-                        )
-                    definition += f" DEFAULT {default}"
-                if not column.nullable:
-                    definition += " NOT NULL"
+                # SQLAlchemy quotes string defaults and identifiers for the backend.
+                definition = str(CreateColumn(column).compile(dialect=dialect))
                 references = list(column.foreign_keys)
-                if len(references) == 1 and references[0].column.table.name in existing_tables:
-                    target = references[0].column
-                    definition += f' REFERENCES "{target.table.name}" ("{target.name}")'
-                statements.append(f'ALTER TABLE "{table.name}" ADD COLUMN {definition}')
-        if statements:
-            with self.engine.begin() as connection:
-                for statement in statements:
-                    connection.exec_driver_sql(statement)
+                if len(references) > 1:
+                    raise RuntimeError('Multiple column references require a reviewed migration')
+                if references:
+                    reference = references[0]
+                    if reference.ondelete or reference.onupdate or reference.deferrable or reference.initially or reference.match:
+                        raise RuntimeError('Foreign key options require a reviewed migration')
+                    target = reference.column
+                    definition += f' REFERENCES {quote(target.table.name)} ({quote(target.name)})'
+                statements.append(f'ALTER TABLE {quote(table.name)} ADD COLUMN {definition}')
+        return statements
 
     @contextmanager
     def session(self):

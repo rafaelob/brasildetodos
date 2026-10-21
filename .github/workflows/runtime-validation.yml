@@ -1,6 +1,18 @@
 name: Runtime integration
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - backend/bdt/storage.py
+      - backend/tests/test_schema*.py
+      - Dockerfile
+      - compose.yaml
+      - docker-compose.yml
+      - pyproject.toml
+      - ops/postgres-test-init.sql
+      - ops/postgres_smoke.py
+      - tests/runtime/test_postgres_runtime.py
+      - .github/workflows/runtime-validation.yml
   push:
     branches: [main]
     # Critical paths only (fleet-machine-hub#248): container/compose, schema, API/config core
@@ -24,8 +36,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: runtime-validation-main
-  cancel-in-progress: false
+  group: runtime-validation-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   postgres:
     runs-on: ubuntu-latest
