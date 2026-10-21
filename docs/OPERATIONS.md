@@ -68,6 +68,15 @@ O comando não publica, não extrai texto e não cria vínculo. O download em
 novamente e responde como anexo com `no-store`. A pasta deve ficar fora de
 `BDT_STATIC_DIR`; hash não substitui backup.
 
+Antes de limpar ou restaurar, verifique cada referência atual e histórica. O
+comando não altera arquivos e separa ausente, corrompido e verificado:
+
+```bash
+python -m bdt.private_store_admin verify \
+  --database sqlite:///data/bdt.db \
+  --folder data/document-originals
+```
+
 Órfãos do store podem ser listados sem remoção e, com decisão explícita do
 operador, removidos após a janela de retenção. Hashes referenciados pelo
 documento atual, por qualquer revisão PNCP ou por um original são preservados:
