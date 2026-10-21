@@ -41,7 +41,7 @@ O lote corrigiu ainda a compatibilidade do fingerprint com releases legados e
 removeu do teste de mapa o `page.wait_for_function` com string, bloqueado pela CSP
 `script-src 'self'`. Nenhuma dessas correções certifica cobertura nacional.
 
-Os oito workflows acionados no `main` pelo commit `9f45f85` passaram: Quality
+Os oito workflows executados no `main` a partir do commit `9f45f85` passaram: Quality
 `39528907182` (com navegador), Runtime integration `39528907133`, Public catalog
 API acceptance `39528907180`, Combined public resource release `39528907240`,
 Published data and OCR acceptance `39528907224`, Unified national catalog

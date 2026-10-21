@@ -23,7 +23,7 @@ dependências sem vulnerabilidades altas. Os releases `public-data-20260906-v1` 
 `education-2025-20260907-v1` foram baixados e reverificados: 96.123 lugares e
 6.679 recursos no primeiro; 138.086 escolas elegíveis, 76.106 excluídas e 27 UFs
 no segundo, com `browser_checked` falso. A compatibilidade do fingerprint com
-releases legados foi corrigida. Os oito workflows acionados no `main` passaram,
+releases legados foi corrigida. Os oito workflows executados no `main` passaram,
 incluindo Quality com navegador, Runtime integration e os aceites de catálogo,
 recursos, educação e dados publicados. Permanecem fora deste lote: corpus oficial
 de OCR, denominadores nacionais, PostgreSQL durável/PITR, migração Alembic, backup

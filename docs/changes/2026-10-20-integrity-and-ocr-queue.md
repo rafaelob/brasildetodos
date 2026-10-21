@@ -94,8 +94,8 @@ cobertura nacional, navegador real nem deploy público.
 ## Evidência CI no main
 
 O commit documental `9f45f859023fdff0198b4314f3aac79d0161655c` publicou o código
-`59a02f2bdabefdbeeac4e1f757a903084d9525ef`. Os oito workflows acionados no
-`main` passaram:
+`59a02f2bdabefdbeeac4e1f757a903084d9525ef`. Os oito workflows executados no
+`main` passaram (o aceite de dados duráveis foi dispatch manual no mesmo SHA):
 
 | Workflow | Execução | Resultado |
 |---|---|---|
