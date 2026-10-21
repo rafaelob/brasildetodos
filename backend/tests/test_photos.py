@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Decode actual JPEG/PNG bytes; generated images are confined to this test suite."""
 import base64
-from datetime import date, timedelta
+from datetime import date
 from io import BytesIO
 import hashlib
 
@@ -104,7 +104,7 @@ def body(**overrides):
 
 
 @pytest.mark.parametrize('change', [dict(caption='  '), dict(credit='x\x00y'), dict(license='unknown'), dict(privacy_confirmed=False),
-    dict(captured_on=(date.today()+timedelta(days=1)).isoformat()), dict(captured_on='1899-12-31'), dict(extra='forbidden')])
+    dict(captured_on=date.max.isoformat()), dict(captured_on='1899-12-31'), dict(extra='forbidden')])
 def test_submission_contract(change):
     with pytest.raises(ValueError): photos.PhotoInput(**body(**change))
 
