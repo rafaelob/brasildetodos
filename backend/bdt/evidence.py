@@ -50,6 +50,7 @@ class Link(Base):
     resource_id = Column(String(200), ForeignKey('resources.id'), nullable=False, index=True)
     document_id = Column(String(64), ForeignKey('evidence_documents.id'), nullable=False)
     page = Column(Integer, nullable=False)
+    field = Column(String(40))
     excerpt = Column(Text, nullable=False)
     justification = Column(Text, nullable=False)
     author_id = Column(String(36), ForeignKey('users.id'), nullable=False)
@@ -108,6 +109,14 @@ class LinkInput(StrictModel):
     resource_id: str = Field(max_length=200)
     document_id: str = Field(pattern=r'^[a-f0-9]{64}$')
     page: int = Field(ge=1, le=1000, strict=True)
+    field: Literal[
+        'agreement_reference', 'proposal_reference', 'contract_reference',
+        'amendment_reference', 'process_reference', 'cnpj_reference',
+        'estimated_cents', 'global_value', 'amendment_cents', 'installment_cents',
+        'payment_cents', 'counterpart_cents', 'planned_capacity', 'legal_basis',
+        'signature_date', 'start_date', 'end_date', 'publication_date',
+        'amendment_date', 'document_text',
+    ] | None = None
     excerpt: str = Field(min_length=10, max_length=1500)
     justification: str = Field(min_length=20, max_length=2000)
 
@@ -256,8 +265,8 @@ def validate_excerpt(document: Document, page: int, excerpt: str):
 
 def link_payload(row: Link, *, public: bool = False) -> dict:
     value = {'id': row.id, 'place_id': row.place_id, 'resource_id': row.resource_id, 'document_id': row.document_id,
-             'page': row.page, 'excerpt': row.excerpt, 'status': row.status, 'revision': row.revision,
-             'created_at': row.created_at, 'reviewed_at': row.reviewed_at}
+             'page': row.page, 'field': row.field, 'excerpt': row.excerpt, 'status': row.status,
+             'revision': row.revision, 'created_at': row.created_at, 'reviewed_at': row.reviewed_at}
     if not public:
         value.update(justification=row.justification, review_note=row.review_note)
     return value

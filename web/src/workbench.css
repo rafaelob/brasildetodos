@@ -7,6 +7,9 @@
 .route-badge.route-ocr_candidate{background:#fff8e6;color:#8a5800;border:1px solid #ffd680}
 .route-badge.route-ocr_processed{background:#e6f0fa;color:#0b5394;border:1px solid #a3c9f1}
 .route-badge.route-review_encoding{background:#fdf0ed;color:#9c412b;border:1px solid #f3b9ad}
+.route-badge.route-hybrid_review{background:#f0edfa;color:#4b3a8a;border:1px solid #c9bdf1}
+.route-badge.route-review_orientation{background:#fff0f6;color:#8a2b56;border:1px solid #f1b9cf}
+.route-badge.route-inspect_blank_or_graphic{background:#f2f2f2;color:#555;border:1px solid #ccc}
 
 .candidates-container{margin:1rem 0;padding:0.85rem;background:#f9fcf9;border:1px solid #c8d8cb;border-radius:10px}
 .candidates-container h3{margin:0 0 0.6rem 0;font-size:0.88rem;color:#112f23}

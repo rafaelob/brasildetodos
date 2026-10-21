@@ -17,9 +17,15 @@ export const featureMessages = {
     openWorkbench:'Abrir revisão documental', noticeData:'As informações descrevem registros carregados, não disponibilidade de vagas ou atendimento em tempo real.',
     extractedCandidates:'Entidades e candidatos identificados', useAsExcerpt:'Usar como trecho',
     routeNative:'Extração Nativa', routeOcrCandidate:'Candidata a OCR', routeOcrProcessed:'OCR Executado', routeReviewEncoding:'Revisão de Codificação',
+    routeHybridReview:'Página Híbrida (texto + digitalização)', routeReviewOrientation:'Revisão de Orientação', routeBlankGraphic:'Página em Branco ou Gráfica',
+    documentFamily:'Família documental', familyAgreement:'Convênio', familyWorkPlan:'Plano de Trabalho', familyContract:'Contrato', familyAmendment:'Termo Aditivo', familyUnknown:'Não identificada',
+    evidenceField:'Campo do trecho', fieldUnspecified:'Não especificado',
     fieldAgreement:'Convênio', fieldProposal:'Proposta', fieldContract:'Contrato', fieldAmendment:'Termo Aditivo',
     fieldProcess:'Processo', fieldCnpj:'CNPJ', fieldEstimated:'Valor Estimado', fieldGlobal:'Valor Global',
-    fieldCapacity:'Capacidade Planejada', fieldLegalBasis:'Base Legal'
+    fieldAmendmentValue:'Valor do Aditivo', fieldInstallment:'Valor da Parcela', fieldPayment:'Valor Pago', fieldCounterpart:'Contrapartida',
+    fieldCapacity:'Capacidade Planejada', fieldLegalBasis:'Base Legal',
+    fieldSignatureDate:'Data de Assinatura', fieldStartDate:'Data de Início', fieldEndDate:'Data de Término', fieldPublicationDate:'Data de Publicação', fieldAmendmentDate:'Data do Aditivo', fieldDocumentText:'Texto do Documento',
+    transcriptionNotice:'Conferir a transcrição não confirma o vínculo institucional: a decisão de revisão é separada e exige outra pessoa.'
   },
   en: {
     workbench:'Document review', resourcesTitle:'Agreements and procurement', links:'Documented relationships', linksEmpty:'No reviewed relationship is available for this place.',
@@ -39,9 +45,15 @@ export const featureMessages = {
     openWorkbench:'Open document review', noticeData:'Information describes loaded records, not real-time places or appointments.',
     extractedCandidates:'Identified entities and candidates', useAsExcerpt:'Use as excerpt',
     routeNative:'Native Extraction', routeOcrCandidate:'OCR Candidate', routeOcrProcessed:'OCR Processed', routeReviewEncoding:'Encoding Review',
+    routeHybridReview:'Hybrid Page (text + scan)', routeReviewOrientation:'Orientation Review', routeBlankGraphic:'Blank or Graphic Page',
+    documentFamily:'Document family', familyAgreement:'Agreement', familyWorkPlan:'Work plan', familyContract:'Contract', familyAmendment:'Amendment', familyUnknown:'Not identified',
+    evidenceField:'Passage field', fieldUnspecified:'Unspecified',
     fieldAgreement:'Agreement', fieldProposal:'Proposal', fieldContract:'Contract', fieldAmendment:'Amendment',
     fieldProcess:'Process', fieldCnpj:'CNPJ', fieldEstimated:'Estimated Value', fieldGlobal:'Global Value',
-    fieldCapacity:'Planned Capacity', fieldLegalBasis:'Legal Basis'
+    fieldAmendmentValue:'Amendment Value', fieldInstallment:'Installment Value', fieldPayment:'Paid Value', fieldCounterpart:'Counterpart',
+    fieldCapacity:'Planned Capacity', fieldLegalBasis:'Legal Basis',
+    fieldSignatureDate:'Signature Date', fieldStartDate:'Start Date', fieldEndDate:'End Date', fieldPublicationDate:'Publication Date', fieldAmendmentDate:'Amendment Date', fieldDocumentText:'Document Text',
+    transcriptionNotice:'Checking the transcription does not confirm an institutional relationship: the review decision is separate and requires another person.'
   },
   es: {
     workbench:'Revisión documental', resourcesTitle:'Convenios y contrataciones', links:'Relaciones documentadas', linksEmpty:'No hay una relación revisada disponible para este lugar.',
@@ -61,9 +73,15 @@ export const featureMessages = {
     openWorkbench:'Abrir revisión documental', noticeData:'La información describe registros cargados, no plazas o citas disponibles en tiempo real.',
     extractedCandidates:'Entidades y candidatos identificados', useAsExcerpt:'Usar como extracto',
     routeNative:'Extracción Nativa', routeOcrCandidate:'Candidata a OCR', routeOcrProcessed:'OCR Procesado', routeReviewEncoding:'Revisión de Codificación',
+    routeHybridReview:'Página Híbrida (texto + escaneo)', routeReviewOrientation:'Revisión de Orientación', routeBlankGraphic:'Página en Blanco o Gráfica',
+    documentFamily:'Familia documental', familyAgreement:'Convenio', familyWorkPlan:'Plan de Trabajo', familyContract:'Contrato', familyAmendment:'Adenda / Enmienda', familyUnknown:'No identificada',
+    evidenceField:'Campo del fragmento', fieldUnspecified:'No especificado',
     fieldAgreement:'Convenio', fieldProposal:'Propuesta', fieldContract:'Contrato', fieldAmendment:'Adenda / Enmienda',
     fieldProcess:'Expediente', fieldCnpj:'CNPJ', fieldEstimated:'Valor Estimado', fieldGlobal:'Valor Global',
-    fieldCapacity:'Capacidad Planificada', fieldLegalBasis:'Base Legal'
+    fieldAmendmentValue:'Valor de la Adenda', fieldInstallment:'Valor de la Cuota', fieldPayment:'Valor Pagado', fieldCounterpart:'Contrapartida',
+    fieldCapacity:'Capacidad Planificada', fieldLegalBasis:'Base Legal',
+    fieldSignatureDate:'Fecha de Firma', fieldStartDate:'Fecha de Inicio', fieldEndDate:'Fecha de Término', fieldPublicationDate:'Fecha de Publicación', fieldAmendmentDate:'Fecha de la Adenda', fieldDocumentText:'Texto del Documento',
+    transcriptionNotice:'Comprobar la transcripción no confirma la relación institucional: la decisión de revisión es separada y requiere otra persona.'
   }
 };
 export function featureText(locale, key) { return featureMessages[locale]?.[key]; }

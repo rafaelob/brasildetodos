@@ -88,8 +88,8 @@ def main():
             if not 1 <= args.ocr_page <= len(result["pages"]):
                 parser.error("Page outside document")
             page = result["pages"][args.ocr_page - 1]
-            if page["route"] == "native":
-                parser.error("Native extraction already works; OCR not justified")
+            if not page.get("ocr_eligible", page["route"] not in {"native", "inspect_blank_or_graphic"}):
+                parser.error("Native extraction or a blank page does not justify OCR")
             text = ocr_page(args.path, args.ocr_page, args.language)
             page["ocr_candidate_text"] = text
             page["ocr_candidates"] = candidates(text)

@@ -166,6 +166,39 @@ def test_link_review_publication_and_retraction(client, database, source):
         assert events[1].detail['public_excerpt_checked'] is True
 
 
+def test_link_field_is_validated_kept_and_published(client, database, source):
+    body = prepare_link(client, database, source) | {'field': 'global_value'}
+    submitted = client.post('/api/workbench/links', headers=HEAD, json=body)
+    assert submitted.status_code == 201
+    assert submitted.json()['field'] == 'global_value'
+    identity = submitted.json()['id']
+
+    invalid = client.post('/api/workbench/links', headers=HEAD, json=body | {'field': 'invented_role'})
+    assert invalid.status_code == 422
+
+    login(client, 'reviewer')
+    assert client.post(f'/api/workbench/links/{identity}/review', headers=HEAD, json=decision()).status_code == 200
+    published = client.get('/api/place-links/test:school').json()[0]
+    assert published['field'] == 'global_value'
+    assert published['page'] == 1
+
+
+def test_document_page_exposes_family_and_multipage_count_but_not_publication(client, database, source):
+    login(client)
+    identity = client.post('/api/workbench/documents', headers=HEAD, json=document(source)).json()['id']
+    with database.session() as session:
+        session.get(Document, identity).extraction = {
+            'sha256': source.snapshot_sha256,
+            'document_family': {'primary': 'contract', 'publication_allowed': False},
+            'multipage_tables': [{'pages': [1, 2], 'publication_allowed': False}],
+            'pages': [{'page': 1, 'text': 'restricted test text'}],
+        }
+    page = client.get(f'/api/workbench/documents/{identity}/pages/1').json()
+    assert page['document_family']['primary'] == 'contract'
+    assert page['multipage_table_count'] == 1
+    assert page['public'] is False
+
+
 def test_link_review_revalidates_excerpt_against_current_extraction(client, database, source):
     body = prepare_link(client, database, source)
     identity = client.post('/api/workbench/links', headers=HEAD, json=body).json()['id']

@@ -116,7 +116,11 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
             value = next((p for p in pages if p['page'] == page), None)
             if value is None:
                 raise HTTPException(404, 'page_not_found')
-            return {'document_id': document_id, 'source': row.source, 'page': value, 'public': False}
+            return {'document_id': document_id, 'source': row.source, 'page': value,
+                    'document_family': row.extraction.get('document_family'),
+                    'multipage_table_count': (len(row.extraction.get('multipage_tables'))
+                                              if isinstance(row.extraction.get('multipage_tables'), list) else 0),
+                    'public': False}
 
     @app.get('/api/workbench/ocr/jobs')
     def ocr_jobs(status: Literal['queued', 'running', 'succeeded', 'failed', 'cancelled'] | None = None,

@@ -1,5 +1,31 @@
 {
+  "document_family": {
+    "evidence": [
+      {
+        "end": 39,
+        "family": "agreement",
+        "page": 1,
+        "start": 31,
+        "term": "CONVENIO"
+      }
+    ],
+    "families": [
+      {
+        "count": 1,
+        "family": "agreement",
+        "pages": [
+          1
+        ]
+      }
+    ],
+    "primary": "agreement",
+    "publication_allowed": false,
+    "review_required": true,
+    "text_basis": "native_text_only"
+  },
+  "extractor_version": "native-pdf-v2",
   "filename": "SYNTHETIC-native.pdf",
+  "multipage_tables": [],
   "original_preserved": true,
   "pages": [
     {
@@ -42,11 +68,15 @@
         }
       ],
       "height": 841.8898,
+      "image_fraction": 0.0,
+      "ocr_eligible": false,
+      "orientation": "portrait",
       "page": 1,
       "rotation": 0,
       "route": "native",
       "tables": [],
       "text": "DOCUMENTO SINTETICO PARA TESTE\nCONVENIO 977950/2025\nPROPOSTA 036806/2025\nVALOR ESTIMADO: R$ 3.642.610,56\nATÉ 170 CRIANÇAS\nSem validade administrativa. Dados fictícios.",
+      "text_length": 167,
       "width": 595.2756,
       "words": [
         {

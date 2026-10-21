@@ -22,6 +22,25 @@ CREATE TABLE observations (
 )
 """
 
+OLD_EVIDENCE_LINKS = """
+CREATE TABLE evidence_links (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    place_id VARCHAR(180) NOT NULL,
+    resource_id VARCHAR(200) NOT NULL,
+    document_id VARCHAR(64) NOT NULL,
+    page INTEGER NOT NULL,
+    excerpt TEXT NOT NULL,
+    justification TEXT NOT NULL,
+    author_id VARCHAR(36) NOT NULL,
+    reviewer_id VARCHAR(36),
+    status VARCHAR(20) NOT NULL,
+    revision INTEGER NOT NULL,
+    created_at VARCHAR(40) NOT NULL,
+    reviewed_at VARCHAR(40),
+    review_note TEXT
+)
+"""
+
 
 def legacy_database(tmp_path, name="legacy.db"):
     url = f"sqlite:///{tmp_path/name}"
@@ -68,6 +87,34 @@ def test_place_detail_reads_an_upgraded_database(tmp_path, source, place):
         response = client.get(f"/api/places/{place.id}")
     assert response.status_code == 200
     assert response.json()["observations"] == []
+    database.engine.dispose()
+
+
+def test_initialize_adds_link_field_to_legacy_evidence_table(tmp_path):
+    url = f"sqlite:///{tmp_path/'legacy-links.db'}"
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.exec_driver_sql(OLD_EVIDENCE_LINKS)
+        connection.exec_driver_sql(
+            "INSERT INTO evidence_links VALUES "
+            "('l1','place:1','pncp:synthetic/2025','" + "a" * 64 + "',1,"
+            "'Synthetic excerpt text','Synthetic justification text','u1',NULL,"
+            "'candidate',1,'2026-01-01T00:00:00+00:00',NULL,NULL)"
+        )
+    engine.dispose()
+    database = Database(url)
+    database.initialize()
+    database.initialize()
+    with database.session() as session:
+        row = session.execute(text("SELECT field FROM evidence_links WHERE id='l1'")).one()
+        assert tuple(row) == (None,)
+    connection = sqlite3.connect(tmp_path / "legacy-links.db")
+    try:
+        assert connection.execute(
+            "SELECT count(*) FROM pragma_table_info('evidence_links') WHERE name='field'"
+        ).fetchone() == (1,)
+    finally:
+        connection.close()
     database.engine.dispose()
 
 

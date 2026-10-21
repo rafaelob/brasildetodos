@@ -18,6 +18,7 @@ from pathlib import Path
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer, JSON, String, delete, func, select, update
 
 from .domain import now
+from .documents import ocr_eligible
 from .evidence import Document, audit, initialize_extensions, validated_extraction_pages
 from .storage import Base, Database, User
 from .sync import file_hash
@@ -134,7 +135,7 @@ def _validate_document(session, document_id: str, pages: list[int]) -> tuple[Doc
     selected = {page['page']: page for page in stored}
     for number in pages:
         page = selected.get(number)
-        if page is None or page.get('route') not in {'ocr_candidate', 'review_encoding'}:
+        if page is None or not ocr_eligible(page):
             raise ValueError('selected_page_is_not_an_inspected_ocr_candidate')
         if page.get('ocr_candidate_text'):
             raise ValueError('page_already_has_ocr_requires_explicit_review')
