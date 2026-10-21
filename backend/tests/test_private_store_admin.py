@@ -11,7 +11,7 @@ from bdt.document_originals import DocumentOriginal
 from bdt.domain import now
 from bdt.evidence import DocumentInput, initialize_extensions, register_document
 from bdt.private_store import content_path
-from bdt.private_store_admin import main, prune_orphans
+from bdt.private_store_admin import main, prune_orphans, verify_store
 from bdt.pncp_documents import PncpContractDocument, PncpDocumentRevision
 from bdt.storage import User
 
@@ -91,6 +91,26 @@ def test_dry_run_then_apply_keeps_current_and_revision_references(database, sour
     assert not orphan.exists()
     assert referenced.exists() and current.exists() and previous.exists()
     assert young.exists() and invalid.exists()
+
+
+def test_verify_checks_current_revision_and_original_bytes(database, source, tmp_path):
+    folder = tmp_path / "private-store"
+    old = 1_900_000_000.0
+    referenced_document(database, source, folder, b"%PDF-1.4 referenced", old)
+    current, previous = referenced_pncp(database, folder, b"%PDF-1.4 current",
+                                        b"%PDF-1.4 previous", old)
+
+    healthy = verify_store(database, folder)
+    assert healthy["status"] == "ok" and healthy["referenced"] == 3
+    assert healthy["checked"] == 3 and healthy["missing"] == 0 and healthy["corrupt"] == 0
+
+    previous.unlink()
+    missing = verify_store(database, folder)
+    assert missing["status"] == "failed" and missing["missing"] == 1
+
+    current.write_bytes(b"corrupt")
+    corrupt = verify_store(database, folder)
+    assert corrupt["status"] == "failed" and corrupt["corrupt"] == 1
 
 
 def test_missing_store_and_bad_retention_are_rejected(database, tmp_path):

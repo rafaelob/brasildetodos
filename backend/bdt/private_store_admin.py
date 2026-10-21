@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Operator-only cleanup for unreferenced content-addressed private files.
+"""Operator-only integrity checks and cleanup for private content-addressed files.
 
-A dry run is the default. ``--apply`` removes only files that are older than
-the retention window and are not referenced by any current document row or
-document revision. Unknown names and symlinks are never deleted.
+``verify`` checks every referenced hash and size. ``prune`` is a dry run by
+default; ``--apply`` removes only files older than the retention window that are
+not referenced by a current document row or any document revision. Unknown
+names and symlinks are never deleted.
 """
 from __future__ import annotations
 
@@ -18,18 +19,60 @@ from sqlalchemy import select
 
 from .document_originals import DocumentOriginal
 from .pncp_documents import PncpContractDocument, PncpDocumentRevision
+from .private_store import verified_path
 from .storage import Database
 
 
 HEX = re.compile(r"[a-f0-9]{64}")
 
 
-def referenced_hashes(database: Database) -> set[str]:
+def reference_rows(database: Database) -> list[tuple[str, int]]:
     with database.session() as session:
-        hashes = set(session.scalars(select(PncpContractDocument.snapshot_sha256)))
-        hashes |= set(session.scalars(select(PncpDocumentRevision.snapshot_sha256)))
-        hashes |= set(session.scalars(select(DocumentOriginal.sha256)))
-        return hashes
+        rows = list(session.execute(select(
+            PncpContractDocument.snapshot_sha256, PncpContractDocument.byte_size)))
+        rows += list(session.execute(select(
+            PncpDocumentRevision.snapshot_sha256, PncpDocumentRevision.byte_size)))
+        rows += list(session.execute(select(
+            DocumentOriginal.sha256, DocumentOriginal.byte_size)))
+        return [(str(sha), int(size)) for sha, size in rows]
+
+
+def referenced_hashes(database: Database) -> set[str]:
+    return {sha for sha, _ in reference_rows(database)}
+
+
+def verify_store(database: Database, folder: Path) -> dict:
+    folder = Path(folder)
+    references = reference_rows(database)
+    unique: dict[str, set[int]] = {}
+    for sha, size in references:
+        unique.setdefault(sha, set()).add(size)
+    errors: list[dict] = []
+    checked = missing = corrupt = 0
+    for sha, sizes in sorted(unique.items()):
+        for size in sorted(sizes):
+            checked += 1
+            try:
+                verified_path(folder, sha, size)
+            except ValueError as error:
+                code = str(error)
+                if code == "private_store_content_missing":
+                    missing += 1
+                else:
+                    corrupt += 1
+                errors.append({"sha256": sha, "byte_size": size, "error": code})
+    return {
+        "schema": "bdt.private-store-verify.v1",
+        "status": "failed" if errors else "ok",
+        "referenced": len(references),
+        "unique": len(unique),
+        "checked": checked,
+        "ok": checked - len(errors),
+        "missing": missing,
+        "corrupt": corrupt,
+        "errors": errors[:100],
+        "publication_allowed": False,
+    }
 
 
 def prune_orphans(database: Database, folder: Path, *, older_than_days: int = 30,
@@ -97,6 +140,12 @@ def prune_orphans(database: Database, folder: Path, *, older_than_days: int = 30
     }
 
 
+def default_folder() -> Path:
+    return Path(os.getenv(
+        "BDT_DOCUMENT_STORE",
+        str(Path(os.getenv("BDT_DATA_DIR", "data")) / "document-originals")))
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -106,17 +155,19 @@ def main(argv=None):
     prune.add_argument("--older-than-days", type=int, default=30)
     prune.add_argument("--apply", action="store_true",
                        help="Delete orphan candidates; omitted means dry run.")
+    verify = sub.add_parser("verify")
+    verify.add_argument("--database", default=os.getenv("BDT_DATABASE_URL", "sqlite:///data/bdt.db"))
+    verify.add_argument("--folder", type=Path, default=None)
     args = parser.parse_args(argv)
-    folder = args.folder
-    if folder is None:
-        folder = Path(os.getenv(
-            "BDT_DOCUMENT_STORE",
-            str(Path(os.getenv("BDT_DATA_DIR", "data")) / "document-originals")))
+    folder = args.folder if args.folder is not None else default_folder()
     database = Database(args.database)
     database.initialize()
     try:
-        result = prune_orphans(database, folder, older_than_days=args.older_than_days,
-                               apply=args.apply)
+        if args.command == "prune":
+            result = prune_orphans(database, folder, older_than_days=args.older_than_days,
+                                   apply=args.apply)
+        else:
+            result = verify_store(database, folder)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     finally:
         database.engine.dispose()
