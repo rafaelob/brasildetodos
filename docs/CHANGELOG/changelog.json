@@ -1003,6 +1003,7 @@
         "Vite 8.2.4, npm audit bloqueante para high/critical, atributos de checkout preservam bytes de pyproject/lock/corpus.",
         "Releases publicados reverificados: public-data-20260906-v1 passou com 96.123 lugares, 6.679 recursos, 0 finanças, 0 usuários e 0 observações; education-2025-20260907-v1 passou com 214.192 lidos, 138.086 elegíveis, 76.106 excluídos e 27 UFs, browser_checked false.",
         "Testes: suíte Python integral 2.138 aprovados, 17 ignorados, zero falhas; web 243 aprovados; build aprovado; npm audit 0.",
+        "CI do main: oito workflows aprovados no commit 9f45f85, incluindo Quality 39528907182, Runtime integration 39528907133, catálogo público 39528907180, recursos combinados 39528907240, dados publicados/OCR 39528907224, catálogo nacional 39528907186, educação 39528907199 e dados públicos duráveis 39528945450.",
         "Limites: sem ingestão oficial, corpus oficial de OCR, PostgreSQL durável, Alembic, navegador ou deploy; national_catalog_certified false."
       ]
     }

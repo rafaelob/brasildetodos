@@ -91,11 +91,32 @@ os resultados registrados.
 Essas verificações comprovam a instalação e a consulta dos bytes publicados, não
 cobertura nacional, navegador real nem deploy público.
 
+## Evidência CI no main
+
+O commit documental `9f45f859023fdff0198b4314f3aac79d0161655c` publicou o código
+`59a02f2bdabefdbeeac4e1f757a903084d9525ef`. Os oito workflows acionados no
+`main` passaram:
+
+| Workflow | Execução | Resultado |
+|---|---|---|
+| Quality | `39528907182` | aprovado, incluindo percursos de navegador |
+| Runtime integration | `39528907133` | aprovado |
+| Public catalog API acceptance | `39528907180` | aprovado sobre o ZIP publicado |
+| Combined public resource release | `39528907240` | aprovado sobre o ZIP publicado |
+| Published data and OCR acceptance | `39528907224` | aprovado |
+| Unified national catalog acceptance | `39528907186` | aprovado |
+| Verified national education release | `39528907199` | aprovado |
+| Durable reviewed public data | `39528945450` | aprovado |
+
+Esses aceites usam os bytes publicados e verificam a API; não são deploy público
+nem certificado de cobertura nacional.
+
 ## Limites
 
-As provas usam SQLite isolado e registros sintéticos. Não houve ingestão de dados
-oficiais, avaliação de corpus oficial de OCR, execução de navegador nesta rodada,
-PostgreSQL durável, migração Alembic, backup de produção ou deploy público.
-`national_catalog_certified` continua **falso**. As Issues #2–#5 permanecem
-abertas; este lote reduz lacunas de software, mas não certifica cobertura nacional
-nem operação em produção.
+As provas unitárias usam SQLite isolado e registros sintéticos; os aceites de
+release usam os bytes publicados. A execução local não abriu navegador, mas o
+Quality no runner executou os percursos de navegador e passou. Não houve ingestão
+nova de dados oficiais, avaliação de corpus oficial de OCR, PostgreSQL durável,
+migração Alembic, backup de produção ou deploy público. `national_catalog_certified`
+continua **falso**. As Issues #2–#5 permanecem abertas; este lote reduz lacunas de
+software, mas não certifica cobertura nacional nem operação em produção.

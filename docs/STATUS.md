@@ -41,9 +41,18 @@ O lote corrigiu ainda a compatibilidade do fingerprint com releases legados e
 removeu do teste de mapa o `page.wait_for_function` com string, bloqueado pela CSP
 `script-src 'self'`. Nenhuma dessas correções certifica cobertura nacional.
 
-Este lote não executou ingestão oficial, avaliação de corpus oficial, PostgreSQL
-durável, migração Alembic, navegador nesta rodada nem deploy. A certificação
-nacional continua **falsa** e as Issues #2–#5 continuam abertas. Detalhes em
+Os oito workflows acionados no `main` pelo commit `9f45f85` passaram: Quality
+`39528907182` (com navegador), Runtime integration `39528907133`, Public catalog
+API acceptance `39528907180`, Combined public resource release `39528907240`,
+Published data and OCR acceptance `39528907224`, Unified national catalog
+acceptance `39528907186`, Verified national education release `39528907199` e
+Durable reviewed public data `39528945450`. Os aceites de catálogo e recursos
+usaram o ZIP publicado e conferiram tamanho/SHA-256.
+
+A execução local não abriu navegador; o Quality no runner executou os percursos.
+Este lote não executou ingestão oficial nova, avaliação de corpus oficial,
+PostgreSQL durável, migração Alembic nem deploy. A certificação nacional continua
+**falsa** e as Issues #2–#5 continuam abertas. Detalhes em
 `changes/2026-10-20-integrity-and-ocr-queue.md`.
 
 ## Resultado
