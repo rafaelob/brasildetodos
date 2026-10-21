@@ -40,6 +40,8 @@ serviço one-shot e só então inicia a aplicação em `127.0.0.1:8009`:
 
 ```bash
 docker compose -f compose.postgres.yaml up --build -d
+# ou o alias de compatibilidade:
+# docker compose -f docker-compose.postgres.yml up --build -d
 curl http://127.0.0.1:8009/api/health
 ```
 
@@ -61,7 +63,7 @@ Importar IBGE primeiro, depois cadastros, depois registros vinculados. Executar 
 ## Documentos isolados
 
 ```bash
-docker build -f ops/Dockerfile.documents -t bdt-documents .
+docker build --platform linux/amd64 -f ops/Dockerfile.documents -t bdt-documents .
 # Ajuste permissões de input/output para o UID 10001; pastas devem existir.
 docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
   --memory 1g --cpus 1 --pids-limit 64 --tmpfs /tmp:rw,noexec,nosuid,size=256m \
@@ -69,7 +71,7 @@ docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-
   /input/arquivo.pdf --output /output/extraido.json
 ```
 
-A imagem usa Python 3.14.8 e o lock Linux verificado. Build e renderização real de uma página com `pdftoppm` foram validados em 21/10/2026; o pipeline ainda não foi avaliado em corpus oficial digitalizado.
+A imagem usa Python 3.14.8 e o lock Linux verificado. Build e renderização real de uma página com `pdftoppm` foram validados em 21/10/2026; o pipeline ainda não foi avaliado em corpus oficial digitalizado. O lock atual é `x86_64`; arm64 exige um lock próprio.
 
 OCR selecionado adiciona `--ocr-page N --language por`. Faça benchmark de tempo, qualidade por campo e revisão humana antes de dimensionar lotes.
 
@@ -121,6 +123,8 @@ python -m bdt.private_store_admin prune ... --apply
 ```
 
 O comando não substitui backup nem expurgo legal de documento referenciado.
+`--apply` recusa um banco sem nenhuma referência, para não transformar uma base
+vazia ou errada em uma limpeza total do store.
 
 ## Migrações
 

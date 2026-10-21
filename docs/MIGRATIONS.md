@@ -21,7 +21,9 @@ python -m bdt.migrate check --database ...
 
 O `upgrade` cria o esquema completo e registra `0001_baseline` em
 `alembic_version`. O `check` compara o banco com `Base.metadata` e falha se
-houver deriva.
+houver deriva. A URL passada em `--database` **vence** uma variável
+`BDT_DATABASE_URL` herdada; a variável só é usada quando nenhuma URL foi
+passada.
 
 ## Banco existente
 
@@ -42,11 +44,12 @@ procedimento de recuperação e exige decisão explícita com backup.
 ## Estrutura
 
 - `alembic.ini`: configuração, sem URL/segredo fixo.
-- `migrations/env.py`: importa todos os módulos de modelo e usa
-  `BDT_DATABASE_URL` ou a URL passada pela CLI.
+- `migrations/env.py`: importa todos os módulos de modelo; a URL da CLI vence
+  `BDT_DATABASE_URL`, que é o fallback.
 - `migrations/versions/`: revisões; a baseline é `0001_baseline`.
 - `backend/bdt/migrate.py`: comandos de operador `upgrade`, `stamp`, `current`
-  e `check`.
+  e `check`. Em instalação fora do checkout, defina `BDT_PROJECT_ROOT` para o
+  diretório que contém `alembic.ini` e `migrations/`.
 
 ## Evidência
 

@@ -38,6 +38,7 @@ on:
       - compose.yaml
       - compose.postgres.yaml
       - docker-compose.yml
+      - docker-compose.postgres.yml
       - ops/postgres-local-init.sql
       - .github/workflows/archive-reviewed-ocr.yml
       - .github/workflows/dependency-lock.yml
@@ -94,6 +95,7 @@ on:
       - compose.yaml
       - compose.postgres.yaml
       - docker-compose.yml
+      - docker-compose.postgres.yml
       - ops/postgres-local-init.sql
       - .github/workflows/archive-reviewed-ocr.yml
       - .github/workflows/dependency-lock.yml

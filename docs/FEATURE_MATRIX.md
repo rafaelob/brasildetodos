@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `d6b1dde`; execuções e hashes anteriores em
+Referência de código deste lote: `04e6aff`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -12,8 +12,10 @@ verificação de integridade em
 `docs/changes/2026-10-21-private-store-verify.md`, da prévia de página em
 `docs/changes/2026-10-21-original-page-render.md`, das provas PostgreSQL/Poppler
 em `docs/changes/2026-10-21-runtime-proofs.md`, do baseline Alembic em
-`docs/changes/2026-10-21-alembic-baseline.md` e do stack PostgreSQL local em
-`docs/changes/2026-10-21-local-postgres-compose.md`. Catálogo escolar posterior:
+`docs/changes/2026-10-21-alembic-baseline.md`, do stack PostgreSQL local em
+`docs/changes/2026-10-21-local-postgres-compose.md` e das correções de
+migração/store em `docs/changes/2026-10-21-migration-store-safety.md`.
+Catálogo escolar posterior:
 `education-2025-20260907-v1`, seleção
 `data/releases/education-2025-20260907-v1.json`. Nenhum status significa
 conclusão integral do projeto. Implementação, aceite do software, cobertura e
