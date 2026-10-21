@@ -129,3 +129,32 @@ jobs:
           name: runtime-container-evidence
           path: test-results/runtime/
           retention-days: 7
+  postgres-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Start the durable local PostgreSQL stack
+        run: docker compose -f compose.postgres.yaml up --build -d
+      - name: Verify migration, health and local backup
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8009/api/health > health.json; then break; fi
+            sleep 2
+          done
+          python - <<'PY'
+          import json
+          health=json.load(open('health.json'))
+          assert health['status']=='ok' and health['llm_required'] is False
+          PY
+          docker compose -f compose.postgres.yaml exec -T postgres \
+            psql -U bdt_app -d bdt_app -c "select version_num from alembic_version" \
+            | grep -q 0001_baseline
+          docker compose -f compose.postgres.yaml --profile ops run --rm postgres-backup
+          docker compose -f compose.postgres.yaml --profile ops run --rm \
+            --entrypoint sh postgres-backup -c "test -n \"\$(ls -1 /backups/*.dump)\""
+      - name: Clean the local stack and its volumes
+        if: always()
+        run: docker compose -f compose.postgres.yaml down -v --remove-orphans
