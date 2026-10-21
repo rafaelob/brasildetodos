@@ -1,0 +1,52 @@
+name: macOS Python lock candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos-lock:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+      - name: Verify exact Python runtime
+        run: python ops/check_toolchain.py --runtime python
+      - name: Resolve hashed dependencies for macOS with Linux version constraints
+        run: |
+          python -m pip install pip-tools==7.6.1
+          python -m piptools compile --generate-hashes --all-extras --all-build-deps \
+            --allow-unsafe --strip-extras --no-emit-index-url --no-emit-trusted-host \
+            --constraint requirements/linux-py314.lock \
+            --output-file=requirements/macos-py314.lock pyproject.toml
+      - name: Install with hash checking and run the backend suite
+        run: |
+          python -m venv "$RUNNER_TEMP/bdt-macos"
+          P="$RUNNER_TEMP/bdt-macos/bin/python"
+          "$P" -m pip install --require-hashes --only-binary=:all: -r requirements/macos-py314.lock
+          "$P" -m pip install --no-deps --no-build-isolation -e .
+          "$P" -m pip check
+          "$P" -m pytest -q
+          "$P" ops/python_lock_manifest.py record \
+            --lock requirements/macos-py314.lock \
+            --manifest requirements/macos-py314.json \
+            --system Darwin
+          "$P" ops/python_lock_manifest.py verify \
+            --lock requirements/macos-py314.lock \
+            --manifest requirements/macos-py314.json \
+            --system Darwin
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-lock-candidate
+          retention-days: 7
+          path: |
+            requirements/macos-py314.lock
+            requirements/macos-py314.json
