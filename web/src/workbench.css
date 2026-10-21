@@ -20,5 +20,6 @@
 .candidate-apply-btn{border:1px solid #b7d6c4;background:#f4faf6;color:#14523e;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease}
 .candidate-apply-btn:hover{background:#12644e;color:#ffffff;border-color:#12644e}
 .workbench-original{display:inline-flex;align-items:center;min-height:44px;margin-left:.75rem;font-weight:600;overflow-wrap:anywhere}
+.privacy-warning{background:#fff4e5;color:#6b4600;border:1px solid #d7a64a}
 @media(max-width:520px){.workbench-original{display:flex;margin-left:0}}
 

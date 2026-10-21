@@ -26,10 +26,10 @@
       "sha256": "feb3c4ca92775e36d04b77204d84af23c5579d3807f63d44e714cde974a22a7a"
     },
     {
-      "bytes": 5697,
+      "bytes": 5948,
       "path": "native-extraction.json",
       "role": "derived-test-evidence",
-      "sha256": "5c23c50dc493459bb629e7ef8f8bfa1fea45595482410d7e8de2bbf3dc97f5bf"
+      "sha256": "e9d92e0a5c37fcb11e1af1fbd09b656c51a3c4da7cae718e81205d4b92fc2050"
     },
     {
       "bytes": 174,

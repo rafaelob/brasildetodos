@@ -28,6 +28,48 @@ _FAMILY_TERMS = (
     ("work_plan", r"\bPLANO\s+DE\s+TRABALHO\b"),
 )
 _FAMILY_PRIORITY = {"amendment": 0, "contract": 1, "agreement": 2, "work_plan": 3}
+_PRIVACY_PATTERNS = (
+    ("cpf", re.compile(r"(?<!\d)\d{3}\.\d{3}\.\d{3}-\d{2}(?!\d)")),
+    ("cpf", re.compile(r"\bCPF\b[^\d]{0,12}(\d{11})(?!\d)", re.I)),
+    ("email", re.compile(r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+(?![\w.-])", re.I)),
+    ("phone", re.compile(r"\b(?:TELEFONE|TEL\.?|CELULAR|WHATSAPP|FONE)\b[^\d]{0,12}"
+                          r"(\(?\d{2}\)?\s?9?\d{4}[-\s]?\d{4})(?!\d)", re.I)),
+    ("phone", re.compile(r"(?<!\d)\(\d{2}\)\s?9?\d{4}[-\s]?\d{4}(?!\d)")),
+    ("signature", re.compile(r"\b(?:ASSINATURA|ASSINADO\s+(?:POR|DIGITALMENTE)|"
+                              r"SIGNAT[AÁ]RIO)\b", re.I)),
+    ("rg", re.compile(r"\bRG\b[^\d]{0,12}(\d{5,12})(?!\d)", re.I)),
+)
+
+
+def privacy_flags(text: str) -> list[dict]:
+    """Find review-only privacy signals without retaining the matched value."""
+    found = {}
+    for kind, pattern in _PRIVACY_PATTERNS:
+        for match in pattern.finditer(text or ""):
+            group = 1 if match.lastindex else 0
+            start, end = match.start(group), match.end(group)
+            found[(kind, start, end)] = {"kind": kind, "start": start, "end": end}
+    return sorted(found.values(), key=lambda item: (item["start"], item["end"], item["kind"]))[:100]
+
+
+def _privacy(pages: list[dict]) -> dict:
+    flags = []
+    for page in pages:
+        for flag in page.get("privacy_flags", []):
+            flags.append(flag | {"page": page["page"]})
+    counts = Counter(flag["kind"] for flag in flags)
+    unreviewed = [{"page": page["page"], "route": page["route"]}
+                  for page in pages if page.get("route") != "native"]
+    return {
+        "review_required": bool(flags or unreviewed),
+        "flags": flags[:200],
+        "kinds": [{"kind": kind, "count": count,
+                   "pages": sorted({flag["page"] for flag in flags if flag["kind"] == kind})}
+                  for kind, count in sorted(counts.items())],
+        "unreviewed_routes": unreviewed[:100],
+        "text_basis": "native_text_only",
+        "publication_allowed": False,
+    }
 
 
 def _iso_br_date(raw: str) -> str | None:
@@ -173,7 +215,7 @@ def inspect_pdf(path: Path, max_pages: int = 100, max_bytes: int = 32 * 1024 * 1
         raise ValueError("Invalid PDF or byte budget exceeded")
     result = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "filename": path.name,
               "extractor_version": "native-pdf-v2", "pages": [], "original_preserved": True,
-              "document_family": None, "multipage_tables": []}
+              "document_family": None, "multipage_tables": [], "privacy": None}
     with pdfplumber.open(path) as pdf:
         if len(pdf.pages) > max_pages:
             raise ValueError("Page budget exceeded; split the reviewed processing job")
@@ -205,14 +247,18 @@ def inspect_pdf(path: Path, max_pages: int = 100, max_bytes: int = 32 * 1024 * 1
                         or (route == "review_orientation" and (not text_length or fraction > .35)))
             tables = page.extract_tables() if route in {"native", "hybrid_review", "review_orientation"} else []
             words = [{key: word[key] for key in ("text", "x0", "top", "x1", "bottom")} for word in page.extract_words()]
+            flags = privacy_flags(text)
             result["pages"].append({"page": index, "width": page.width, "height": page.height,
                                     "rotation": rotation, "orientation": orientation,
                                     "route": route, "ocr_eligible": eligible,
                                     "text": text, "text_length": text_length,
                                     "image_fraction": round(fraction, 4), "words": words,
-                                    "tables": tables, "candidates": candidates(text)})
+                                    "tables": tables, "candidates": candidates(text),
+                                    "privacy_flags": flags,
+                                    "privacy_review_required": bool(flags) or route != "native"})
     result["document_family"] = _document_family(result["pages"])
     result["multipage_tables"] = _multipage_tables(result["pages"])
+    result["privacy"] = _privacy(result["pages"])
     return result
 
 

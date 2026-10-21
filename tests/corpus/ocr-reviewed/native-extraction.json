@@ -72,6 +72,8 @@
       "ocr_eligible": false,
       "orientation": "portrait",
       "page": 1,
+      "privacy_flags": [],
+      "privacy_review_required": false,
       "rotation": 0,
       "route": "native",
       "tables": [],
@@ -222,5 +224,13 @@
       ]
     }
   ],
+  "privacy": {
+    "flags": [],
+    "kinds": [],
+    "publication_allowed": false,
+    "review_required": false,
+    "text_basis": "native_text_only",
+    "unreviewed_routes": []
+  },
   "sha256": "0f7c3d77ffb7ee6d32b323ef141f8d8b9586ea76c9d8eb195d7bc2aa6f385074"
 }

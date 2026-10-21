@@ -3,6 +3,7 @@
 No file here is an official document, and every extracted value remains a
 review candidate rather than a published fact.
 """
+import json
 from pathlib import Path
 
 from PIL import Image
@@ -58,6 +59,8 @@ def test_family_and_dates_keep_their_roles(tmp_path):
     assert found["amendment_cents"]["value"] == 1_000_000
     assert all(item["state"] == "candidate" for item in found.values())
     assert all(item["publication_allowed"] is False for item in found.values())
+    assert {flag["kind"] for flag in result["pages"][0]["privacy_flags"]} == {"signature"}
+    assert result["privacy"]["review_required"] is True
 
 
 def test_impossible_date_is_visible_but_not_normalized():
@@ -125,6 +128,30 @@ def test_hybrid_page_keeps_native_stamp_and_requires_ocr_review(tmp_path):
     assert extracted["image_fraction"] > .65
     assert extracted["text_length"] >= 200
     assert extracted["text"].startswith("CARIMBO DE PROTOCOLO")
+
+
+def test_privacy_flags_are_review_signals_without_raw_values(tmp_path):
+    path = tmp_path / "synthetic-privacy.pdf"
+    page = canvas.Canvas(str(path), pagesize=letter)
+    page.drawString(72, 720, "CPF: 123.456.789-09")
+    page.drawString(72, 700, "E-mail: pessoa@example.org")
+    page.drawString(72, 680, "Telefone: (11) 91234-5678")
+    page.drawString(72, 660, "Assinado por: Fulano de Tal")
+    page.save()
+
+    result = inspect_pdf(path)
+    extracted = result["pages"][0]
+    kinds = {flag["kind"] for flag in extracted["privacy_flags"]}
+    assert {"cpf", "email", "phone", "signature"} <= kinds
+    assert extracted["privacy_review_required"] is True
+    assert result["privacy"]["review_required"] is True
+    assert result["privacy"]["publication_allowed"] is False
+    privacy = json.dumps(result["privacy"], ensure_ascii=False)
+    assert "123.456.789-09" not in privacy
+    assert "pessoa@example.org" not in privacy
+    assert "91234-5678" not in privacy
+    assert "Fulano" not in privacy
+    assert all(set(flag) == {"kind", "start", "end", "page"} for flag in result["privacy"]["flags"])
 
 
 def test_legacy_ocr_route_remains_eligible_but_blank_does_not():
