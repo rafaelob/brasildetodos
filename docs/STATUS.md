@@ -9,6 +9,8 @@
   worker documental (GHSA-6q48/GHSA-8g5g).
 - Alembic `0001_baseline` (41 tabelas), `bdt.migrate` e locks Linux (51) e
   Windows (54) com instalação hash-checked.
+- Banco local `data/national.db` com **234.209 lugares**, 6.679 recursos e
+  5.571 municípios; coletas frescas CNES/Inep verificadas separadamente.
 - Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico, volume de dados/originais e health em
   `:8009`.

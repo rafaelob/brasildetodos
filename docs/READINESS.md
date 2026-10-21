@@ -32,7 +32,13 @@ outros três ainda têm gates abertos.
 - Suíte local: **2.192 testes Python aprovados, 17 ignorados**; web **243
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
-  `education-2025-20260907-v1`, com hashes e limites documentados.
+  `education-2025-20260907-v1` instaladas juntas em `data/national.db`:
+  **234.209 lugares**, 6.679 recursos, 5.571 municípios, 27 UFs e aceite de API
+  em 54 partições. Evidência em
+  [`reports/20261021-national-data.json`](../reports/20261021-national-data.json).
+- Coletas frescas de 21/10/2026: CNES com **96.607 elegíveis** (1 quarentena
+  por nome curto) e Inep 2025 com **138.086 escolas**; verificadas
+  separadamente, ainda não fundidas em uma edição nacional certificada.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Lock Windows CPython 3.14.8/AMD64 com 54 pacotes, manifesto e suíte integral

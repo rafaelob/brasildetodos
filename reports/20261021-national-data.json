@@ -1,0 +1,79 @@
+{
+  "schema": "bdt.national-data-evidence.v1",
+  "collected_on": "2026-10-21",
+  "national_catalog_certified": false,
+  "public_deployment": false,
+  "release_installation": {
+    "status": "installed_new_database",
+    "database": "data/national.db",
+    "database_bytes": 561250304,
+    "install_result_sha256": "f37b4ed2a6b18c9c5c705e50fbb4e4d7b45563e81534043a8aabd2175754a519",
+    "health_tag": "public-data-20260906-v1",
+    "health_archive_sha256": "6d62f9ca107f3672e8dcfb0a7d0b591010931d9daa05eaf6212c91c3cecc1639",
+    "education_tag": "education-2025-20260907-v1",
+    "education_archive_sha256": "483bba3a2e71d5360061cbc1880b41c8ab4915e94199a74bb8ac5678ee5fcfe7",
+    "counts": {
+      "places": 234209,
+      "health": 96123,
+      "school": 138086,
+      "resources": 6679,
+      "resource_revisions": 6679,
+      "finance": 0,
+      "users": 0,
+      "observations": 0
+    },
+    "municipalities": 5571,
+    "states_with_places": 27,
+    "without_geometry": 138093,
+    "history_records": 234209,
+    "api_acceptance": "passed",
+    "partitions_checked": 54,
+    "private_routes_protected": true
+  },
+  "fresh_sources": {
+    "cnes": {
+      "url": "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_csv.zip",
+      "collected_at": "2026-10-21T23:42:14Z",
+      "bytes": 56656725,
+      "sha256": "481f52004a6accd01592db91e597b36027e895fe2437554f5f308bd5bcdf4ef8",
+      "rows": 640494,
+      "eligible": 96607,
+      "excluded_profile": 543886,
+      "quarantined": 1,
+      "quarantine_reason": "name:string_too_short",
+      "without_geometry": 6,
+      "states": 27,
+      "public_places_sha256": "69b3bea48a33d18d441d831eab8ecb35d4c21f77d84af6c3bdc9145beb8b30b8",
+      "public_catalog_roundtrip": "passed",
+      "scope": "declared outpatient SUS, empty deactivation reason; not all SUS or live availability",
+      "status": "partial_quality"
+    },
+    "inep": {
+      "url": "https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2025_.zip",
+      "collected_at": "2026-10-21T23:44:51Z",
+      "bytes": 537217189,
+      "sha256": "ad2c389160be5cf6b8e32257677e9b5657f01d10a342355ad9757bfecd2fc90a",
+      "rows": 214192,
+      "eligible": 138086,
+      "excluded_profile": 76106,
+      "without_geometry": 138086,
+      "states": 27,
+      "status": "imported",
+      "scope": "public schools declared active in the reviewed 2025 school table; no open seats, schedules or quality"
+    }
+  },
+  "local_instance": {
+    "url": "http://127.0.0.1:8009",
+    "database": "sqlite:///data/national.db",
+    "health": "ok",
+    "frontend_served": true,
+    "production": false
+  },
+  "limits": [
+    "Release installation is historical and not a fresh combined national collection.",
+    "Fresh CNES and Inep were obtained and verified separately; they were not merged into data/national.db.",
+    "No municipal, state or national denominator reconciliation.",
+    "No national_catalog_certified=true, public deployment, PITR, offsite backup or production restore.",
+    "No permission to treat this local instance as the official site."
+  ]
+}
