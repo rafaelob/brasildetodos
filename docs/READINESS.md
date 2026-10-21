@@ -35,6 +35,8 @@ outros três ainda têm gates abertos.
   `education-2025-20260907-v1`, com hashes e limites documentados.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
+- Lock Windows CPython 3.14.8/AMD64 com 54 pacotes, manifesto e suíte integral
+  validada; o lock Linux permanece em 51 pacotes.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
   membros do grupo, com rota privada e sem publicação automática.
 - Backup lógico local e restore em banco novo validados (`0001_baseline`, 42
@@ -101,7 +103,8 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 - Panoramas opcionais com licença/data e provedor definidos.
 - Auditoria de acessibilidade com leitor de tela, teclado e dispositivos
   físicos.
-- Lockfiles Windows/macOS e validação nessas plataformas.
+- Lockfile macOS e validação nessa plataforma; o lock Windows já foi validado
+  localmente, mas não em CI Windows.
 - Tiles vetoriais nacionais/3D com fonte licenciada; o mapa atual é
   progressivo e opcional.
 
@@ -119,5 +122,5 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 Comece por [CONTRIBUTING.md](../CONTRIBUTING.md). Tarefas boas para a primeira
 contribuição: revisão de documentação em inglês/espanhol, testes de restore
 PostgreSQL local, auditoria de acessibilidade, revisão de licença de uma fonte
-oficial e lockfiles Windows/macOS. Abra uma issue com o contexto antes de um
+oficial e lockfile macOS. Abra uma issue com o contexto antes de um
 patch grande; dados pessoais e segredos nunca entram em issue pública.

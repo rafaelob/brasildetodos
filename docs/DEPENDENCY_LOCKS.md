@@ -24,6 +24,32 @@ Linux atual tem 51 pacotes e inclui os extras de migração (`alembic==1.20.0`)
 e MCP, além de `certifi==2026.10.19` e `Pillow==13.0.0`; a regeneração de
 21/10/2026 foi verificada com instalação hash-checked.
 
+## Backend Windows
+
+`requirements/windows-py314.lock` é gerado no CPython 3.14.8/AMD64 com
+pip-tools 7.6.1, usando o lock Linux como constraint para manter uma única
+versão dos 51 pacotes comuns. Ele adiciona apenas `colorama`, `pywin32` e
+`tzdata`, totalizando 54 pacotes com hashes SHA-256. O manifesto
+`requirements/windows-py314.json` registra plataforma, arquitetura, hashes do
+lock e do pyproject e a contagem.
+
+A validação de 21/10/2026 usou venv nova em Windows/AMD64: instalação
+`--require-hashes --only-binary=:all:`, projeto editável sem resolução,
+`pip check` e a suíte integral **2.192 aprovados, 17 ignorados, zero falhas**.
+A instalação também foi repetida com `pip`; o lock não é universal e não foi
+executado em CI Windows. A auditoria de vulnerabilidades continua separada.
+
+```powershell
+python ops/python_lock_manifest.py verify --lock requirements/windows-py314.lock `
+  --manifest requirements/windows-py314.json --system Windows
+python -m venv .venv
+.\.venv\Scripts\python -m pip install --require-hashes --only-binary=:all: `
+  -r requirements\windows-py314.lock
+.\.venv\Scripts\python -m pip install --no-deps --no-build-isolation -e .
+.\.venv\Scripts\python -m pip check
+.\.venv\Scripts\python -m pytest
+```
+
 Os artefatos marcados como evidência podem existir mesmo quando o job falha;
 não equivalem a lock aprovado. A publicação só acontece após os testes e com
 comparação do manifesto no main. Nem o lock nem o relatório certificam dados
@@ -41,8 +67,8 @@ python -m pip check
 python -m pytest
 ```
 
-O lock tem escopo de sistema/versão. Windows, macOS e outras arquiteturas devem
-receber sua própria validação; não rotular o pacote Linux como universal.
+O lock tem escopo de sistema/versão. macOS e outras arquiteturas devem receber
+sua própria validação; não rotular o pacote Linux ou Windows como universal.
 A geração não atualiza automaticamente a instalação de produção. CI/containers
 precisam usar a política de instalação travada depois que o lock for confirmado.
 O registro de migração informa quais instalações efetivamente o utilizaram.

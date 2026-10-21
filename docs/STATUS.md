@@ -3,12 +3,12 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `e199dc7`; suíte local **2.192 aprovados, 17
+- Código de referência: `ed1a770`; suíte local **2.192 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental (GHSA-6q48/GHSA-8g5g).
-- Alembic `0001_baseline` (41 tabelas), `bdt.migrate` e lock Linux de 51
-  pacotes.
+- Alembic `0001_baseline` (41 tabelas), `bdt.migrate` e locks Linux (51) e
+  Windows (54) com instalação hash-checked.
 - Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico, volume de dados/originais e health em
   `:8009`.
@@ -20,7 +20,7 @@
   recusa banco sem referências; `store_file` não apaga o próprio target.
 - Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,
   produção/PITR/offsite, acessibilidade assistiva, panoramas licenciados e
-  locks Windows/macOS. Veja [Prontidão](READINESS.md).
+  lock macOS. Veja [Prontidão](READINESS.md).
 
 O texto abaixo é o histórico do fechamento de 20/10/2026.
 

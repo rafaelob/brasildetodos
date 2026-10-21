@@ -12,7 +12,7 @@ web em **243 aprovados** com build Vite 8.2.4.
 
 O que continua aberto não é uma única feature: dados nacionais reconciliados,
 corpus oficial de OCR, produção/PITR/offsite, acessibilidade assistiva,
-panoramas licenciados e locks Windows/macOS.
+panoramas licenciados e lock macOS.
 O quadro de gates está em [Prontidão](READINESS.md); não há declaração de 100%
 nem de deploy público.
 
