@@ -47,7 +47,9 @@ docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-
   /input/arquivo.pdf --output /output/extraido.json
 ```
 
-OCR selecionado adiciona `--ocr-page N --language por`. O pipeline não foi avaliado em corpus oficial digitalizado neste ambiente. Faça benchmark de tempo, qualidade por campo e revisão humana antes de dimensionar lotes.
+A imagem usa Python 3.14.8 e o lock Linux verificado. Build e renderização real de uma página com `pdftoppm` foram validados em 21/10/2026; o pipeline ainda não foi avaliado em corpus oficial digitalizado.
+
+OCR selecionado adiciona `--ocr-page N --language por`. Faça benchmark de tempo, qualidade por campo e revisão humana antes de dimensionar lotes.
 
 ### Originais de evidência
 

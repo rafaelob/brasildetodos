@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `d458b4a`; execuções e hashes anteriores em
+Referência de código deste lote: `9bdcfe0`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -9,8 +9,9 @@ originais documentais em `docs/changes/2026-10-21-document-originals.md`, dos
 sinais de privacidade em `docs/changes/2026-10-21-privacy-signals.md`, da
 limpeza de órfãos em `docs/changes/2026-10-21-private-store-retention.md`, da
 verificação de integridade em
-`docs/changes/2026-10-21-private-store-verify.md` e da prévia de página em
-`docs/changes/2026-10-21-original-page-render.md`. Catálogo escolar posterior:
+`docs/changes/2026-10-21-private-store-verify.md`, da prévia de página em
+`docs/changes/2026-10-21-original-page-render.md` e das provas PostgreSQL/Poppler
+em `docs/changes/2026-10-21-runtime-proofs.md`. Catálogo escolar posterior:
 `education-2025-20260907-v1`, seleção
 `data/releases/education-2025-20260907-v1.json`. Nenhum status significa
 conclusão integral do projeto. Implementação, aceite do software, cobertura e
@@ -31,7 +32,7 @@ em testes.
 | Histórico e exportação | Versões, antes/depois, links, CSV/JSON/texto e seleção limitada; quatro percursos específicos | Valores de metadados não constituem pagamento |
 | Observação guiada | Escola/saúde/obra, gravação privada, revisão/retirada e cópia; browser guided | Processo operacional de moderação e recurso |
 | Grupos | Membros, convites, tarefas, compartilhamento explícito, revisão independente e retirada; browser groups | Fotos, recuperação de conta e gestão operacional não são resolvidas pelo grupo |
-| Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; famílias lexicais de convênio/plano de trabalho/contrato/aditivo; datas e valores com papéis separados; tabelas multipágina somente com cabeçalho idêntico repetido; orientação por rotação; página híbrida e campo do trecho; sinais de privacidade/assinatura sem reter valores; PDF original privado com SHA-256 e download de revisor; prévia de página opcional via Poppler; verificação de integridade e limpeza de órfãos com dry-run; browser extended | Corpus oficial diversificado, métricas por família, backup/restauração, retenção/expurgo dos referenciados e avaliação da prévia com Poppler real |
+| Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; famílias lexicais de convênio/plano de trabalho/contrato/aditivo; datas e valores com papéis separados; tabelas multipágina somente com cabeçalho idêntico repetido; orientação por rotação; página híbrida e campo do trecho; sinais de privacidade/assinatura sem reter valores; PDF original privado com SHA-256 e download de revisor; prévia de página via Poppler validada em container com PDF sintético; verificação de integridade e limpeza de órfãos com dry-run; browser extended | Corpus oficial diversificado, métricas por família, retenção/expurgo dos referenciados e prévia em corpus oficial |
 | OCR seletivo | Integração local; uma página sintética PT processada anteriormente; fila persistente com quotas, lease, retry, cancelamento, retenção, CLI e rotas de revisor; rotas híbrida/orientação usam elegibilidade explícita; nenhum byte/texto na fila | Avaliação com corpus oficial e operação em produção |
 | Preservação OCR | Quatro originais sintéticos + dois derivados + manifesto no Git; conferência offline obrigatória | Não chamar de convênios oficiais nem usá-los como dados reais |
 | Distribuição de dados | Releases v1 de saúde/recursos e educação com hashes e entrada fixada; instalação e API reverificadas em 20/10/2026 (96.123 lugares/6.679 recursos; 138.086 escolas elegíveis/76.106 excluídas) | Renovação periódica, nova seleção de dados e deploy público |
@@ -39,7 +40,7 @@ em testes.
 | Mapa/WebGL | Worker empacotado, mapa opcional e teste de renderização isolada | Fonte de tiles/3D externa e aparelhos limitados |
 | Panoramas e fotos | Não entregues como funcionalidade de produção | Provedor/licença/captura, minimização, upload e moderação |
 | Idiomas e layout | pt-BR/en/es, 320/390/1440 pixels nos percursos Chromium | Revisão assistiva/Safari/aparelhos físicos |
-| Banco e container | SQLite e ensaio PostgreSQL; container não-root/read-only e frontend servido | Infraestrutura durável em produção |
+| Banco e container | SQLite e PostgreSQL 16 efêmero provado via Compose: não-superuser, schema concorrente, DDL atômico e snapshot para SQLite; worker documental 3.14.8 com Poppler/Tesseract; container não-root/read-only e frontend servido | PostgreSQL durável/PITR, backup/restauração de produção e failover |
 | Dependências | Pins exatos, locks usados na CI | Auditoria completa, imagem/browser por digest, Windows/macOS |
 | Implantação pública | Não comprovada | URL, HTTPS, dados duráveis, atualizações, backups e rollback reais |
 
