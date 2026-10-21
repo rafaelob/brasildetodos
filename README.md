@@ -24,6 +24,17 @@ extraído** e **vínculo revisado**. O Brasil de Todos mantém essa separação
 visível, preserva fonte/hash/data de referência e só publica contribuições após
 revisão independente.
 
+```mermaid
+flowchart LR
+  C[Pessoa cidadã] --> W[React / pt-BR · en · es]
+  R[Pessoa revisora] --> W
+  W --> A[FastAPI]
+  A --> D[(SQLite ou PostgreSQL)]
+  A --> P[Store privado de documentos]
+  A --> S[Fontes oficiais]
+  A --> M[Mapa opcional / lista sempre disponível]
+```
+
 ## Começar em dois minutos
 
 ### SQLite local
