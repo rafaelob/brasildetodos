@@ -34,7 +34,8 @@ MAX_TOTAL_BYTES = 8 * 1024**3
 MAX_RECORDS = 5_000_000
 EXCLUDED = ['accounts', 'sessions', 'rate_limits', 'citizen_observations',
             'moderation_audit', 'document_originals', 'document_extractions', 'reviewer_identities',
-            'document_links', 'recovery_codes', 'evidence_photos', 'photo_content']
+            'document_links', 'recovery_codes', 'evidence_photos', 'photo_content',
+            'pncp_contract_documents', 'pncp_document_revisions']
 _LEGACY_EXCLUDED = (
     'accounts', 'sessions', 'rate_limits', 'citizen_observations',
     'moderation_audit', 'document_originals', 'document_extractions',
