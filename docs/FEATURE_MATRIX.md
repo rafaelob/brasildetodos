@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `04e6aff`; execuções e hashes anteriores em
+Referência de código deste lote: `a3dd943`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -45,7 +45,7 @@ em testes.
 | Panoramas e fotos | Não entregues como funcionalidade de produção | Provedor/licença/captura, minimização, upload e moderação |
 | Idiomas e layout | pt-BR/en/es, 320/390/1440 pixels nos percursos Chromium | Revisão assistiva/Safari/aparelhos físicos |
 | Banco e container | SQLite; PostgreSQL 16 efêmero provado via Compose e stack local durável com volume, migração one-shot, backup lógico e health em `:8009`; baseline Alembic 0001 e `check` sem deriva em SQLite/PostgreSQL; worker documental 3.14.8 com Poppler/Tesseract; container não-root/read-only | Produção com TLS/PITR, backup offsite, restauração automatizada, migração de dados histórica, multi-réplica e failover |
-| Dependências | Pins exatos, locks usados na CI | Auditoria completa, imagem/browser por digest, Windows/macOS |
+| Dependências | Pins exatos, lock Linux de 51 pacotes, certifi 2026.10.19/Pillow 13.0.0 corrigidos, instalação hash-checked | Auditoria completa, imagem/browser por digest, Windows/macOS |
 | Implantação pública | Não comprovada | URL, HTTPS, dados duráveis, atualizações, backups e rollback reais |
 
 A operação no núcleo não usa chatbot, embeddings nem chave paga de mapas.

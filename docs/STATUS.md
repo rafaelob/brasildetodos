@@ -3,8 +3,10 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `04e6aff`; suíte local **2.189 aprovados, 17
+- Código de referência: `a3dd943`; suíte local **2.189 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
+- Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
+  worker documental (GHSA-6q48/GHSA-8g5g).
 - Alembic `0001_baseline` (41 tabelas), `bdt.migrate` e lock Linux de 51
   pacotes.
 - Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com

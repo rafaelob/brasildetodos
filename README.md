@@ -80,7 +80,8 @@ completo está em [Migrações](docs/MIGRATIONS.md).
 - **PNCP:** contratos e documentos oficiais com metadados, SHA-256, revisões e
   armazenamento privado; nenhum documento é publicado automaticamente.
 - **Infra:** Alembic `0001_baseline`, PostgreSQL local durável, backup/verify,
-  container não-root/read-only e frontend servido na mesma origem.
+  pins de segurança `certifi==2026.10.19`/`Pillow==13.0.0`, container
+  não-root/read-only e frontend servido na mesma origem.
 - **Idiomas:** pt-BR, inglês e espanhol.
 
 ## Dados e proveniência

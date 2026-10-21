@@ -21,7 +21,8 @@ A suíte de backend e o piso de cobertura são obrigatórios antes da publicaç�
 `ops/python_lock_manifest.py` confere pins, hashes do lock e do pyproject,
 contagem e versões instaladas. Mudança do manifesto exige regeneração. O lock
 Linux atual tem 51 pacotes e inclui os extras de migração (`alembic==1.20.0`)
-e MCP; a regeneração de 21/10/2026 foi verificada com instalação hash-checked.
+e MCP, além de `certifi==2026.10.19` e `Pillow==13.0.0`; a regeneração de
+21/10/2026 foi verificada com instalação hash-checked.
 
 Os artefatos marcados como evidência podem existir mesmo quando o job falha;
 não equivalem a lock aprovado. A publicação só acontece após os testes e com

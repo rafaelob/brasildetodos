@@ -33,6 +33,8 @@ outros três ainda têm gates abertos.
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
   `education-2025-20260907-v1`, com hashes e limites documentados.
+- Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
+  worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 
 Evidências: [Status](STATUS.md), [Matriz de capacidades](FEATURE_MATRIX.md),
 [Operação](OPERATIONS.md), [Migrações](MIGRATIONS.md) e
