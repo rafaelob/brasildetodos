@@ -1,5 +1,7 @@
 # Brasil de Todos
 
+[English](README.en.md) · **Português**
+
 **O mapa vivo do que é público.** Plataforma cívica open source para consultar
 serviços, acompanhar intervenções e contribuir com informações revisadas sobre
 o território brasileiro. O núcleo roda sem LLM, banco vetorial ou chave paga de
