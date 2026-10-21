@@ -18,11 +18,20 @@ credenciais desnecessárias. Limites por comando: 32 MiB, dez páginas, 1..300
 segundos por etapa de renderização/reconhecimento e texto de até 200 mil caracteres
 por página. A rotina não é um endpoint público e não deve ser exposta como tal.
 
-Somente páginas classificadas como `ocr_candidate` ou `review_encoding` entram
-no comando. Página nativa é recusada, não rasterizada por conveniência. Texto
-nativo e palavras/posições anteriores permanecem intactos. O resultado adicional
-fica em `ocr_candidate_text`, acompanhado de idioma, página e hash original;
+Somente páginas com elegibilidade explícita `ocr_eligible` entram no comando:
+`ocr_candidate`, `review_encoding`, `hybrid_review` e `review_orientation` quando
+a rota indica texto insuficiente ou área de imagem relevante. Página nativa é
+recusada, não rasterizada por conveniência. Texto nativo e palavras/posições
+anteriores permanecem intactos. O resultado adicional fica em
+`ocr_candidate_text`, acompanhado de idioma, página e hash original;
 `ocr_candidates` contém apenas sugestões, nunca fatos publicados automaticamente.
+
+A inspeção nativa também registra `privacy_flags` por página e um resumo
+`privacy` no documento para CPF, e-mail, telefone, RG e termos de assinatura. O
+flag guarda apenas tipo e posição, nunca o valor encontrado; o texto privado
+continua no original e na extração restrita. Páginas não nativas exigem revisão
+de privacidade mesmo quando nenhum sinal lexical foi encontrado. O OCR não
+apaga nem promove esses sinais automaticamente.
 
 ## Concorrência e recuperação
 
