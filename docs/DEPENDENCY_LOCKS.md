@@ -19,7 +19,9 @@ Uma venv nova instala com `--require-hashes` e somente wheels; o projeto local
 é instalado sem nova resolução nem build isolado que busque outras versões.
 A suíte de backend e o piso de cobertura são obrigatórios antes da publicação.
 `ops/python_lock_manifest.py` confere pins, hashes do lock e do pyproject,
-contagem e versões instaladas. Mudança do manifesto exige regeneração.
+contagem e versões instaladas. Mudança do manifesto exige regeneração. O lock
+Linux atual tem 51 pacotes e inclui os extras de migração (`alembic==1.20.0`)
+e MCP; a regeneração de 21/10/2026 foi verificada com instalação hash-checked.
 
 Os artefatos marcados como evidência podem existir mesmo quando o job falha;
 não equivalem a lock aprovado. A publicação só acontece após os testes e com

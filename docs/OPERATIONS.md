@@ -100,6 +100,21 @@ python -m bdt.private_store_admin prune ... --apply
 
 O comando não substitui backup nem expurgo legal de documento referenciado.
 
+## Migrações
+
+Banco novo pode ser criado pelo Alembic; banco existente precisa ser marcado
+uma vez antes de receber migrações futuras. Não rode `upgrade` em banco
+existente não marcado.
+
+```bash
+python -m bdt.migrate upgrade --database sqlite:///data/bdt.db
+python -m bdt.migrate stamp --database postgresql+psycopg://...
+python -m bdt.migrate check --database ...
+```
+
+O baseline e os limites estão em [Migrações](MIGRATIONS.md). Backup e
+restauração testados precedem qualquer migração destrutiva em produção.
+
 ## Recuperação
 
 Backup do banco e do armazenamento de originais são operações distintas. SQLite ativo requer backup consistente via sqlite backup API, não cópia isolada do arquivo ignorando WAL. PostgreSQL exige backup/restauração testados. Nunca tratar hash como cópia de segurança. Testar upgrade de schema em clone antes de produção.
