@@ -57,7 +57,25 @@ The PostgreSQL stack has a persistent volume, a one-shot Alembic migration and
 logical backup/restore. `down` keeps volumes; `down -v` removes local data.
 Neither stack is production.
 
-### Manual development
+### Verified national data
+
+The two public releases can fill a local installation without synthetic data.
+Download the `public-data.zip` and `education-catalog.zip` assets from the
+[releases](https://github.com/rafaelob/brasildetodos/releases), then run:
+
+```bash
+python ops/install_national_catalog.py \
+  --health public-data.zip --education education-catalog.zip \
+  --output data/national.db
+BDT_DATABASE_URL=sqlite:///data/national.db \
+  uvicorn bdt.api:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+The installed edition has **234,209 places** (96,123 health and 138,086
+schools), 6,679 resources and 5,571 municipalities across 27 states. It is a
+historical snapshot, not a live national catalog; `national_catalog_certified`
+stays `false`. See [unified installation](docs/UNIFIED_INSTALLATION.md) and the
+[local evidence](reports/20261021-national-data.json).
 
 Requires **Python 3.14.8** and **Node.js 24.20.0**, pinned in the repository.
 
