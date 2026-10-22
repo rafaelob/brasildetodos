@@ -75,6 +75,10 @@ def main():
                         expect(page.locator('a.skip')).to_be_visible()
                         page.keyboard.press('Enter')
                         expect(page.locator('#main')).to_be_focused()
+                        assert page.get_by_role('main').count() == 1
+                        assert page.get_by_role('banner').count() == 1
+                        assert page.get_by_role('navigation').count() >= 1
+                        assert page.get_by_role('heading', level=1).count() >= 1
                         assert not page.evaluate('document.documentElement.scrollWidth > window.innerWidth'), f'Horizontal overflow at {width}'
                         place_card = page.locator('.place-card')
                         expect(place_card).to_have_count(1)
@@ -97,7 +101,7 @@ def main():
                         page.get_by_role('heading', name=re.compile(r'300,00')).wait_for()
                         assert page.get_by_role('heading', name=re.compile(r'1\.300,00')).count() == 0
                         assert not errors, errors
-                        report['checks'].append({'viewport':width, 'skip_link':True, 'languages':3, 'favorites_persisted':True, 'financial_stages_separate':True, 'javascript_errors':errors})
+                        report['checks'].append({'viewport':width, 'skip_link':True, 'landmarks':True, 'languages':3, 'favorites_persisted':True, 'financial_stages_separate':True, 'javascript_errors':errors})
                         page.close()
                     page = browser.new_page(viewport={'width':1440, 'height':1000})
                     page.goto('http://127.0.0.1:8034', wait_until='domcontentloaded')
