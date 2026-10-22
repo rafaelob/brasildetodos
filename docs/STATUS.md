@@ -20,9 +20,9 @@
   membros do grupo; retirada/retratação/expulsão encerram o acesso.
 - Correções recentes: `--database` vence `BDT_DATABASE_URL`; `prune --apply`
   recusa banco sem referências; `store_file` não apaga o próprio target.
-- Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,
-  produção/PITR/offsite, panoramas licenciados e lock macOS
-  Intel/outras arquiteturas. Veja
+- Ainda faltam dados nacionais reconciliados, corpus oficial de OCR, panoramas
+  licenciados e lock macOS Intel/outras arquiteturas. Produção/PITR/offsite
+  foram retirados do escopo desta fase por decisão do owner. Veja
   [Prontidão](READINESS.md).
 
 O texto abaixo é o histórico do fechamento de 20/10/2026.

@@ -147,13 +147,14 @@ atualidade, completude nacional ou deploy. Evidências e limites:
 
 ## O que falta para 100%
 
-Não existe “100%” sem dados oficiais reconciliados, operação pública durável e
-sustentabilidade comunitária. O quadro honesto está em
-**[Prontidão](docs/READINESS.md)**. Em resumo, ainda faltam:
+Não existe "100%" sem dados oficiais reconciliados e sustentabilidade
+comunitária. O quadro honesto está em **[Prontidão](docs/READINESS.md)**. Em
+resumo, ainda faltam:
 
 - edição nacional oficial reconciliada e denominadores;
 - corpus oficial de OCR e revisão jurídica/privacidade;
-- domínio/HTTPS, PostgreSQL durável/PITR, backup offsite e restauração ensaiada;
+- produção pública (domínio/HTTPS, PITR, offsite) foi retirada do escopo desta
+  fase por decisão do owner;
 - panoramas licenciados e locks para macOS Intel/outras arquiteturas.
 
 ## Como contribuir

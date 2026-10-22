@@ -144,13 +144,14 @@ prove currentness, national completeness or deployment. Evidence and limits:
 
 ## What is missing for 100%
 
-There is no honest "100%" without reconciled official data, durable public
-operations and community sustainability. The full checklist is in
-**[Readiness](docs/READINESS.md)** (Portuguese). In short, still missing:
+There is no honest "100%" without reconciled official data and community
+sustainability. The full checklist is in **[Readiness](docs/READINESS.md)**
+(Portuguese). In short, still missing:
 
 - a reconciled national official edition and denominators;
 - an official OCR corpus and legal/privacy review;
-- domain/HTTPS, durable PostgreSQL/PITR, offsite backup and a rehearsed restore;
+- public production (domain/HTTPS, PITR, offsite) was removed from this phase
+  by the owner's decision;
 - licensed panoramas and lock coverage for Intel macOS/other architectures.
 
 ## Contributing

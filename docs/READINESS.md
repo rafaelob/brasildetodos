@@ -13,7 +13,7 @@ outros três ainda têm gates abertos.
 |---|---|---|
 | Software | percursos cidadãos e de revisão funcionam, com testes locais e builds | **Forte localmente**; falta leitor de tela e dispositivos físicos; axe A/AA e skip link cobertos no Chromium |
 | Dados | ingestão oficial atual, denominadores reconciliados e cobertura nacional explícita | **Parcial**: releases certificadas existem, mas não são um catálogo nacional vivo |
-| Operação | domínio/HTTPS, PostgreSQL durável, PITR, backup offsite, restauração ensaiada, monitoramento e rollback | **Não iniciado em produção** |
+| Operação | domínio/HTTPS, PostgreSQL durável, PITR, backup offsite, restauração ensaiada, monitoramento e rollback | **Fora do escopo desta fase** por decisão do owner; stack local, backup/restore e locks validados |
 | Comunidade | licença, conduta, contribuição, triagem, moderação, segurança e cadência de releases | **Em formação** |
 
 ## O que já está entregue e verificado
@@ -87,15 +87,10 @@ revisão jurídica/operacional aplicável.
 
 ### 3. Produção
 
-- Domínio próprio, HTTPS, HSTS, origem/allowlist e segredos gerenciados.
-- PostgreSQL durável com PITR, backup offsite, restauração ensaiada e retenção.
-- Múltiplas réplicas sem DDL concorrente; migrações aplicadas antes do app.
-- Monitoramento, alertas, logs sem PII, limites de recurso e rollback por
-  digest.
-- Revisão de segurança e teste de carga com dados reais.
-
-**Aceite:** deploy público reproduzível, com rollback e restauração
-comprovados, não apenas um `compose up` local.
+**Fora do escopo desta fase** por decisão do owner em 21/10/2026: não haverá
+domínio/HTTPS, PITR, backup offsite, monitoramento ou deploy público. O stack
+local, o backup/restore e os locks continuam documentados; um alvo futuro exige
+nova ordem e o checklist de produção original.
 
 ### 4. Comunidade e operação
 
