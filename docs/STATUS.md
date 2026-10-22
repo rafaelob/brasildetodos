@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `7d52624`; suíte local **2.201 aprovados, 17
+- Código de referência: `8ba31e0`; suíte local **2.204 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Toolchain Node **24.22.1** (release de segurança de 21/10/2026) alinhada em
   pins, Dockerfile, package engines, CI e testes. `npm ci` (0 vulnerabilidades),
@@ -11,7 +11,7 @@
   o binário oficial.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental (GHSA-6q48/GHSA-8g5g).
-- Alembic `0002_transferegov_parcerias` (42 tabelas de runtime +
+- Alembic `0003_parceria_empenhos` (43 tabelas de runtime +
   `alembic_version`), `bdt.migrate` e locks Linux (51), Windows (54) e macOS
   arm64 (50) com instalação hash-checked.
 - Banco local `data/national.db` com **234.209 lugares**, 6.679 recursos e
@@ -22,6 +22,9 @@
 - Conector bounded de Parcerias do Transferegov: 200 linhas de 89.695
   declaradas, página com SHA-256, import idempotente e consumidor do cabeçalho
   exato; migração `0002_transferegov_parcerias`.
+- Conector bounded de empenhos de parcerias: 200 linhas de 69.345 declaradas,
+  consumidor reviewer-only por `id_parceria`, valores exatos e sem soma;
+  migração `0003_parceria_empenhos`.
 - Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico, volume de dados/originais e health em
   `:8009`.

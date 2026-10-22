@@ -4,8 +4,9 @@
 O baseline `0001_baseline` representa o esquema criado pelo bootstrap
 `Database.initialize`, com 41 tabelas de runtime, ingestão, colaboração, OCR,
 documentos e originais. A revisão `0002_transferegov_parcerias` adiciona a
-tabela aditiva de cabeçalhos de parcerias, totalizando 42 tabelas de runtime; as
-cinco tabelas de versão continuam com `id=1, version=1`.
+tabela de cabeçalhos de parcerias e a `0003_parceria_empenhos`
+adiciona a tabela de empenhos de parcerias, totalizando 43 tabelas de runtime;
+as cinco tabelas de versão continuam com `id=1, version=1`.
 
 `Database.initialize` continua sendo o bootstrap rápido de desenvolvimento e a
 proteção aditiva para colunas opcionais. Ele **não substitui** uma migração
@@ -20,8 +21,8 @@ python -m bdt.migrate upgrade --database sqlite:///data/bdt.db
 python -m bdt.migrate check --database ...
 ```
 
-O `upgrade` cria o esquema completo e registra `0002_transferegov_parcerias`
-em `alembic_version`. O `check` compara o banco com `Base.metadata` e falha se
+O `upgrade` cria o esquema completo e registra
+`0003_parceria_empenhos` em `alembic_version`. O `check` compara o banco com `Base.metadata` e falha se
 houver deriva. A URL passada em `--database` **vence** uma variável
 `BDT_DATABASE_URL` herdada; a variável só é usada quando nenhuma URL foi
 passada.
@@ -48,7 +49,7 @@ procedimento de recuperação e exige decisão explícita com backup.
 - `migrations/env.py`: importa todos os módulos de modelo; a URL da CLI vence
   `BDT_DATABASE_URL`, que é o fallback.
 - `migrations/versions/`: revisões; a baseline é `0001_baseline` e a atual
-  `0002_transferegov_parcerias`.
+  `0003_parceria_empenhos`.
 - `backend/bdt/migrate.py`: comandos de operador `upgrade`, `stamp`, `current`
   e `check`. Em instalação fora do checkout, defina `BDT_PROJECT_ROOT` para o
   diretório que contém `alembic.ini` e `migrations/`.

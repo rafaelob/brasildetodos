@@ -41,6 +41,18 @@ situação e a fonte com URL/SHA-256; `publication_allowed=false` e
 cobertura nacional. A amostra real de 200 parcerias de 89.695 declaradas está
 em [`reports/20261022-transferegov-parcerias.json`](../reports/20261022-transferegov-parcerias.json).
 
+## Empenhos de uma parceria
+
+```http
+GET /api/workbench/parcerias/14487/empenhos?page=1&limit=50
+```
+
+A rota exige revisor e lista os empenhos cujo `id_parceria` é exatamente o
+informado. Retorna número/ano, data, situação SIAFI, favorecido publicado e
+`valor_empenho_publicado`; `aggregate: null` e nenhum total monetário. Empenho
+não é pagamento. A amostra real de 200 empenhos de 69.345 declarados está em
+[`reports/20261022-transferegov-parceria-empenhos.json`](../reports/20261022-transferegov-parceria-empenhos.json).
+
 ## Documentos de um contrato PNCP
 
 ```http
@@ -87,5 +99,5 @@ python -m pytest backend/tests/test_resource_relations.py -q
 
 Cobrem plano exato, exclusão de outro plano, paginação, ausência de agregado,
 401 anônimo, 404 para não-plano, documentos PNCP sem bytes, parcerias e o
-conector bounded. A suíte integral deste lote passou com **2.201 aprovados,
+conector bounded. A suíte integral deste lote passou com **2.204 aprovados,
 17 ignorados**.
