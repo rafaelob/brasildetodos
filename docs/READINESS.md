@@ -25,11 +25,12 @@ outros três ainda têm gates abertos.
 - Extração PDF nativa, OCR seletivo, fila privada, sinais de privacidade,
   originais content-addressed e prévia de página com Poppler.
 - Coletor privado de documentos PNCP, revisões e `not_listed`.
-- Alembic `0001_baseline` com 41 tabelas; `bdt.migrate` com `upgrade`, `stamp`,
+- Alembic `0002_transferegov_parcerias` com 42 tabelas de runtime; `bdt.migrate`
+  com `upgrade`, `stamp`,
   `current` e `check`.
 - Compose PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico e health em `:8009`.
-- Suíte local: **2.198 testes Python aprovados, 17 ignorados**; web **243
+- Suíte local: **2.201 testes Python aprovados, 17 ignorados**; web **243
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
   `education-2025-20260907-v1` instaladas juntas em `data/national.db`:
@@ -42,6 +43,9 @@ outros três ainda têm gates abertos.
 - Consumidores reviewer-only de empenhos especiais, PDDE e documentos PNCP,
   com paginação, linhas publicadas exatas e `aggregate: null`; amostras reais
   de 200 empenhos bounded e um documento de 87.356 bytes, sem bytes públicos.
+- Conector bounded de Parcerias do Transferegov com 200 linhas de 89.695
+  declaradas e consumidor reviewer-only do cabeçalho exato; sem somas ou
+  vínculo territorial.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Locks Windows CPython 3.14.8/AMD64 (54 pacotes), macOS arm64 (50) e Linux
@@ -53,8 +57,9 @@ outros três ainda têm gates abertos.
   retirada do escopo por decisão do owner.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
   membros do grupo, com rota privada e sem publicação automática.
-- Backup lógico local e restore em banco novo validados (`0001_baseline`, 42
-  tabelas); não é PITR nem backup offsite de produção.
+- Backup lógico local e restore em banco novo validados
+  (`0002_transferegov_parcerias`, 43 tabelas incluindo `alembic_version`); não
+  é PITR nem backup offsite de produção.
 
 Evidências: [Status](STATUS.md), [Matriz de capacidades](FEATURE_MATRIX.md),
 [Operação](OPERATIONS.md), [Migrações](MIGRATIONS.md) e

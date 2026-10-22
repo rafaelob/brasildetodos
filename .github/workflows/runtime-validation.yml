@@ -153,13 +153,13 @@ jobs:
           PY
           docker compose -f compose.postgres.yaml exec -T postgres \
             psql -U bdt_app -d bdt_app -c "select version_num from alembic_version" \
-            | grep -q 0001_baseline
+            | grep -q 0002_transferegov_parcerias
           docker compose -f compose.postgres.yaml --profile ops run --rm \
             -e BDT_BACKUP_NAME=bdt-ci.dump postgres-backup
           docker compose -f compose.postgres.yaml --profile ops run --rm \
             -e BDT_RESTORE_BACKUP=bdt-ci.dump -e BDT_RESTORE_DB=bdt_restore_ci \
             postgres-restore > restore.log
-          grep -q 0001_baseline restore.log
+          grep -q 0002_transferegov_parcerias restore.log
       - name: Clean the local stack and its volumes
         if: always()
         run: docker compose -f compose.postgres.yaml down -v --remove-orphans

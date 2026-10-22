@@ -1,0 +1,33 @@
+{
+  "schema": "bdt.transferegov-parcerias-evidence.v1",
+  "collected_on": "2026-10-22",
+  "national_catalog_certified": false,
+  "collection": {
+    "status": "bounded",
+    "terminal": "max_pages_bound",
+    "url": "https://api-publica.transferegov.gestao.gov.br/parcerias/parceria?pagina=1&tamanho_da_pagina=200",
+    "sha256": "bbc989c7e517e992381354b023bda29452ebb7e48fbe2268a2a7a126b6d01e14",
+    "bytes": 132765,
+    "pages": 1,
+    "total_pages_declared": 449,
+    "total_items_declared": 89695,
+    "rows_read": 200,
+    "rows_created": 200,
+    "rows_updated": 0,
+    "rows_unchanged": 0
+  },
+  "consumer": {
+    "path": "/api/workbench/parcerias/{id_parceria}",
+    "auth": "reviewer_session",
+    "sample_id": "37840",
+    "sample_situacao": "Aprovada",
+    "returned_payload": "exact published header",
+    "publication_allowed": false,
+    "review_required": true
+  },
+  "limits": [
+    "One page of 449 declared pages; not national coverage.",
+    "The consumer exposes the exact partnership header, not proof of execution, payment or a territorial link.",
+    "No sum of values and no public release."
+  ]
+}

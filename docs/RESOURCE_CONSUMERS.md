@@ -28,6 +28,19 @@ esse, com:
 `limit` máximo é 200. Recurso inexistente, não-plano ou plano inexistente
 retorna 404; sessão ausente/não revisora retorna 401/403.
 
+## Cabeçalho de parceria Transferegov
+
+```http
+GET /api/workbench/parcerias/37840
+```
+
+A rota exige revisor e devolve o cabeçalho exato já importado pelo conector
+bounded `transferegov_parcerias`. O payload inclui os campos publicados, a
+situação e a fonte com URL/SHA-256; `publication_allowed=false` e
+`review_required=true`. Não há soma, pagamento, vínculo com escola/obra ou
+cobertura nacional. A amostra real de 200 parcerias de 89.695 declaradas está
+em [`reports/20261022-transferegov-parcerias.json`](../reports/20261022-transferegov-parcerias.json).
+
 ## Documentos de um contrato PNCP
 
 ```http
@@ -73,5 +86,6 @@ python -m pytest backend/tests/test_resource_relations.py -q
 ```
 
 Cobrem plano exato, exclusão de outro plano, paginação, ausência de agregado,
-401 anônimo, 404 para não-plano e documentos PNCP sem bytes. A suíte integral
-deste lote passou com **2.198 aprovados, 17 ignorados**.
+401 anônimo, 404 para não-plano, documentos PNCP sem bytes, parcerias e o
+conector bounded. A suíte integral deste lote passou com **2.201 aprovados,
+17 ignorados**.

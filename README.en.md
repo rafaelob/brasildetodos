@@ -110,10 +110,10 @@ For PostgreSQL, install `.[test,postgres]` and use
   content-addressed originals and Poppler page preview.
 - **PNCP:** official contract documents with metadata, SHA-256, revisions and
   private storage; nothing is published automatically.
-- **Official consumers:** special-plan commitments, PDDE by school and PNCP
-  contract documents, reviewer-only, exact rows, no monetary totals and no
-  public bytes.
-- **Infrastructure:** Alembic `0001_baseline`, durable local PostgreSQL,
+- **Official consumers:** special-plan commitments, PDDE by school, PNCP
+  contract documents and partnership headers, reviewer-only, exact rows, no
+  monetary totals and no public bytes.
+- **Infrastructure:** Alembic `0002_transferegov_parcerias`, durable local PostgreSQL,
   backup/restore, non-root/read-only containers and same-origin frontend.
 - **Languages:** Brazilian Portuguese, English and Spanish.
 
@@ -140,7 +140,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Latest local state: **2,198 Python tests passed, 17 skipped**, **243 web tests
+Latest local state: **2,201 Python tests passed, 17 skipped**, **243 web tests
 passed** and a successful Vite 8.2.4 build. Tests use synthetic data; they do not
 prove currentness, national completeness or deployment. Evidence and limits:
 [Status](docs/STATUS.md) and [changes/](docs/changes/).

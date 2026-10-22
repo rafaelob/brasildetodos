@@ -33,4 +33,4 @@ Mapa carrega somente após consentimento para conexão ao provedor. MapLibre usa
 
 ## Deploy e banco
 
-SQLite para desenvolvimento/single-instance; PostgreSQL para concorrência. create_all + schema_version=1 continua sendo bootstrap e proteção aditiva, mas o esquema tem baseline Alembic `0001_baseline` e revisões estruturais passam por `bdt.migrate`. API não deve reiniciar migration DDL concorrente numa implantação multi-replica. A aplicação começa sem registros.
+SQLite para desenvolvimento/single-instance; PostgreSQL para concorrência. create_all + schema_version=1 continua sendo bootstrap e proteção aditiva, mas o esquema tem revisões Alembic `0001_baseline` e `0002_transferegov_parcerias`; mudanças estruturais passam por `bdt.migrate`. API não deve reiniciar migration DDL concorrente numa implantação multi-replica. A aplicação começa sem registros.
