@@ -6,15 +6,20 @@ recipient or institutional link.
 """
 from __future__ import annotations
 
+import re
+
 from fastapi import Depends, HTTPException, Query
 from sqlalchemy import func, select
 
 from .evidence import Resource
 from .pdde import PddePayment, initialize_pdde
+from .pncp_documents import PncpContractDocument, PncpDocumentRevision
 from .storage import Place
 from .transferegov_especiais import TransferegovEspeciaisEmpenho, initialize_transferegov_especiais
 
 SPECIAL_PLAN_DATASET = 'transferegov_special_plans'
+PNCP_DATASET = 'pncp_contracts'
+_PNCP_CONTROL = re.compile(r'([A-Z0-9]{12}\d{2})-2-(\d{6})/(\d{4})\Z')
 
 
 def _plan_id(resource):
@@ -83,9 +88,57 @@ def place_pdde(database, place_id: str, *, page: int = 1, limit: int = 50) -> di
                 'note': 'receiver_is_executing_unit_or_entity_not_proof_of_school_payment'}
 
 
+def _pncp_key(resource):
+    if not isinstance(resource.source, dict) or resource.source.get('dataset') != PNCP_DATASET:
+        raise LookupError('resource_not_pncp_contract')
+    raw = resource.source.get('record_id')
+    match = _PNCP_CONTROL.fullmatch(raw) if isinstance(raw, str) else None
+    if match is None:
+        raise LookupError('resource_not_pncp_contract')
+    return match.group(1), int(match.group(3)), int(match.group(2))
+
+
+def pncp_documents(database, resource_id: str, *, page: int = 1, limit: int = 50) -> dict:
+    with database.session() as session:
+        resource = session.get(Resource, resource_id)
+        if resource is None:
+            raise LookupError('resource_not_found')
+        cnpj, year, sequence = _pncp_key(resource)
+        condition = ((PncpContractDocument.cnpj == cnpj)
+                     & (PncpContractDocument.ano_contract == year)
+                     & (PncpContractDocument.sequencial_contract == sequence))
+        total = session.scalar(select(func.count()).select_from(
+            PncpContractDocument).where(condition))
+        rows = session.scalars(select(PncpContractDocument).where(condition)
+                               .order_by(PncpContractDocument.sequencial_document)
+                               .offset((page - 1) * limit).limit(limit + 1)).all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{'id': row.id,
+                  'sequencial_document': row.sequencial_document,
+                  'title': row.title,
+                  'document_type': row.document_type,
+                  'published_at': row.published_at,
+                  'source_url': row.source_url,
+                  'snapshot_sha256': row.snapshot_sha256,
+                  'byte_size': row.byte_size,
+                  'status': row.status,
+                  'revision': row.revision,
+                  'first_seen_at': row.first_seen_at,
+                  'last_seen_at': row.last_seen_at} for row in rows]
+        return {'resource_id': resource.id,
+                'contract': {'cnpj': cnpj, 'ano': year, 'sequencial': sequence},
+                'count': len(items), 'page': page, 'limit': limit, 'total_rows': total,
+                'has_more': has_more, 'items': items,
+                'publication_allowed': False, 'review_required': True,
+                'scope': 'official_document_metadata_and_private_store_hashes_not_publication'}
+
+
 def install(app, database, reviewer):
     initialize_transferegov_especiais(database)
     initialize_pdde(database)
+    PncpContractDocument.__table__.create(database.engine, checkfirst=True)
+    PncpDocumentRevision.__table__.create(database.engine, checkfirst=True)
 
     @app.get('/api/workbench/resources/{resource_id:path}/empenhos')
     def resource_empenhos(resource_id: str, page: int = Query(1, ge=1, le=100000),
@@ -102,3 +155,11 @@ def install(app, database, reviewer):
             return place_pdde(database, place_id, page=page, limit=limit)
         except LookupError:
             raise HTTPException(404, 'school_place_not_found') from None
+
+    @app.get('/api/workbench/resources/{resource_id:path}/documentos')
+    def resource_documents(resource_id: str, page: int = Query(1, ge=1, le=100000),
+                           limit: int = Query(50, ge=1, le=200), _=Depends(reviewer)):
+        try:
+            return pncp_documents(database, resource_id, page=page, limit=limit)
+        except LookupError:
+            raise HTTPException(404, 'resource_not_found') from None
