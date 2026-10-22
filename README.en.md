@@ -110,6 +110,8 @@ For PostgreSQL, install `.[test,postgres]` and use
   content-addressed originals and Poppler page preview.
 - **PNCP:** official contract documents with metadata, SHA-256, revisions and
   private storage; nothing is published automatically.
+- **Official consumers:** special-plan commitments and PDDE by school,
+  reviewer-only, exact rows and no monetary totals.
 - **Infrastructure:** Alembic `0001_baseline`, durable local PostgreSQL,
   backup/restore, non-root/read-only containers and same-origin frontend.
 - **Languages:** Brazilian Portuguese, English and Spanish.
@@ -137,7 +139,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Latest local state: **2,192 Python tests passed, 17 skipped**, **243 web tests
+Latest local state: **2,196 Python tests passed, 17 skipped**, **243 web tests
 passed** and a successful Vite 8.2.4 build. Tests use synthetic data; they do not
 prove currentness, national completeness or deployment. Evidence and limits:
 [Status](docs/STATUS.md) and [changes/](docs/changes/).
@@ -175,7 +177,7 @@ issue with exploit details.
 ## Documentation
 
 [Readiness](docs/READINESS.md) · [Accessibility](docs/ACCESSIBILITY.md) · [Sources](docs/SOURCES.md) ·
-[Data](docs/DATA.md) · [Architecture](docs/ARCHITECTURE.md) ·
+[Data](docs/DATA.md) · [Resource consumers](docs/RESOURCE_CONSUMERS.md) · [Architecture](docs/ARCHITECTURE.md) ·
 [Operations](docs/OPERATIONS.md) · [Migrations](docs/MIGRATIONS.md) ·
 [Roadmap](docs/ROADMAP.md) · [Capability matrix](docs/FEATURE_MATRIX.md)
 

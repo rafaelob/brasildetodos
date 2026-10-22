@@ -112,6 +112,8 @@ completo está em [Migrações](docs/MIGRATIONS.md).
   privacidade, originais content-addressed e prévia de página com Poppler.
 - **PNCP:** contratos e documentos oficiais com metadados, SHA-256, revisões e
   armazenamento privado; nenhum documento é publicado automaticamente.
+- **Consumidores oficiais:** empenhos especiais por plano e PDDE por escola,
+  somente para revisor, com linhas exatas e sem somas monetárias.
 - **Infra:** Alembic `0001_baseline`, PostgreSQL local durável, backup/verify,
   pins de segurança `certifi==2026.10.19`/`Pillow==13.0.0`, container
   não-root/read-only e frontend servido na mesma origem.
@@ -140,7 +142,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Estado local recente: **2.192 testes Python aprovados, 17 ignorados**, web
+Estado local recente: **2.196 testes Python aprovados, 17 ignorados**, web
 **243 aprovados** e build Vite 8.2.4. Testes usam dados sintéticos; não provam
 atualidade, completude nacional ou deploy. Evidências e limites:
 [Status](docs/STATUS.md) e [changes/](docs/changes/).
@@ -178,7 +180,7 @@ issue pública com detalhes de exploração.
 ## Documentação
 
 [Prontidão](docs/READINESS.md) · [Acessibilidade](docs/ACCESSIBILITY.md) · [Fontes](docs/SOURCES.md) ·
-[Dados](docs/DATA.md) · [Arquitetura](docs/ARCHITECTURE.md) ·
+[Dados](docs/DATA.md) · [Consumidores](docs/RESOURCE_CONSUMERS.md) · [Arquitetura](docs/ARCHITECTURE.md) ·
 [Operação](docs/OPERATIONS.md) · [Migrações](docs/MIGRATIONS.md) ·
 [Roadmap](docs/ROADMAP.md) · [Matriz de capacidades](docs/FEATURE_MATRIX.md)
 

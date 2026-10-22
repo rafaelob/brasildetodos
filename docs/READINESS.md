@@ -29,7 +29,7 @@ outros três ainda têm gates abertos.
   `current` e `check`.
 - Compose PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico e health em `:8009`.
-- Suíte local: **2.192 testes Python aprovados, 17 ignorados**; web **243
+- Suíte local: **2.196 testes Python aprovados, 17 ignorados**; web **243
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
   `education-2025-20260907-v1` instaladas juntas em `data/national.db`:
@@ -39,6 +39,9 @@ outros três ainda têm gates abertos.
 - Coletas frescas de 21/10/2026: CNES com **96.607 elegíveis** (1 quarentena
   por nome curto) e Inep 2025 com **138.086 escolas**; verificadas
   separadamente, ainda não fundidas em uma edição nacional certificada.
+- Consumidores reviewer-only de empenhos especiais e PDDE, com paginação,
+  linhas publicadas exatas e `aggregate: null`; amostra real de 200 empenhos
+  bounded em `reports/20261022-transferegov-special-empenhos.json`.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Locks Windows CPython 3.14.8/AMD64 (54 pacotes), macOS arm64 (50) e Linux
