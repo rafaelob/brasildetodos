@@ -45,6 +45,8 @@ def install(app, database, current_user, reviewer, rate_limit, check_password):
     install_groups(app, database, current_user, rate_limit)
     from .resource_routes import install as install_resource_routes
     install_resource_routes(app, database)
+    from .resource_relations import install as install_resource_relations
+    install_resource_relations(app, database, reviewer)
 
     @app.get('/api/map/viewport')
     def map_view(bbox: str = Query(..., max_length=150), zoom: int = Query(4, ge=0, le=20),
