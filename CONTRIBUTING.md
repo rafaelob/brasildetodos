@@ -29,7 +29,7 @@ privacidade podem exigir revisão de um mantenedor antes do código.
 
 ## Ambiente local
 
-Requisitos fixados: Python **3.14.8** e Node.js **24.20.0**.
+Requisitos fixados: Python **3.14.8** e Node.js **24.22.1**.
 
 ```bash
 python -m venv .venv

@@ -11,7 +11,7 @@ import sys
 import tomllib
 
 PYTHON = '3.14.8'
-NODE = '24.20.0'
+NODE = '24.22.1'
 ROOT = Path(__file__).resolve().parents[1]
 
 

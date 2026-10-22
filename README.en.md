@@ -9,7 +9,7 @@ database or a paid map key.
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 [![Python 3.14.8](https://img.shields.io/badge/python-3.14.8-3776AB)](.python-version)
-[![Node 24.20.0](https://img.shields.io/badge/node-24.20.0-339933)](.nvmrc)
+[![Node 24.22.1](https://img.shields.io/badge/node-24.22.1-339933)](.nvmrc)
 [![Status: local alpha](https://img.shields.io/badge/status-local%20alpha-orange)](docs/READINESS.md)
 
 > **A fresh clone starts empty.** National scope is a product requirement, not
@@ -77,7 +77,7 @@ historical snapshot, not a live national catalog; `national_catalog_certified`
 stays `false`. See [unified installation](docs/UNIFIED_INSTALLATION.md) and the
 [local evidence](reports/20261021-national-data.json).
 
-Requires **Python 3.14.8** and **Node.js 24.20.0**, pinned in the repository.
+Requires **Python 3.14.8** and **Node.js 24.22.1**, pinned in the repository.
 
 ```bash
 python -m venv .venv

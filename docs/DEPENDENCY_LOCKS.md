@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Dependências reproduzíveis
 
-Alvos: Python 3.14.8 e Node.js 24.20.0. Não substituir por latest ou por uma
+Alvos: Python 3.14.8 e Node.js 24.22.1. Não substituir por latest ou por uma
 versão local disponível. Ver `TOOLCHAIN.md`.
 
 ## Web

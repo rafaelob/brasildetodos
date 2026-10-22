@@ -2,7 +2,7 @@
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
-export const EXPECTED_NODE = '24.20.0';
+export const EXPECTED_NODE = '24.22.1';
 export function assertNodeVersion(actual = process.versions.node) {
   if (actual !== EXPECTED_NODE) throw new Error(`Node.js ${EXPECTED_NODE} required; found ${actual}`);
   return actual;

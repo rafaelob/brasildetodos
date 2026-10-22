@@ -48,7 +48,7 @@ banco com usuários. A combinação durável de catálogos exige importação co
 não substituição de arquivos. As datas de coleta e referência ficam preservadas.
 
 O workflow de publicação exige antes o percurso de navegador com frontend
-compilado em Node 24.20.0, API e registros reais. Em seguida baixa o próprio asset
+compilado em Node 24.22.1, API e registros reais. Em seguida baixa o próprio asset
 publicado e reexecuta a validação. Uma nova seleção exige tag e revisão distintas.
 Não há sobrescrita de assets. O hash no código protege contra troca de bytes,
 mas não transforma a release em um serviço administrativamente imutável.

@@ -1,6 +1,6 @@
-FROM node:24.20.0-bookworm-slim AS web
+FROM node:24.22.1-bookworm-slim AS web
 WORKDIR /app/web
-RUN node -e "if (process.versions.node !== '24.20.0') process.exit(1)"
+RUN node -e "if (process.versions.node !== '24.22.1') process.exit(1)"
 COPY web/package.json web/package-lock.json web/.npmrc ./
 RUN npm ci
 COPY web/ ./

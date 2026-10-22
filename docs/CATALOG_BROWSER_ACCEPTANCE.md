@@ -20,7 +20,7 @@ observações ou registros. Preferências de favoritos existem só no navegador
 temporário. O mapa não é ativado; nenhuma requisição externa é necessária.
 
 O workflow `Published data and OCR acceptance` agora executa também esse percurso
-sobre a release v1 fixada em `data/releases/`, com Python 3.14.8, Node 24.20.0 e
+sobre a release v1 fixada em `data/releases/`, com Python 3.14.8, Node 24.22.1 e
 locks existentes. Os doze percursos sintéticos de regressão na Quality continuam
 independentes e não são removidos. Os testes unitários deste ensaio usam fixtures
 sintéticas; a execução de aceite da release usa os registros efetivamente publicados.

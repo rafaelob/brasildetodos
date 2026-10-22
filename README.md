@@ -9,7 +9,7 @@ mapa.
 
 [![Licença: AGPL-3.0-or-later](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0--or--later-blue)](LICENSE)
 [![Python 3.14.8](https://img.shields.io/badge/python-3.14.8-3776AB)](.python-version)
-[![Node 24.20.0](https://img.shields.io/badge/node-24.20.0-339933)](.nvmrc)
+[![Node 24.22.1](https://img.shields.io/badge/node-24.22.1-339933)](.nvmrc)
 [![Status: alpha local](https://img.shields.io/badge/status-alpha%20local-orange)](docs/READINESS.md)
 
 > **Um clone novo começa vazio.** Escopo nacional é requisito do produto, não
@@ -79,7 +79,7 @@ catálogo nacional vivo; `national_catalog_certified` continua `false`. Detalhes
 
 ### Desenvolvimento manual
 
-Requer **Python 3.14.8** e **Node.js 24.20.0**, fixados no repositório.
+Requer **Python 3.14.8** e **Node.js 24.22.1**, fixados no repositório.
 
 ```bash
 python -m venv .venv

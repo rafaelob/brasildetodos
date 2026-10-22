@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Toolchain do Brasil de Todos
 
-Versões escolhidas pelo proprietário: **Node.js 24.20.0** em 2026-09-06 e
+Versões escolhidas pelo proprietário: **Node.js 24.22.1** em 2026-10-22 (release de seguranca de 2026-10-21, no lugar da 24.20.0) e
 **Python 3.14.8** em 2026-10-08 (release de segurança de 2026-09-30, no lugar da
 3.14.7). A publicação oficial das duas versões foi consultada. Não usar a série genérica 3.14/24 como comprovação de patch.
 
@@ -31,7 +31,7 @@ npm run build
 
 Para uma árvore que ainda não contém `web/package-lock.json`, a geração inicial
 é `npm install`. Não apresentar essa instalação como reprodução transitiva exata.
-O workflow `dependency-lock.yml` gera o lock sob Node 24.20.0, testa, compila,
+O workflow `dependency-lock.yml` gera o lock sob Node 24.22.1, testa, compila,
 executa auditoria e só publica se o manifesto continuar igual. Uma falha de
 vulnerabilidades impede a publicação; não adicionar exceções silenciosas.
 
@@ -58,6 +58,6 @@ de dependências; esses controles continuam rastreados no TODO.
 ## Referências
 
 - https://www.python.org/downloads/release/python-3148/
-- https://nodejs.org/en/download/archive/v24.20.0
+- https://nodejs.org/en/download/archive/v24.22.1
 - https://github.com/actions/setup-python
 - https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md
