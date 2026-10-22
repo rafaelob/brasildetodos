@@ -12,7 +12,7 @@ database or a paid map key.
 [![Node 24.20.0](https://img.shields.io/badge/node-24.20.0-339933)](.nvmrc)
 [![Status: local alpha](https://img.shields.io/badge/status-local%20alpha-orange)](docs/READINESS.md)
 
-> **This checkout starts empty.** National scope is a product requirement, not
+> **A fresh clone starts empty.** National scope is a product requirement, not
 > a claim about this installation. There is no demo data disguised as official
 > records. `GET /api/coverage` is the truth of this instance;
 > `national_catalog_certified` stays `false` even after importing a certified

@@ -12,7 +12,7 @@ mapa.
 [![Node 24.20.0](https://img.shields.io/badge/node-24.20.0-339933)](.nvmrc)
 [![Status: alpha local](https://img.shields.io/badge/status-alpha%20local-orange)](docs/READINESS.md)
 
-> **Este clone começa vazio.** Escopo nacional é requisito do produto, não
+> **Um clone novo começa vazio.** Escopo nacional é requisito do produto, não
 > cobertura desta instalação. Não há dados demonstrativos disfarçados de
 > registros oficiais. `GET /api/coverage` é a verdade desta instância;
 > `national_catalog_certified` permanece `false` mesmo após importar uma edição
