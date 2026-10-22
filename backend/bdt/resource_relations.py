@@ -16,6 +16,7 @@ from .pdde import PddePayment, initialize_pdde
 from .pncp_documents import PncpContractDocument, PncpDocumentRevision
 from .storage import Place
 from .transferegov_especiais import TransferegovEspeciaisEmpenho, initialize_transferegov_especiais
+from .transferegov_parcerias import TransferegovParceria, initialize_transferegov_parcerias
 
 SPECIAL_PLAN_DATASET = 'transferegov_special_plans'
 PNCP_DATASET = 'pncp_contracts'
@@ -134,9 +135,22 @@ def pncp_documents(database, resource_id: str, *, page: int = 1, limit: int = 50
                 'scope': 'official_document_metadata_and_private_store_hashes_not_publication'}
 
 
+def parceria(database, parceria_id: str) -> dict:
+    with database.session() as session:
+        row = session.get(TransferegovParceria, str(parceria_id))
+        if row is None:
+            raise LookupError('parceria_not_found')
+        return {'id': row.id, 'cd_parceria': row.cd_parceria,
+                'id_proposta': row.id_proposta, 'situacao': row.situacao,
+                'payload': row.payload, 'source': row.source,
+                'publication_allowed': False, 'review_required': True,
+                'scope': 'exact_published_partnership_header_not_proof_of_execution'}
+
+
 def install(app, database, reviewer):
     initialize_transferegov_especiais(database)
     initialize_pdde(database)
+    initialize_transferegov_parcerias(database)
     PncpContractDocument.__table__.create(database.engine, checkfirst=True)
     PncpDocumentRevision.__table__.create(database.engine, checkfirst=True)
 
@@ -163,3 +177,10 @@ def install(app, database, reviewer):
             return pncp_documents(database, resource_id, page=page, limit=limit)
         except LookupError:
             raise HTTPException(404, 'resource_not_found') from None
+
+    @app.get('/api/workbench/parcerias/{parceria_id}')
+    def partnership(parceria_id: str, _=Depends(reviewer)):
+        try:
+            return parceria(database, parceria_id)
+        except LookupError:
+            raise HTTPException(404, 'parceria_not_found') from None

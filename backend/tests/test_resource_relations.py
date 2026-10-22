@@ -11,6 +11,7 @@ from bdt.pdde import PddePayment
 from bdt.pncp_documents import PncpContractDocument
 from bdt.storage import Municipality, User, upsert_place
 from bdt.transferegov_especiais import TransferegovEspeciaisEmpenho, _item_row
+from bdt.transferegov_parcerias import TransferegovParceria
 from test_transferegov_especiais import make_item
 
 PASSWORD = 'test-only-reviewer-password'
@@ -72,6 +73,11 @@ def relations(tmp_path):
             source_url='https://pncp.gov.br/app/contratos/12345678000199/2026/1',
             snapshot_sha256='d' * 64, byte_size=1234, status='present', revision=1,
             first_seen_at=now(), last_seen_at=now(), metadata_json={}))
+        session.add(TransferegovParceria(
+            id='37840', cd_parceria=202500037062, id_proposta='37916',
+            situacao='Aprovada',
+            payload={'id_parceria': 37840, 'in_situacao_parceria': 'Aprovada'},
+            source={'url': 'https://example.org/parceria', 'sha256': 'e' * 64}))
     client = TestClient(app)
     response = client.post('/api/auth/login', headers=HEAD, json={'username': 'reviewer', 'password': PASSWORD})
     assert response.status_code == 200, response.text
@@ -128,6 +134,17 @@ def test_pncp_document_consumer_rejects_non_contract(relations):
     response = client.get('/api/workbench/resources/' + quote(
         'transferegov_special_plans:101', safe='') + '/documentos')
     assert response.status_code == 404
+
+
+def test_parceria_consumer_returns_exact_header_without_publication(relations):
+    _, client, _ = relations
+    response = client.get('/api/workbench/parcerias/37840')
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body['id'] == '37840' and body['situacao'] == 'Aprovada'
+    assert body['payload'] == {'id_parceria': 37840, 'in_situacao_parceria': 'Aprovada'}
+    assert body['publication_allowed'] is False and body['review_required'] is True
+    assert client.get('/api/workbench/parcerias/99999').status_code == 404
 
 
 def test_pdde_consumer_returns_exact_values_for_school_only(relations):

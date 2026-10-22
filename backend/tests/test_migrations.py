@@ -23,11 +23,12 @@ def test_empty_database_upgrades_to_the_full_baseline(tmp_path):
     migrate.upgrade(url)
     tables = _tables(tmp_path / "migration.db")
     assert {"alembic_version", "schema_version", "users", "places", "community_groups",
-            "ocr_jobs", "pncp_contract_documents", "document_originals"} <= tables
+            "ocr_jobs", "pncp_contract_documents", "document_originals",
+            "transferegov_parcerias"} <= tables
     with sqlite3.connect(tmp_path / "migration.db") as connection:
         assert connection.execute("SELECT id, version FROM schema_version").fetchone() == (1, 1)
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "0001_baseline",)
+            "0002_transferegov_parcerias",)
     migrate.check(url)
     Database(url).initialize()
 
