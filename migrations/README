@@ -1,4 +1,4 @@
 Alembic migrations for Brasil de Todos.
 
-The baseline is `0001_baseline`; the current head is `0002_transferegov_parcerias`. See `docs/MIGRATIONS.md` for the operator flow,
+The baseline is `0001_baseline`; the current head is `0003_parceria_empenhos`. See `docs/MIGRATIONS.md` for the operator flow,
 existing-database stamping and the backup/restore preconditions.

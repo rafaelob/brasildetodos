@@ -1,6 +1,6 @@
 """Add raw Transferegov Parcerias budget commitments.
 
-Revision ID: 0003_transferegov_parceria_empenhos
+Revision ID: 0003_parceria_empenhos
 Revises: 0002_transferegov_parcerias
 """
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = '0003_transferegov_parceria_empenhos'
+revision = '0003_parceria_empenhos'
 down_revision = '0002_transferegov_parcerias'
 branch_labels = None
 depends_on = None
