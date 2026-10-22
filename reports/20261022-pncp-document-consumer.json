@@ -1,0 +1,43 @@
+{
+  "schema": "bdt.pncp-document-consumer-evidence.v1",
+  "collected_on": "2026-10-22",
+  "national_catalog_certified": false,
+  "contract": {
+    "cnpj": "00000368000150",
+    "ano": 2026,
+    "sequencial": 207,
+    "control_number": "00000368000150-2-000207/2026"
+  },
+  "collection": {
+    "status": "complete",
+    "terminal": "short_page",
+    "pages": 1,
+    "documents": 1,
+    "new": 1,
+    "updated": 0,
+    "not_listed": 0,
+    "publication_allowed": false,
+    "review_required": true,
+    "official_metadata_only": true
+  },
+  "document": {
+    "id": "pncp-doc:00000368000150:2026:207:1",
+    "sequencial_document": 1,
+    "sha256": "b5f503966fdc96147c5e84f2f70ffacabb89ce424abd0e7d930ffe93c2b8d9bd",
+    "bytes": 87356,
+    "status": "present"
+  },
+  "consumer": {
+    "path": "/api/workbench/resources/{resource_id}/documentos",
+    "auth": "reviewer_session",
+    "returned_count": 1,
+    "returns_bytes_or_content": false,
+    "publication_allowed": false,
+    "review_required": true
+  },
+  "limits": [
+    "One contract and one document only; not a national document census.",
+    "Metadata and private-store hash are exposed; the PDF bytes remain private.",
+    "No OCR, field ground truth, institutional link or publication is implied."
+  ]
+}

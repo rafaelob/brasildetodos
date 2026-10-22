@@ -28,6 +28,21 @@ esse, com:
 `limit` máximo é 200. Recurso inexistente, não-plano ou plano inexistente
 retorna 404; sessão ausente/não revisora retorna 401/403.
 
+## Documentos de um contrato PNCP
+
+```http
+GET /api/workbench/resources/pncp_contracts%3A00000368000150-2-000207%2F2026/documentos?page=1&limit=50
+```
+
+A rota exige um `Resource` cujo `source.dataset` seja `pncp_contracts`, lê o
+`cnpj`, ano e sequencial do `source.record_id` e retorna os metadados dos
+documentos oficiais já coletados. Não devolve bytes nem conteúdo; inclui
+SHA-256, tamanho, título, tipo, status, revisão, URL oficial e
+`publication_allowed: false`/`review_required: true`. O PDF permanece no
+armazenamento privado. Uma amostra real de um contrato e um documento de
+87.356 bytes está em
+[`reports/20261022-pncp-document-consumer.json`](../reports/20261022-pncp-document-consumer.json).
+
 ## PDDE por escola
 
 ```http
@@ -58,5 +73,5 @@ python -m pytest backend/tests/test_resource_relations.py -q
 ```
 
 Cobrem plano exato, exclusão de outro plano, paginação, ausência de agregado,
-401 anônimo e 404 para não-plano. A suíte integral deste lote passou com
-**2.196 aprovados, 17 ignorados**.
+401 anônimo, 404 para não-plano e documentos PNCP sem bytes. A suíte integral
+deste lote passou com **2.198 aprovados, 17 ignorados**.

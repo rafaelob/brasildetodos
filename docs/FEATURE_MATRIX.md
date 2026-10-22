@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `1c28b55`; execuções e hashes anteriores em
+Referência de código deste lote: `79beb48`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -31,7 +31,7 @@ em testes.
 | Cobertura e importações | Painel e histórico paginado integrados; contadores `read`/`accepted`/`excluded`; filtro `has_geometry` | Denominadores oficiais reconciliados para certificação nacional |
 | CNES | Pacote com 96.123 elegíveis, sete sem coordenadas, consulta aceita | Nova competência e validação do perfil/denominadores |
 | Educação | Leitor nacional e validações; `education-2025-20260907-v1` com 138.086 escolas públicas ativas, 0 geometria, 27 UFs; seleção `data/releases/education-2025-20260907-v1.json` | Incidente Inep 06/09/2026: `SSLCertVerificationError` código 20 (`reports/20260906-inep-tls-cb873ed.json`); TLS não desabilitado. 27 UFs não é completude; denominadores abertos |
-| Recursos PNCP | Janela de 6.677 contratos importada; precisão e objetos preservados; coletor privado de documentos oficiais com bytes content-addressed, SHA-256, revisões e `not_listed` em listagem completa | Histórico nacional completo, atualização recorrente, retenção/limpeza operacional, publicação revisada e reconciliação |
+| Recursos PNCP | Janela de 6.677 contratos importada; precisão e objetos preservados; coletor privado de documentos oficiais com bytes content-addressed, SHA-256, revisões e `not_listed` em listagem completa; consumidor reviewer-only de metadados sem bytes | Histórico nacional completo, atualização recorrente, retenção/limpeza operacional, publicação revisada e reconciliação |
 | Transferegov/Obrasgov | Perfis de plano especial e projeto; um registro real de cada aceito; consumidores reviewer-only de empenhos especiais e PDDE, com linhas exatas e sem somas | Demais módulos, pagamentos, execução física, geometrias e reconciliação |
 | Histórico e exportação | Versões, antes/depois, links, CSV/JSON/texto e seleção limitada; quatro percursos específicos | Valores de metadados não constituem pagamento |
 | Observação guiada | Escola/saúde/obra, gravação privada, revisão/retirada e cópia; browser guided | Processo operacional de moderação e recurso |
