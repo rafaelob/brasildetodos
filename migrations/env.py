@@ -33,6 +33,7 @@ import bdt.siconfi  # noqa: F401
 import bdt.storage  # noqa: F401
 import bdt.transferegov_especiais  # noqa: F401
 import bdt.transferegov_parcerias  # noqa: F401
+import bdt.transferegov_parceria_empenhos  # noqa: F401
 from bdt.storage import Base
 
 config = context.config

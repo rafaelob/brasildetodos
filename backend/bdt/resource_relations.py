@@ -17,6 +17,8 @@ from .pncp_documents import PncpContractDocument, PncpDocumentRevision
 from .storage import Place
 from .transferegov_especiais import TransferegovEspeciaisEmpenho, initialize_transferegov_especiais
 from .transferegov_parcerias import TransferegovParceria, initialize_transferegov_parcerias
+from .transferegov_parceria_empenhos import (
+    TransferegovParceriaEmpenho, initialize_transferegov_parceria_empenhos)
 
 SPECIAL_PLAN_DATASET = 'transferegov_special_plans'
 PNCP_DATASET = 'pncp_contracts'
@@ -147,10 +149,39 @@ def parceria(database, parceria_id: str) -> dict:
                 'scope': 'exact_published_partnership_header_not_proof_of_execution'}
 
 
+def parceria_empenhos(database, parceria_id: str, *, page: int = 1, limit: int = 50) -> dict:
+    with database.session() as session:
+        condition = TransferegovParceriaEmpenho.id_parceria == str(parceria_id)
+        total = session.scalar(select(func.count()).select_from(
+            TransferegovParceriaEmpenho).where(condition))
+        rows = session.scalars(select(TransferegovParceriaEmpenho).where(condition)
+                               .order_by(TransferegovParceriaEmpenho.data_emissao,
+                                         TransferegovParceriaEmpenho.id_empenho_parceria)
+                               .offset((page - 1) * limit).limit(limit + 1)).all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{'id_empenho_parceria': row.id_empenho_parceria,
+                  'id_parceria': row.id_parceria,
+                  'nr_empenho': row.nr_empenho,
+                  'aa_empenho': row.aa_empenho,
+                  'data_emissao': row.data_emissao,
+                  'situacao_siafi': row.situacao_siafi,
+                  'favorecido_nome': row.favorecido_nome,
+                  'favorecido_id': row.favorecido_id,
+                  'valor_empenho_publicado': row.payload.get('valor_empenho'),
+                  'payload': row.payload,
+                  'source': row.source} for row in rows]
+        return {'parceria_id': str(parceria_id), 'count': len(items), 'page': page,
+                'limit': limit, 'total_rows': total, 'has_more': has_more, 'items': items,
+                'aggregate': None,
+                'scope': 'exact_published_empenhos_for_one_partnership_not_a_payment_or_total'}
+
+
 def install(app, database, reviewer):
     initialize_transferegov_especiais(database)
     initialize_pdde(database)
     initialize_transferegov_parcerias(database)
+    initialize_transferegov_parceria_empenhos(database)
     PncpContractDocument.__table__.create(database.engine, checkfirst=True)
     PncpDocumentRevision.__table__.create(database.engine, checkfirst=True)
 
@@ -184,3 +215,8 @@ def install(app, database, reviewer):
             return parceria(database, parceria_id)
         except LookupError:
             raise HTTPException(404, 'parceria_not_found') from None
+
+    @app.get('/api/workbench/parcerias/{parceria_id}/empenhos')
+    def partnership_commitments(parceria_id: str, page: int = Query(1, ge=1, le=100000),
+                                limit: int = Query(50, ge=1, le=200), _=Depends(reviewer)):
+        return parceria_empenhos(database, parceria_id, page=page, limit=limit)

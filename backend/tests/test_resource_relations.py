@@ -12,6 +12,7 @@ from bdt.pncp_documents import PncpContractDocument
 from bdt.storage import Municipality, User, upsert_place
 from bdt.transferegov_especiais import TransferegovEspeciaisEmpenho, _item_row
 from bdt.transferegov_parcerias import TransferegovParceria
+from bdt.transferegov_parceria_empenhos import TransferegovParceriaEmpenho
 from test_transferegov_especiais import make_item
 
 PASSWORD = 'test-only-reviewer-password'
@@ -78,6 +79,14 @@ def relations(tmp_path):
             situacao='Aprovada',
             payload={'id_parceria': 37840, 'in_situacao_parceria': 'Aprovada'},
             source={'url': 'https://example.org/parceria', 'sha256': 'e' * 64}))
+        session.add(TransferegovParceriaEmpenho(
+            key='f' * 64, id_empenho_parceria='17292', id_parceria='37840',
+            nr_empenho=504312, aa_empenho=2025, data_emissao='2025-11-14T00:00:00',
+            situacao_siafi='Empenho enviado', favorecido_nome='Synthetic entity',
+            favorecido_id='00000000000100', valor_empenho=299977.0,
+            payload={'id_empenho_parceria': 17292, 'id_parceria': 37840,
+                     'valor_empenho': 299977.0},
+            source={'url': 'https://example.org/empenhos', 'sha256': 'f' * 64}))
     client = TestClient(app)
     response = client.post('/api/auth/login', headers=HEAD, json={'username': 'reviewer', 'password': PASSWORD})
     assert response.status_code == 200, response.text
@@ -134,6 +143,17 @@ def test_pncp_document_consumer_rejects_non_contract(relations):
     response = client.get('/api/workbench/resources/' + quote(
         'transferegov_special_plans:101', safe='') + '/documentos')
     assert response.status_code == 404
+
+
+def test_parceria_empenho_consumer_returns_exact_rows_without_total(relations):
+    _, client, _ = relations
+    response = client.get('/api/workbench/parcerias/37840/empenhos')
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body['count'] == 1 and body['aggregate'] is None and body['total_rows'] == 1
+    assert body['items'][0]['id_empenho_parceria'] == '17292'
+    assert body['items'][0]['valor_empenho_publicado'] == 299977.0
+    assert 'total' not in body and 'sum' not in body
 
 
 def test_parceria_consumer_returns_exact_header_without_publication(relations):
