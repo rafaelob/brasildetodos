@@ -151,7 +151,6 @@ operations and community sustainability. The full checklist is in
 - a reconciled national official edition and denominators;
 - an official OCR corpus and legal/privacy review;
 - domain/HTTPS, durable PostgreSQL/PITR, offsite backup and a rehearsed restore;
-- screen-reader and physical-device accessibility;
 - licensed panoramas and lock coverage for Intel macOS/other architectures.
 
 ## Contributing
@@ -165,7 +164,7 @@ Good first steps:
 
 - review the Portuguese documentation or improve this English guide;
 - test the local PostgreSQL restore;
-- audit keyboard/screen-reader flows;
+- review automated semantics, focus and landmarks;
 - review an official source's license and schema;
 - improve test coverage without hiding failures.
 

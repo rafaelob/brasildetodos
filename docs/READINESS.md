@@ -45,7 +45,9 @@ outros três ainda têm gates abertos.
   (51), com manifestos e suítes integrais validadas; macOS Intel e outras
   arquiteturas ainda não estão cobertos.
 - Auditoria axe-core 4.10.3 (WCAG A/AA) sem violações em exploração, ficha e
-  colaboração a 320/390/1440 px; skip link com foco real em `#main`.
+  colaboração a 320/390/1440 px; skip link com foco real em `#main` e
+  landmarks `main`/`banner`/`navigation`/`h1` verificados. Auditoria humana foi
+  retirada do escopo por decisão do owner.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
   membros do grupo, com rota privada e sem publicação automática.
 - Backup lógico local e restore em banco novo validados (`0001_baseline`, 42
@@ -110,8 +112,6 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 ### 5. Produto ainda não entregue
 
 - Panoramas opcionais com licença/data e provedor definidos.
-- Auditoria com leitor de tela, Safari/dispositivos físicos e reflow/zoom;
-  axe A/AA, contraste, alvos de toque e skip link já estão cobertos no Chromium.
 - macOS Intel e outras arquiteturas; Linux, Windows AMD64 e macOS arm64 já têm
   locks e suítes validadas.
 - Tiles vetoriais nacionais/3D com fonte licenciada; o mapa atual é

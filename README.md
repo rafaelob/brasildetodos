@@ -154,7 +154,6 @@ sustentabilidade comunitária. O quadro honesto está em
 - edição nacional oficial reconciliada e denominadores;
 - corpus oficial de OCR e revisão jurídica/privacidade;
 - domínio/HTTPS, PostgreSQL durável/PITR, backup offsite e restauração ensaiada;
-- leitor de tela e dispositivos físicos;
 - panoramas licenciados e locks para macOS Intel/outras arquiteturas.
 
 ## Como contribuir
@@ -168,7 +167,7 @@ Bons primeiros passos:
 
 - revisar a documentação em inglês/espanhol;
 - testar restauração do backup PostgreSQL local;
-- auditar teclado/leitor de tela nos percursos;
+- revisar semântica, foco e landmarks automatizados;
 - revisar licença e formato de uma fonte oficial;
 - melhorar cobertura de testes sem mascarar falhas.
 

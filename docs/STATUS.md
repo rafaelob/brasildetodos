@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `bb23946`; suíte local **2.192 aprovados, 17
+- Código de referência: `a11c48b`; suíte local **2.192 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental (GHSA-6q48/GHSA-8g5g).
@@ -21,8 +21,8 @@
 - Correções recentes: `--database` vence `BDT_DATABASE_URL`; `prune --apply`
   recusa banco sem referências; `store_file` não apaga o próprio target.
 - Ainda faltam dados nacionais reconciliados, corpus oficial de OCR,
-  produção/PITR/offsite, leitor de tela/dispositivos físicos, panoramas
-  licenciados e lock macOS Intel/outras arquiteturas. Veja
+  produção/PITR/offsite, panoramas licenciados e lock macOS
+  Intel/outras arquiteturas. Veja
   [Prontidão](READINESS.md).
 
 O texto abaixo é o histórico do fechamento de 20/10/2026.
@@ -167,7 +167,7 @@ Denominadores escolares/CNES e atualização periódica; transporte TLS verifica
 para edições futuras; nova competência CNES; demais módulos
 Transferegov/Obrasgov/PDDE/FNS e reconciliação financeira; corpus oficial de OCR,
 fila e retenção; panoramas; mapas externos; recuperação de conta/moderação;
-leitor de tela/dispositivos físicos; segurança e desempenho; implantação pública
+segurança e desempenho; implantação pública
 com HTTPS, armazenamento durável, monitoramento e recuperação.
 Detalhamento executável: Issues #2–#5 no GitHub; visão: `ROADMAP.md`; matriz: `FEATURE_MATRIX.md`.
 O texto anterior permanece intacto em `history/STATUS_89584b82.md`.

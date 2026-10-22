@@ -11,7 +11,7 @@ e correções de alvo de migração/store, além dos pins `certifi==2026.10.19` 
 web em **243 aprovados** com build Vite 8.2.4.
 
 O que continua aberto não é uma única feature: dados nacionais reconciliados,
-corpus oficial de OCR, produção/PITR/offsite, leitor de tela/dispositivos físicos,
+corpus oficial de OCR, produção/PITR/offsite,
 panoramas licenciados e locks para macOS Intel/outras arquiteturas.
 O quadro de gates está em [Prontidão](READINESS.md); não há declaração de 100%
 nem de deploy público.

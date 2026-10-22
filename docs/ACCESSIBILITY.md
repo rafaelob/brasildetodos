@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Acessibilidade
 
-Status em 21/10/2026: **cobertura automatizada parcial**, não certificação WCAG.
-O código de referência é `e8703ce`.
+Status em 21/10/2026: **escopo automatizado concluído por decisão do owner**;
+não é certificação WCAG. O código de referência é `a11c48b`.
 
 ## O que foi verificado
 
@@ -14,6 +14,8 @@ O código de referência é `e8703ce`.
   violação `serious` ou `critical` quando `BDT_AXE_FAIL=1`.
 - Teclado: o primeiro `Tab` alcança o link “pular para o conteúdo”; `Enter`
   move o foco para `<main id="main" tabIndex={-1}>`.
+- Estrutura de leitor de tela: o smoke exige exatamente um `main`, um `banner`,
+  ao menos uma `navigation` e um heading de nível 1 em cada largura.
 - A suíte web já cobre alvos de toque de 44 px, contraste dos tokens, redução
   de movimento e presença de rótulos/landmarks em pontos específicos.
 
@@ -44,8 +46,12 @@ O `browser_smoke.py` sobe a API e o frontend compilado em `127.0.0.1:8034`,
 usa dados sintéticos e apaga o banco temporário. Em Windows, use uma cópia
 equivalente em `%TEMP%` e o Edge/Chromium instalado.
 
-## Lacuna aberta
+## Escopo encerrado e limites
 
-A Issue #20 continua aberta para leitor de tela, dispositivos físicos, Safari e
-reflow/zoom. Nenhum resultado acima deve ser lido como “acessível para todos”
-ou como cobertura de produção.
+O owner decidiu em 21/10/2026 que **não haverá auditoria humana** de leitor de
+tela, Safari, dispositivo físico ou reflow/zoom neste projeto. O escopo
+automatizado acima é o aceite final; a Issue #20 foi encerrada como *not
+planned* para a parte humana. Isso não autoriza dizer que o produto é
+“acessível para todos”, que cumpre WCAG integralmente ou que foi validado em
+produção. Teclado, skip link, landmarks, axe A/AA e os testes web são a
+evidência disponível.
