@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `2bfb412`; execuções e hashes anteriores em
+Referência de código deste lote: `7d52624`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos

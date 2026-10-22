@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `2bfb412`; suíte local **2.201 aprovados, 17
+- Código de referência: `7d52624`; suíte local **2.201 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Toolchain Node **24.22.1** (release de segurança de 21/10/2026) alinhada em
   pins, Dockerfile, package engines, CI e testes. `npm ci` (0 vulnerabilidades),
