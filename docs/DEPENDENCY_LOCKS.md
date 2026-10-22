@@ -50,6 +50,27 @@ python -m venv .venv
 .\.venv\Scripts\python -m pytest
 ```
 
+## Backend macOS arm64
+
+`requirements/macos-py314.lock` foi gerado no CPython 3.14.8/arm64 pelo workflow
+manual `.github/workflows/macos-lock.yml`, usando o lock Linux como constraint.
+São 50 pacotes; os 50 pins comuns são idênticos ao Linux e `greenlet` não é
+resolvido neste alvo (o runtime é síncrono). O manifesto
+`requirements/macos-py314.json` registra `Darwin`/`arm64`, hashes do lock e do
+pyproject e a contagem.
+
+O run público [39696830961](https://github.com/rafaelob/brasildetodos/actions/runs/39696830961)
+executou instalação `--require-hashes --only-binary=:all:`, projeto editável,
+`pip check`, a suíte integral **2.192 aprovados, 17 ignorados** e a gravação/
+verificação do manifesto. O artefato foi baixado e incorporado ao `main`; o
+workflow não faz commit automático. macOS Intel e outras arquiteturas não estão
+cobertos.
+
+```sh
+python ops/python_lock_manifest.py verify --lock requirements/macos-py314.lock \
+  --manifest requirements/macos-py314.json --system Darwin
+```
+
 Os artefatos marcados como evidência podem existir mesmo quando o job falha;
 não equivalem a lock aprovado. A publicação só acontece após os testes e com
 comparação do manifesto no main. Nem o lock nem o relatório certificam dados
@@ -67,8 +88,9 @@ python -m pip check
 python -m pytest
 ```
 
-O lock tem escopo de sistema/versão. macOS e outras arquiteturas devem receber
-sua própria validação; não rotular o pacote Linux ou Windows como universal.
+O lock tem escopo de sistema/versão. macOS Intel e outras arquiteturas ainda
+devem receber sua própria validação; não rotular Linux, Windows ou macOS arm64
+como universais.
 A geração não atualiza automaticamente a instalação de produção. CI/containers
 precisam usar a política de instalação travada depois que o lock for confirmado.
 O registro de migração informa quais instalações efetivamente o utilizaram.

@@ -135,7 +135,7 @@ sustentabilidade comunitária. O quadro honesto está em
 - corpus oficial de OCR e revisão jurídica/privacidade;
 - domínio/HTTPS, PostgreSQL durável/PITR, backup offsite e restauração ensaiada;
 - leitor de tela e dispositivos físicos;
-- panoramas licenciados e lockfile macOS.
+- panoramas licenciados e locks para macOS Intel/outras arquiteturas.
 
 ## Como contribuir
 

@@ -41,8 +41,9 @@ outros três ainda têm gates abertos.
   separadamente, ainda não fundidas em uma edição nacional certificada.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
-- Lock Windows CPython 3.14.8/AMD64 com 54 pacotes, manifesto e suíte integral
-  validada; o lock Linux permanece em 51 pacotes.
+- Locks Windows CPython 3.14.8/AMD64 (54 pacotes), macOS arm64 (50) e Linux
+  (51), com manifestos e suítes integrais validadas; macOS Intel e outras
+  arquiteturas ainda não estão cobertos.
 - Auditoria axe-core 4.10.3 (WCAG A/AA) sem violações em exploração, ficha e
   colaboração a 320/390/1440 px; skip link com foco real em `#main`.
 - Fotos aprovadas de observações compartilhadas podem ser vistas apenas por
@@ -111,8 +112,8 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 - Panoramas opcionais com licença/data e provedor definidos.
 - Auditoria com leitor de tela, Safari/dispositivos físicos e reflow/zoom;
   axe A/AA, contraste, alvos de toque e skip link já estão cobertos no Chromium.
-- Lockfile macOS e validação nessa plataforma; o lock Windows já foi validado
-  localmente, mas não em CI Windows.
+- macOS Intel e outras arquiteturas; Linux, Windows AMD64 e macOS arm64 já têm
+  locks e suítes validadas.
 - Tiles vetoriais nacionais/3D com fonte licenciada; o mapa atual é
   progressivo e opcional.
 
@@ -130,5 +131,5 @@ executar os testes locais e receber uma revisão sem depender do autor original.
 Comece por [CONTRIBUTING.md](../CONTRIBUTING.md). Tarefas boas para a primeira
 contribuição: revisão de documentação em inglês/espanhol, testes de restore
 PostgreSQL local, auditoria de acessibilidade, revisão de licença de uma fonte
-oficial e lockfile macOS. Abra uma issue com o contexto antes de um
+oficial e lock macOS Intel. Abra uma issue com o contexto antes de um
 patch grande; dados pessoais e segredos nunca entram em issue pública.

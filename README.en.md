@@ -134,7 +134,7 @@ operations and community sustainability. The full checklist is in
 - an official OCR corpus and legal/privacy review;
 - domain/HTTPS, durable PostgreSQL/PITR, offsite backup and a rehearsed restore;
 - screen-reader and physical-device accessibility;
-- licensed panoramas and a macOS lockfile.
+- licensed panoramas and lock coverage for Intel macOS/other architectures.
 
 ## Contributing
 
