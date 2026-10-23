@@ -1,0 +1,185 @@
+{
+  "generated_on": "2026-10-23T15:11:31.862481+00:00",
+  "installed": {
+    "by_kind": {
+      "health": 96123,
+      "school": 138086
+    },
+    "by_state": [
+      {
+        "health": 423,
+        "school": 1484,
+        "state": "AC"
+      },
+      {
+        "health": 1803,
+        "school": 2392,
+        "state": "AL"
+      },
+      {
+        "health": 1312,
+        "school": 5158,
+        "state": "AM"
+      },
+      {
+        "health": 256,
+        "school": 786,
+        "state": "AP"
+      },
+      {
+        "health": 8402,
+        "school": 13366,
+        "state": "BA"
+      },
+      {
+        "health": 4438,
+        "school": 5977,
+        "state": "CE"
+      },
+      {
+        "health": 490,
+        "school": 722,
+        "state": "DF"
+      },
+      {
+        "health": 1691,
+        "school": 2633,
+        "state": "ES"
+      },
+      {
+        "health": 3622,
+        "school": 3576,
+        "state": "GO"
+      },
+      {
+        "health": 3659,
+        "school": 10080,
+        "state": "MA"
+      },
+      {
+        "health": 12213,
+        "school": 12070,
+        "state": "MG"
+      },
+      {
+        "health": 1482,
+        "school": 1377,
+        "state": "MS"
+      },
+      {
+        "health": 2740,
+        "school": 2237,
+        "state": "MT"
+      },
+      {
+        "health": 3476,
+        "school": 9631,
+        "state": "PA"
+      },
+      {
+        "health": 3373,
+        "school": 3721,
+        "state": "PB"
+      },
+      {
+        "health": 5281,
+        "school": 5884,
+        "state": "PE"
+      },
+      {
+        "health": 2626,
+        "school": 3557,
+        "state": "PI"
+      },
+      {
+        "health": 5502,
+        "school": 7405,
+        "state": "PR"
+      },
+      {
+        "health": 4445,
+        "school": 6905,
+        "state": "RJ"
+      },
+      {
+        "health": 2187,
+        "school": 2713,
+        "state": "RN"
+      },
+      {
+        "health": 877,
+        "school": 1026,
+        "state": "RO"
+      },
+      {
+        "health": 316,
+        "school": 864,
+        "state": "RR"
+      },
+      {
+        "health": 5947,
+        "school": 7232,
+        "state": "RS"
+      },
+      {
+        "health": 5343,
+        "school": 5218,
+        "state": "SC"
+      },
+      {
+        "health": 1082,
+        "school": 1517,
+        "state": "SE"
+      },
+      {
+        "health": 12111,
+        "school": 19173,
+        "state": "SP"
+      },
+      {
+        "health": 1026,
+        "school": 1382,
+        "state": "TO"
+      }
+    ],
+    "database": "data/national.db",
+    "total_places": 234209,
+    "without_geometry": 138093
+  },
+  "national_catalog_certified": false,
+  "not_national_coverage": true,
+  "notes": [
+    "Installed database and fresh sources were collected separately; they were not merged.",
+    "Only national totals were published by these sources; no per-state denominator was compared.",
+    "A zero gap proves arithmetic equality with the declared total, not a merge or reproduction.",
+    "Certification requires official per-state/municipal denominators and a reconciled edition."
+  ],
+  "receipt": {
+    "path": "reports/20261021-national-data.json"
+  },
+  "schema": "bdt.national-reconciliation.v1",
+  "sources": {
+    "health": {
+      "collected_at": "2026-10-21T23:42:14Z",
+      "dataset": "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_csv.zip",
+      "datasource_scope": "declared outpatient SUS, empty deactivation reason; not all SUS or live availability",
+      "declared_total": 96607,
+      "gap": -484,
+      "installed": 96123,
+      "sha256": "481f52004a6accd01592db91e597b36027e895fe2437554f5f308bd5bcdf4ef8",
+      "status": "reconciled",
+      "status_note": "partial_quality"
+    },
+    "school": {
+      "collected_at": "2026-10-21T23:44:51Z",
+      "dataset": "https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2025_.zip",
+      "datasource_scope": "public schools declared active in the reviewed 2025 school table; no open seats, schedules or quality",
+      "declared_total": 138086,
+      "gap": 0,
+      "installed": 138086,
+      "sha256": "ad2c389160be5cf6b8e32257677e9b5657f01d10a342355ad9757bfecd2fc90a",
+      "status": "reconciled",
+      "status_note": "imported"
+    }
+  }
+}

@@ -30,7 +30,7 @@ outros três ainda têm gates abertos.
   `current` e `check`.
 - Compose PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico e health em `:8009`.
-- Suíte local: **2.206 testes Python aprovados, 17 ignorados**; web **243
+- Suíte local: **2.210 testes Python aprovados, 17 ignorados**; web **243
   aprovados**; build Vite 8.2.4.
 - Releases históricas `public-data-20260906-v1` e
   `education-2025-20260907-v1` instaladas juntas em `data/national.db`:
@@ -53,6 +53,11 @@ outros três ainda têm gates abertos.
   `id_projeto_investimento`; amostra real bounded de 200 execuções de 74.280
   declaradas (8 rejeitadas com percentual inválido, jamais inventadas) e 200
   projetos de 154.800 declarados (frescura `2026-10-23`).
+- Reconciliação `installed` vs `declared` do banco nacional em
+  `ops/national_reconciliation.py`: saúde 96.123/96.607 (gap −484) e escolas
+  138.086/138.086 (gap 0), com contagem por UF e sem denominador municipal
+  declarado. Escola em gap zero prove igualdade aritmética com o total
+  declarado, **não** fusão nem certificação.
 - Pins de segurança `certifi==2026.10.19` e `Pillow==13.0.0` no lock e no
   worker documental, corrigindo GHSA-6q48/GHSA-8g5g.
 - Locks Windows CPython 3.14.8/AMD64 (54 pacotes), macOS arm64 (50) e Linux
@@ -82,7 +87,13 @@ Evidências: [Status](STATUS.md), [Matriz de capacidades](FEATURE_MATRIX.md),
   quarentena; presença em 27 UFs não é completude.
 - Produzir uma edição nacional revisada, com hashes, retomada, idempotência e
   política de revisita.
-- Não transformar release histórica em “catálogo vivo” nem preencher lacunas
+- Progresso de 23/10/2026: `ops/national_reconciliation.py` compara o banco
+  instalado com os totais **declarados** das duas coletas frescas de
+  21/10/2026 — saúde 96.123/96.607 (gap −484) e escolas 138.086/138.086 (gap
+  0), por UF e sem denominador municipal; `national_catalog_certified` segue
+  `false`. Recibo em
+  [`../reports/20261023-national-reconciliation.json`](../reports/20261023-national-reconciliation.json).
+- Não transformar release histórica em "catálogo vivo" nem preencher lacunas
   com dados sintéticos.
 
 **Aceite:** uma edição oficial reproduzível, reconciliada por território e

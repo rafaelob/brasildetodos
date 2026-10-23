@@ -3,7 +3,7 @@
 
 ## Snapshot de 21/10/2026
 
-- Código de referência: `4f92f89`; suíte local **2.206 aprovados, 17
+- Código de referência: `d6c26a6`; suíte local **2.210 aprovados, 17
   ignorados, zero falhas**; web **243 aprovados** e build Vite 8.2.4.
 - Toolchain Node **24.22.1** (release de segurança de 21/10/2026) alinhada em
   pins, Dockerfile, package engines, CI e testes. `npm ci` (0 vulnerabilidades),
@@ -30,6 +30,12 @@
   74.280 declaradas e 200 projetos de 154.800 declarados (frescura
   `2026-10-23`); 8 execuções publicadas com percentual inválido ficam
   rejeitadas e nunca recebem valor inventado.
+- Reconciliação `installed` vs `declared` do banco nacional: saúde **96.123
+  instalados de 96.607 declarados** (gap −484) e escolas **138.086/138.086**
+  (gap 0), com contagem por UF e nenhuma reconciliação municipal ainda
+  declarada. Recibo em
+  [`reports/20261023-national-reconciliation.json`](../reports/20261023-national-reconciliation.json)
+  e script reprodutível em `ops/national_reconciliation.py`.
 - Stack PostgreSQL local durável em `docker-compose.postgres.yml`, com
   migração one-shot, backup lógico, volume de dados/originais e health em
   `:8009`.

@@ -74,7 +74,11 @@ BDT_DATABASE_URL=sqlite:///data/national.db \
 The installed edition has **234,209 places** (96,123 health and 138,086
 schools), 6,679 resources and 5,571 municipalities across 27 states. It is a
 historical snapshot, not a live national catalog; `national_catalog_certified`
-stays `false`. See [unified installation](docs/UNIFIED_INSTALLATION.md) and the
+stays `false`. The reconciliation of *installed vs declared* totals (health
+96,123/96,607; schools 138,086/138,086) lives in
+`ops/national_reconciliation.py` and
+`reports/20261023-national-reconciliation.json`. See
+[unified installation](docs/UNIFIED_INSTALLATION.md) and the
 [local evidence](reports/20261021-national-data.json).
 
 Requires **Python 3.14.8** and **Node.js 24.22.1**, pinned in the repository.
@@ -141,7 +145,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Latest local state: **2,206 Python tests passed, 17 skipped**, **243 web tests
+Latest local state: **2,210 Python tests passed, 17 skipped**, **243 web tests
 passed** and a successful Vite 8.2.4 build. Tests use synthetic data; they do not
 prove currentness, national completeness or deployment. Evidence and limits:
 [Status](docs/STATUS.md) and [changes/](docs/changes/).

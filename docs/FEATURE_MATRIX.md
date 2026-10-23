@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Matriz de capacidades e limites verificáveis
 
-Referência de código deste lote: `4f92f89`; execuções e hashes anteriores em
+Referência de código deste lote: `d6c26a6`; execuções e hashes anteriores em
 `reports/20260906-verified-closeout.json`, evidência do lote documental em
 `docs/changes/2026-10-20-document-structure-and-link-field.md`, dos documentos
 PNCP privados em `docs/changes/2026-10-21-pncp-private-documents.md`, dos
@@ -39,7 +39,7 @@ em testes.
 | Documento nativo | Extração, posições, tabelas, candidato e vínculo revisado; famílias lexicais de convênio/plano de trabalho/contrato/aditivo; datas e valores com papéis separados; tabelas multipágina somente com cabeçalho idêntico repetido; orientação por rotação; página híbrida e campo do trecho; sinais de privacidade/assinatura sem reter valores; PDF original privado com SHA-256 e download de revisor; prévia de página via Poppler validada em container com PDF sintético; verificação de integridade e limpeza de órfãos com dry-run; browser extended | Corpus oficial diversificado, métricas por família, retenção/expurgo dos referenciados e prévia em corpus oficial |
 | OCR seletivo | Integração local; uma página sintética PT processada anteriormente; fila persistente com quotas, lease, retry, cancelamento, retenção, CLI e rotas de revisor; rotas híbrida/orientação usam elegibilidade explícita; nenhum byte/texto na fila | Avaliação com corpus oficial e operação em produção |
 | Preservação OCR | Quatro originais sintéticos + dois derivados + manifesto no Git; conferência offline obrigatória | Não chamar de convênios oficiais nem usá-los como dados reais |
-| Distribuição de dados | Releases v1 de saúde/recursos e educação com hashes e entrada fixada; instalação e API reverificadas em 20/10/2026 (96.123 lugares/6.679 recursos; 138.086 escolas elegíveis/76.106 excluídas) | Renovação periódica, nova seleção de dados e deploy público |
+| Distribuição de dados | Releases v1 de saúde/recursos e educação com hashes e entrada fixada; instalação e API reverificadas em 20/10/2026 (96.123 lugares/6.679 recursos; 138.086 escolas elegíveis/76.106 excluídas); reconciliação `installed` vs `declared` em `ops/national_reconciliation.py` com gap −484 saúde e gap 0 escolas, por UF e sem denominador municipal | Renovação periódica, nova seleção de dados, denominadores por território e deploy público |
 | Instalação do pacote | Um comando; staging privado; banco novo atômico; baseline Alembic 0001; 35 regressões novas | Migração de dados históricos e downgrade de produção; não sobrescreve banco ativo com usuários |
 | Mapa/WebGL | Worker empacotado, mapa opcional e teste de renderização isolada | Fonte de tiles/3D externa e aparelhos limitados |
 | Panoramas e fotos | Fotos privadas com upload opcional, revisão, retirada e compartilhamento em grupo; panorama não entregue | Provedor/licença/captura de panorama, política de retenção e moderação operacional |
