@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Reconciliação instalado vs declarado do banco nacional
 
-Lote de 23/10/2026 (código deste lote: `d6c26a6`).
+Lote de 23/10/2026 (código deste lote: `1851844`).
 
 ## O que mudou
 
