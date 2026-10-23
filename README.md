@@ -113,8 +113,9 @@ completo está em [Migrações](docs/MIGRATIONS.md).
 - **PNCP:** contratos e documentos oficiais com metadados, SHA-256, revisões e
   armazenamento privado; nenhum documento é publicado automaticamente.
 - **Consumidores oficiais:** empenhos especiais por plano, PDDE por escola,
-  documentos PNCP por contrato, cabeçalho e empenhos de parceria, somente para
-  revisor, com linhas exatas, sem somas monetárias e sem bytes públicos.
+  documentos PNCP por contrato, cabeçalho e empenhos de parceria, execução
+  física e catálogo do ObrasGov, somente para revisor, com linhas exatas, sem
+  somas monetárias e sem bytes públicos.
 - **Infra:** Alembic `0003_parceria_empenhos`, PostgreSQL local durável, backup/verify,
   pins de segurança `certifi==2026.10.19`/`Pillow==13.0.0`, container
   não-root/read-only e frontend servido na mesma origem.
@@ -143,7 +144,7 @@ python -m pytest
 cd web && npm test && npm run build
 ```
 
-Estado local recente: **2.204 testes Python aprovados, 17 ignorados**, web
+Estado local recente: **2.206 testes Python aprovados, 17 ignorados**, web
 **243 aprovados** e build Vite 8.2.4. Testes usam dados sintéticos; não provam
 atualidade, completude nacional ou deploy. Evidências e limites:
 [Status](docs/STATUS.md) e [changes/](docs/changes/).

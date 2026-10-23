@@ -1,0 +1,70 @@
+{
+  "schema": "bdt.obrasgov-bounded-consumer.v1",
+  "collected_on": "2026-10-23",
+  "national_catalog_certified": false,
+  "not_national_coverage": true,
+  "execution": {
+    "status": "bounded",
+    "terminal": "max_pages_bound",
+    "plan": {"page_size": 200, "max_pages": 1, "delay_seconds": 1.0},
+    "page_url": "https://api-publica.obrasgov.gestao.gov.br/obras/execucao-fisica?pagina=1&tamanho_da_pagina=200",
+    "page_sha256": "6674be39ccfe0b2cb8f3336a8f4f09abe9f0762e3ed6b42480472b8fd1ed105f",
+    "page_bytes": 106232,
+    "total_pages_declared": 372,
+    "total_items_declared": 74280,
+    "import_counts": {"read": 200, "created": 187, "unchanged": 5, "rejected": 8},
+    "rejected_reason": "obrasgov_execution_row_malformed_percentage (8 rows publish percentual_execucao_fisica that fails the strict validator; rows never get invented values.)",
+    "rejected_examples": [
+      {"execution_id": 165550, "project": "86816.43-91"},
+      {"execution_id": 165580, "project": "86846.21-13"},
+      {"execution_id": 4544, "project": "47744.35-45"},
+      {"execution_id": 165782, "project": "87050.41-47"},
+      {"execution_id": 165674, "project": "86941.13-43"},
+      {"execution_id": 136661, "project": "29364.13-05"},
+      {"execution_id": 136603, "project": "31202.13-78"},
+      {"execution_id": 136660, "project": "28167.51-41"}
+    ],
+    "consumer_example": {
+      "route": "/api/workbench/obrasgov/projeto/101695.29-99/execucao",
+      "count": 1,
+      "total_rows": 1,
+      "aggregate": null,
+      "first": {"execution_id": 186663, "percentage_published": 34.08, "instrument_type": null}
+    }
+  },
+  "catalog": {
+    "dataset": "projeto-investimento",
+    "status": "bounded",
+    "terminal": "max_pages_bound",
+    "plan": {"page_size": 200, "max_pages": 1, "delay_seconds": 1.0},
+    "page_url": "https://api-publica.obrasgov.gestao.gov.br/obras/projeto-investimento?pagina=1&tamanho_da_pagina=200",
+    "page_sha256": "86e07c8422b93f57bcdda892e70d41ff5c1a567b341255e1ab6a0674d54249a2",
+    "page_bytes": 445951,
+    "total_pages_declared": 774,
+    "total_items_declared": 154800,
+    "import_counts": {"read": 200, "created": 200, "unchanged": 0, "rejected": 0},
+    "freshness": {
+      "url": "https://api-publica.obrasgov.gestao.gov.br/obras/data-atualizacao",
+      "sha256": "f0d0df3e0abf90e03aeb31c230e3a0d8fde9ef9a5fcefbaf87f1ddc916be1341",
+      "bytes": 49,
+      "data_ultima_atualizacao": "2026-10-23T00:00:00"
+    },
+    "consumer_example": {
+      "route": "/api/workbench/obrasgov/projeto/100920.42-84/catalogo?dataset=projeto-investimento",
+      "count": 1,
+      "total_rows": 1,
+      "aggregate": null,
+      "first": {
+        "dataset": "projeto-investimento",
+        "project_id": "100920.42-84",
+        "ibge_code": null,
+        "desc_nome": "SEGUNDA ETAPA DO PROGRAMA DE DESENVOLVIMENTO URBANO EM URUPE             MA SC - PRO-CIDADES"
+      }
+    }
+  },
+  "limits": [
+    "Each page is a bounded sample of hundreds of declared pages; not national coverage.",
+    "Page 1 of /execucao-fisica and page 1 of /projeto-investimento do not overlap, so the two live consumer examples use different project ids from the imported pages.",
+    "The consumer returns exact published rows; it never sums percentages, phases or money and never binds a project to a municipality or place."
+  ]
+}

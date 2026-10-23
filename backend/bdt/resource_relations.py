@@ -1,8 +1,9 @@
 """Read-only consumers for official rows that are not part of the public catalog.
 
 These routes expose exact published rows for a reviewer. They never create a
-place, never sum phases, never turn an empenho into payment and never infer a
-recipient or institutional link.
+place, never sum phases, never turn an empenho into payment, never infer a
+recipient or institutional link and never bind an Obrasgov project to a
+municipality, place or work address.
 """
 from __future__ import annotations
 
@@ -12,6 +13,9 @@ from fastapi import Depends, HTTPException, Query
 from sqlalchemy import func, select
 
 from .evidence import Resource
+from .obrasgov_catalog import DATASETS as OBRASGOV_CATALOG_DATASETS
+from .obrasgov_catalog import ObrasgovCatalog, initialize_obrasgov_catalog
+from .obrasgov_execution import ObrasgovExecution, initialize_obrasgov_execution
 from .pdde import PddePayment, initialize_pdde
 from .pncp_documents import PncpContractDocument, PncpDocumentRevision
 from .storage import Place
@@ -177,11 +181,71 @@ def parceria_empenhos(database, parceria_id: str, *, page: int = 1, limit: int =
                 'scope': 'exact_published_empenhos_for_one_partnership_not_a_payment_or_total'}
 
 
+def obra_execucao(database, project_id: str, *, page: int = 1, limit: int = 50) -> dict:
+    with database.session() as session:
+        project = str(project_id)
+        condition = ObrasgovExecution.project_id == project
+        total = session.scalar(select(func.count()).select_from(
+            ObrasgovExecution).where(condition))
+        if total < 1:
+            raise LookupError('obrasgov_project_not_found')
+        rows = session.scalars(select(ObrasgovExecution).where(condition)
+                               .order_by(ObrasgovExecution.execution_id)
+                               .offset((page - 1) * limit).limit(limit + 1)).all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{'execution_id': row.execution_id,
+                  'percentage_published': row.percentage,
+                  'starts_on': row.starts_on,
+                  'ends_on': row.ends_on,
+                  'instrument_type': row.instrument_type,
+                  'execution_form': row.execution_form,
+                  'created_at_upstream': row.created_at_upstream,
+                  'registered_at': row.registered_at,
+                  'updated_at_upstream': row.updated_at_upstream,
+                  'indicatives': row.indicatives,
+                  'reasons': row.reasons,
+                  'payload': row.payload,
+                  'source': row.source} for row in rows]
+        return {'project_id': project, 'count': len(items), 'page': page,
+                'limit': limit, 'total_rows': total, 'has_more': has_more,
+                'items': items, 'aggregate': None,
+                'scope': 'exact_published_execution_rows_for_one_investment_project_not_a_payment_or_municipal_link'}
+
+
+def obra_catalogo(database, project_id: str, *, dataset: str | None = None,
+                  page: int = 1, limit: int = 50) -> dict:
+    filters = [ObrasgovCatalog.project_id == str(project_id)]
+    if dataset is not None:
+        filters.append(ObrasgovCatalog.dataset == dataset)
+    with database.session() as session:
+        total = session.scalar(select(func.count()).select_from(
+            ObrasgovCatalog).where(*filters))
+        if total < 1:
+            raise LookupError('obrasgov_project_not_found')
+        rows = session.scalars(select(ObrasgovCatalog).where(*filters)
+                               .order_by(ObrasgovCatalog.dataset, ObrasgovCatalog.key)
+                               .offset((page - 1) * limit).limit(limit + 1)).all()
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [{'key': row.key, 'dataset': row.dataset,
+                  'project_id': row.project_id, 'ibge_code': row.ibge_code,
+                  'payload': row.payload, 'source': row.source} for row in rows]
+        return {'project_id': str(project_id),
+                'dataset': dataset, 'count': len(items), 'page': page,
+                'limit': limit, 'total_rows': total, 'has_more': has_more,
+                'items': items, 'aggregate': None,
+                'datasets_available': sorted(OBRASGOV_CATALOG_DATASETS),
+                'scope': 'exact_published_catalog_rows_for_one_investment_project_not_a_municipal_link_or_value'}
+
+
 def install(app, database, reviewer):
     initialize_transferegov_especiais(database)
     initialize_pdde(database)
     initialize_transferegov_parcerias(database)
     initialize_transferegov_parceria_empenhos(database)
+    initialize_obrasgov_execution(database)
+    initialize_obrasgov_catalog(database)
     PncpContractDocument.__table__.create(database.engine, checkfirst=True)
     PncpDocumentRevision.__table__.create(database.engine, checkfirst=True)
 
@@ -220,3 +284,22 @@ def install(app, database, reviewer):
     def partnership_commitments(parceria_id: str, page: int = Query(1, ge=1, le=100000),
                                 limit: int = Query(50, ge=1, le=200), _=Depends(reviewer)):
         return parceria_empenhos(database, parceria_id, page=page, limit=limit)
+
+    @app.get('/api/workbench/obrasgov/projeto/{project_id}/execucao')
+    def obra_execution(project_id: str, page: int = Query(1, ge=1, le=100000),
+                       limit: int = Query(50, ge=1, le=200), _=Depends(reviewer)):
+        try:
+            return obra_execucao(database, project_id, page=page, limit=limit)
+        except LookupError:
+            raise HTTPException(404, 'obrasgov_project_not_found') from None
+
+    @app.get('/api/workbench/obrasgov/projeto/{project_id}/catalogo')
+    def obra_catalog(project_id: str, dataset: str | None = Query(None),
+                     page: int = Query(1, ge=1, le=100000),
+                     limit: int = Query(50, ge=1, le=200), _=Depends(reviewer)):
+        if dataset is not None and dataset not in OBRASGOV_CATALOG_DATASETS:
+            raise HTTPException(400, 'obrasgov_dataset_invalid')
+        try:
+            return obra_catalogo(database, project_id, dataset=dataset, page=page, limit=limit)
+        except LookupError:
+            raise HTTPException(404, 'obrasgov_project_not_found') from None

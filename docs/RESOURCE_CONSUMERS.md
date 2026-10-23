@@ -53,6 +53,25 @@ informado. Retorna número/ano, data, situação SIAFI, favorecido publicado e
 não é pagamento. A amostra real de 200 empenhos de 69.345 declarados está em
 [`reports/20261022-transferegov-parceria-empenhos.json`](../reports/20261022-transferegov-parceria-empenhos.json).
 
+## Execução física e catálogo do ObrasGov
+
+```http
+GET /api/workbench/obrasgov/projeto/101695.29-99/execucao?page=1&limit=50
+GET /api/workbench/obrasgov/projeto/100920.42-84/catalogo?dataset=projeto-investimento
+```
+
+A rota exige revisor e `project_id` exato (`id_projeto_investimento`, formato
+`00NNNN.NN-NN`). `/execucao` lista as linhas publicadas de execução física
+(para uma obra), com `percentage_published`, datas e instrumento;
+`/catalogo` lista as linhas da origem para o projeto em um dos quatro datasets
+(`contrato`, `empenho`, `geometria`, `projeto-investimento`), com filtro
+`dataset` opcional. Nenhum projeto é vinculado a lugar ou município; nenhuma
+porcentagem, fase ou valor é somado. 404 significa **nenhuma linha importada
+com esse id**, não obra inexistente; 400 se o dataset for desconhecido. A
+amostra real (200 execuções de 74.280 declaradas e 200 projetos de 154.800
+declarados, frescura `2026-10-23`) está em
+[`reports/20261023-obrasgov-consumers.json`](../reports/20261023-obrasgov-consumers.json).
+
 ## Documentos de um contrato PNCP
 
 ```http
@@ -99,5 +118,5 @@ python -m pytest backend/tests/test_resource_relations.py -q
 
 Cobrem plano exato, exclusão de outro plano, paginação, ausência de agregado,
 401 anônimo, 404 para não-plano, documentos PNCP sem bytes, parcerias e o
-conector bounded. A suíte integral deste lote passou com **2.204 aprovados,
+conector bounded. A suíte integral deste lote passou com **2.206 aprovados,
 17 ignorados**.

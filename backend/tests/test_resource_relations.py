@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 from bdt.api import create_app, password_hash
 from bdt.domain import PlaceInput, Source, now
 from bdt.evidence import Resource
+from bdt.obrasgov_catalog import ObrasgovCatalog
+from bdt.obrasgov_execution import ObrasgovExecution
 from bdt.pdde import PddePayment
 from bdt.pncp_documents import PncpContractDocument
 from bdt.storage import Municipality, User, upsert_place
@@ -87,6 +89,23 @@ def relations(tmp_path):
             payload={'id_empenho_parceria': 17292, 'id_parceria': 37840,
                      'valor_empenho': 299977.0},
             source={'url': 'https://example.org/empenhos', 'sha256': 'f' * 64}))
+        session.add(ObrasgovExecution(
+            key='g' * 64, execution_id=5, project_id='107712.23-56',
+            percentage=42.5, starts_on='2024-01-10', ends_on='2025-06-30',
+            instrument_type='Contrato', execution_form='Execução direta',
+            created_at_upstream='2023-12-01', registered_at='2024-02-15',
+            updated_at_upstream='2024-08-01', indicatives=['INDICATIVO'], reasons=[],
+            payload={'id_execucao_fisica': 5, 'id_projeto_investimento': '107712.23-56',
+                     'percentual_execucao_fisica': 42.5},
+            source={'url': 'https://example.org/execucao', 'sha256': 'g' * 64}))
+        session.add(ObrasgovCatalog(
+            key='h' * 64, dataset='projeto-investimento', project_id='107712.23-56',
+            payload={'id_projeto_investimento': '107712.23-56'},
+            source={'url': 'https://example.org/projeto', 'sha256': 'h' * 64}))
+        session.add(ObrasgovCatalog(
+            key='i' * 64, dataset='empenho', project_id='107712.23-56',
+            payload={'id_projeto_investimento': '107712.23-56', 'nr_empenho': 100},
+            source={'url': 'https://example.org/empenho', 'sha256': 'i' * 64}))
     client = TestClient(app)
     response = client.post('/api/auth/login', headers=HEAD, json={'username': 'reviewer', 'password': PASSWORD})
     assert response.status_code == 200, response.text
@@ -178,3 +197,37 @@ def test_pdde_consumer_returns_exact_values_for_school_only(relations):
     assert 'total' not in body and 'sum' not in body
     missing = client.get('/api/workbench/places/test%3Amissing/pdde')
     assert missing.status_code == 404
+
+
+def test_obrasgov_execution_consumer_returns_exact_rows_without_views(relations):
+    _, client, _ = relations
+    response = client.get('/api/workbench/obrasgov/projeto/107712.23-56/execucao')
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body['count'] == 1 and body['aggregate'] is None and body['total_rows'] == 1
+    assert body['items'][0]['execution_id'] == 5
+    assert body['items'][0]['percentage_published'] == 42.5
+    assert body['items'][0]['starts_on'] == '2024-01-10'
+    assert 'total' not in body and 'sum' not in body
+
+
+def test_obrasgov_catalog_consumer_filters_datasets_and_rejects_unknown(relations):
+    _, client, _ = relations
+    response = client.get('/api/workbench/obrasgov/projeto/107712.23-56/catalogo')
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body['count'] == 2 and body['aggregate'] is None
+    assert [row['dataset'] for row in body['items']] == ['empenho', 'projeto-investimento']
+    assert body['datasets_available'] == ['contrato', 'empenho', 'geometria', 'projeto-investimento']
+    filtered = client.get('/api/workbench/obrasgov/projeto/107712.23-56/catalogo?dataset=empenho')
+    assert filtered.json()['count'] == 1 and filtered.json()['items'][0]['dataset'] == 'empenho'
+    assert client.get(
+        '/api/workbench/obrasgov/projeto/107712.23-56/catalogo?dataset=inexistente').status_code == 400
+    assert client.get('/api/workbench/obrasgov/projeto/00000000-99/execucao').status_code == 404
+    assert client.get('/api/workbench/obrasgov/projeto/00000000-99/catalogo').status_code == 404
+    assert client.get(
+        '/api/workbench/obrasgov/projeto/00000000-99/execucao?page=2&limit=0').status_code == 422
+    app, _, _ = relations
+    anonymous = TestClient(app)
+    assert anonymous.get('/api/workbench/obrasgov/projeto/107712.23-56/execucao').status_code == 401
+    assert anonymous.get('/api/workbench/obrasgov/projeto/107712.23-56/catalogo').status_code == 401
