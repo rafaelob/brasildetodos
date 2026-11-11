@@ -1,2 +1,3 @@
 backend-python-fastapi
 document-parsing-resilience
+frontend-react-vite-spa
