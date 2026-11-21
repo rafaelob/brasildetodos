@@ -16,4 +16,4 @@ Tracker: github — as Issues #2–#5 são a autoridade do trabalho pendente; co
 - IAJUS and DOCIA must not appear on public or citizen-facing surfaces (README, web UI copy, and `docs/` product docs). Fleet internals under `scripts/ops/` and `control_docs/` are excluded from that prohibition.
 - Docker Compose and localhost (including the documented `:8008` bind) are a local instance, never production.
 
-Fleet: to migrate the installation or legacy instructions, see control_docs/MIGRACAO_FLEET.md
+Fleet: cloud agents skip the Fleet rules: plain git, a branch and a PR with `Closes #N`.
